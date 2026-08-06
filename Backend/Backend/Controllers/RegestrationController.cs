@@ -4,6 +4,7 @@ using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 
 namespace Backend.Controllers
@@ -102,6 +103,51 @@ namespace Backend.Controllers
 
         //}
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetSettings()
+        {
+            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
+            if (ownerId == null)
+            {
+                return Unauthorized();
+            }
+            var owner = await _context.BarbershopOwners.FindAsync(Guid.Parse(ownerId));
+            if (owner == null)
+            {
+                return NotFound();
+            }
+            var settings = new
+            {
+                owner.LogoUrl,
+                owner.BrandColor,
+                owner.ReminderHoursBefore,
+                owner.DepositEnabled,
+                owner.DepositPercent
+            };
+            return Ok(settings);
+        }
+    }
 
+    public class UpdateSettingsRequest
+    {
+        [Required]
+        public string LogoUrl { get; set; }
+        [Required]
+        public string BrandColor { get; set; }
+        [Required]
+        public int ReminderHoursBefore { get; set; }
+        [Required]
+        public bool DepositEnabled { get; set; }
+        [Required]
+        public int DepositPercent { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        [Required]
+        public string CurrentPassword { get; set; }
+        [Required]
+        public string NewPassword { get; set; }
     }
 }

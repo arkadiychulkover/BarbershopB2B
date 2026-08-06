@@ -12,6 +12,8 @@ namespace Backend.Models
         public string Email { get; set; }
         public string PasswordHash { get; set; }
 
+        public string WalletAddress { get; set; }
+
         public string BarbershopName { get; set; }
         public string BarbershopAddress { get; set; }
         public string BarbershopDescription { get; set; }
@@ -27,6 +29,7 @@ namespace Backend.Models
 
         public List<Master> Masters { get; set; }
         public List<Client> Clients { get; set; }
+        public List<Tranzaction> Tranzactions { get; set; }
 
         public OwnerStatus Status { get; set; } = OwnerStatus.Trial;
         public bool IsBlocked { get; set; } = false;

@@ -109,7 +109,6 @@ D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.build.json.ca
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.development.json
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\swae.build.ex.cache
-D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\Backend.csproj.Up2Date
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\Backend.dll
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\refint\Backend.dll
@@ -118,3 +117,4 @@ D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\Backend.genruntimeconfig.cach
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\ref\Backend.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Npgsql.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\Backend.sourcelink.json
