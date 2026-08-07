@@ -10,5 +10,6 @@
         public DateTime Time { get; set; }
 
         public decimal Amount { get; set; }
+        public string TxhHash { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Backend.Models.Enums;
+using Backend.Models.Enums;
 
 namespace Backend.Models
 {
@@ -38,6 +38,7 @@ namespace Backend.Models
         public DateTime PayedAt { get; set; }
         public DateTime NextPayment { get; set; }
         public DateTime LastPayment { get; set; }
+        public bool IsSubscribed => NextPayment > DateTime.UtcNow;
 
         public decimal MasterFee { get; set; }
     }

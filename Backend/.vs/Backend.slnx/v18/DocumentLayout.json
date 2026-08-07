@@ -3,32 +3,12 @@
   "WorkspaceRootPath": "D:\\BarbershopB2B\\Backend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\statisticcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\statisticcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\services\\statisticservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\services\\statisticservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\barbercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\barbercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\barbershopowner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\barbershopowner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\regestrationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\regestrationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\dtos\\registrationrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\dtos\\registrationrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\tranzaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\tranzaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\services\\tonservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\services\\tonservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -46,93 +26,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "AppDbContext.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Data\\AppDbContext.cs",
-              "RelativeDocumentMoniker": "Backend\\Data\\AppDbContext.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Data\\AppDbContext.cs",
-              "RelativeToolTip": "Backend\\Data\\AppDbContext.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAA8AAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "TonService.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\TonService.cs",
+              "RelativeDocumentMoniker": "Backend\\Services\\TonService.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\TonService.cs",
+              "RelativeToolTip": "Backend\\Services\\TonService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T14:56:27.48Z",
+              "WhenOpened": "2026-08-07T09:09:42.576Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "StatisticController.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\StatisticController.cs",
-              "RelativeDocumentMoniker": "Backend\\Controllers\\StatisticController.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\StatisticController.cs",
-              "RelativeToolTip": "Backend\\Controllers\\StatisticController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAQwCcAAAAkAAAAAAAAAA==",
+              "Title": "StatisticService.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\StatisticService.cs",
+              "RelativeDocumentMoniker": "Backend\\Services\\StatisticService.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\StatisticService.cs",
+              "RelativeToolTip": "Backend\\Services\\StatisticService.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAgwBUAAABaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T14:55:22.028Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "Tranzaction.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Tranzaction.cs",
-              "RelativeDocumentMoniker": "Backend\\Models\\Tranzaction.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Tranzaction.cs",
-              "RelativeToolTip": "Backend\\Models\\Tranzaction.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAArAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T14:50:45.294Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "BarberController.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\BarberController.cs",
-              "RelativeDocumentMoniker": "Backend\\Controllers\\BarberController.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\BarberController.cs",
-              "RelativeToolTip": "Backend\\Controllers\\BarberController.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAxwAsAAAAhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T14:44:52.79Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "RegistrationRequest.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\DTOs\\RegistrationRequest.cs",
-              "RelativeDocumentMoniker": "Backend\\DTOs\\RegistrationRequest.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\DTOs\\RegistrationRequest.cs",
-              "RelativeToolTip": "Backend\\DTOs\\RegistrationRequest.cs",
-              "ViewState": "AgIAAAcAAAAAAAAAAAAxwBIAAAAuAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T13:54:04.625Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "BarbershopOwner.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\BarbershopOwner.cs",
-              "RelativeDocumentMoniker": "Backend\\Models\\BarbershopOwner.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\BarbershopOwner.cs",
-              "RelativeToolTip": "Backend\\Models\\BarbershopOwner.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAA8wB8AAAA7AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T13:51:37.756Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "RegestrationController.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\RegestrationController.cs",
-              "RelativeDocumentMoniker": "Backend\\Controllers\\RegestrationController.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\RegestrationController.cs",
-              "RelativeToolTip": "Backend\\Controllers\\RegestrationController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGkAAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-06T13:49:41.329Z",
+              "WhenOpened": "2026-08-07T09:09:12.055Z",
               "EditorCaption": ""
             }
           ]

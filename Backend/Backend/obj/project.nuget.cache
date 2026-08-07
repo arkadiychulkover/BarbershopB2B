@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "bsu+fTbY9KM=",
+  "dgSpecHash": "zkyeq3mT4BE=",
   "success": true,
-  "projectFilePath": "D:\\BarbershopB2B\\Backend\\Backend\\Backend.csproj",
+  "projectFilePath": "d:\\BarbershopB2B\\Backend\\Backend\\Backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\arkad\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\arkad\\.nuget\\packages\\microsoft.build.framework\\18.0.2\\microsoft.build.framework.18.0.2.nupkg.sha512",
