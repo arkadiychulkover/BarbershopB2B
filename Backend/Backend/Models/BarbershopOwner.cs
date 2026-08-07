@@ -31,7 +31,7 @@ namespace Backend.Models
         public List<Client> Clients { get; set; }
         public List<Tranzaction> Tranzactions { get; set; }
 
-        public OwnerStatus Status { get; set; } = OwnerStatus.Trial;
+        public OwnerStatus Status { get; set; } = OwnerStatus.Pending;
         public bool IsBlocked { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

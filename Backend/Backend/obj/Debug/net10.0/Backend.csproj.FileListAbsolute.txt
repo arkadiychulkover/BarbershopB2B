@@ -118,3 +118,13 @@ D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\ref\Backend.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Npgsql.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\Backend.sourcelink.json
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.Abstractions.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.JsonWebTokens.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.Logging.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
+d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

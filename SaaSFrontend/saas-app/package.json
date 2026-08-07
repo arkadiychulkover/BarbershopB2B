@@ -12,5 +12,12 @@
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
     "svelte": "^5.56.8",
     "vite": "^8.2.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "lucide-svelte": "^1.0.1",
+    "qrcode": "^1.5.4",
+    "svelte-chartjs": "^4.0.1",
+    "svelte-spa-router": "^5.1.1"
   }
 }

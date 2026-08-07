@@ -1,5 +1,9 @@
 using Backend.Data;
+using Backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Backend
 {
@@ -12,14 +16,47 @@ namespace Backend
             // Add services to the container.
             builder.Services.AddControllers();
 
-            builder.Services.AddDbContext<AppDbContext>(options =>
+            builder.Services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+                
+            builder.Services.AddScoped<AppDbContext>(p => 
+                p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
+
+            builder.Services.AddHttpClient();
+
+            builder.Services.AddScoped<StatisticService>();
+            builder.Services.AddScoped<TonService>();
+
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings.GetValue<string>("Secret");
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.GetValue<string>("Issuer"),
+                    ValidAudience = jwtSettings.GetValue<string>("Audience"),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                };
+            });
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             app.UseHttpsRedirection();
+            
+            app.UseAuthentication();
             app.UseAuthorization();
+            
             app.MapControllers();
 
             app.Run();

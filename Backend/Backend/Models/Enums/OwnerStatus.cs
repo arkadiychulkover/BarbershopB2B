@@ -1,8 +1,8 @@
-﻿namespace Backend.Models.Enums
+namespace Backend.Models.Enums
 {
     public enum OwnerStatus
     {
-        Trial,
+        Pending,
         Active,
         Frozen,
         Cancelled

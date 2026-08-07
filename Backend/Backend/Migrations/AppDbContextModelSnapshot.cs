@@ -140,6 +140,10 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("PayedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -158,6 +162,10 @@ namespace Backend.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WalletAddress")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -361,6 +369,32 @@ namespace Backend.Migrations
                     b.ToTable("Shifts");
                 });
 
+            modelBuilder.Entity("Backend.Models.Tranzaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TxhHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Tranxactions");
+                });
+
             modelBuilder.Entity("Backend.Models.Appointment", b =>
                 {
                     b.HasOne("Backend.Models.Client", "Client")
@@ -467,11 +501,24 @@ namespace Backend.Migrations
                     b.Navigation("Master");
                 });
 
+            modelBuilder.Entity("Backend.Models.Tranzaction", b =>
+                {
+                    b.HasOne("Backend.Models.BarbershopOwner", "Owner")
+                        .WithMany("Tranzactions")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("Backend.Models.BarbershopOwner", b =>
                 {
                     b.Navigation("Clients");
 
                     b.Navigation("Masters");
+
+                    b.Navigation("Tranzactions");
                 });
 
             modelBuilder.Entity("Backend.Models.Client", b =>

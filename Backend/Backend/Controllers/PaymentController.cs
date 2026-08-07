@@ -15,12 +15,22 @@ namespace Backend.Controllers
         private readonly AppDbContext _context;
         private readonly TonService _ton;
 
-        public PaymentController(AppDbContext context, TonService ton, IConfiguration configuration, decimal subscriptionAmount)
+        public PaymentController(AppDbContext context, TonService ton, IConfiguration configuration)
         {
             _context = context;
             _ton = ton;
             _configuration = configuration;
-            _subscriptionAmount = Convert.ToDecimal(_configuration["SubscriptionAmount"]);
+            _subscriptionAmount = Convert.ToDecimal(_configuration["SubscriptionAmount"], System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        [HttpGet("price")]
+        [AllowAnonymous]
+        public IActionResult GetSubscriptionPrice()
+        {
+            return Ok(new { 
+                price = _subscriptionAmount,
+                platformWalletAddress = _configuration["Ton:Address"]
+            });
         }
 
         [HttpPost]
@@ -36,7 +46,7 @@ namespace Backend.Controllers
             {
                 return BadRequest("Invalid transaction.");
             }
-            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
             if (userId == null)
             {
                 return Unauthorized();

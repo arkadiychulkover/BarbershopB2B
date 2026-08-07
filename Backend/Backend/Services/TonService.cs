@@ -32,6 +32,8 @@ namespace Backend.Services
 
                 using var client = _httpFactory.CreateClient();
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+                client.DefaultRequestHeaders.Add("User-Agent", "BarbershopB2B/1.0");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
                 
                 var response = await client.GetAsync($"https://tonapi.io/v2/blockchain/accounts/{_address}/transactions?limit=20");
                 if (!response.IsSuccessStatusCode) return false;
