@@ -37,7 +37,8 @@ namespace Backend.Controllers
                 Description = request.Description,
                 TelegramId = request.TelegramId,
                 PhotoUrl = request.PhotoUrl,
-                OwnerId = owner.Id
+                OwnerId = owner.Id,
+                Ip = HttpContext.Connection.RemoteIpAddress ?? System.Net.IPAddress.Loopback
             };
             _context.Masters.Add(barber);
             await _context.SaveChangesAsync();

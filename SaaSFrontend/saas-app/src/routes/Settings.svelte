@@ -135,9 +135,9 @@
           {/if}
 
           <div class="form-group">
-            <label for="masterFee">Комиссия мастера (%)</label>
+            <label for="masterFee">Комиссия барбершопа (%)</label>
             <input id="masterFee" type="number" class="input" bind:value={settings.masterFee} min="0" max="100" required />
-            <small class="hint">Какую долю от оплаты получает мастер.</small>
+            <small class="hint">Какую долю от оплаты получает барбершоп (владелец).</small>
           </div>
           
           <div class="form-group">

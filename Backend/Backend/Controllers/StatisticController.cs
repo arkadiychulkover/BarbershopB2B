@@ -55,6 +55,9 @@ namespace Backend.Controllers
                 return BadRequest("startDate and endDate are required.");
             }
 
+            startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+
             var stats = await _statisticService.GetOwnerStatisticByDate(Guid.Parse(ownerId), startDate, endDate);
             return Ok(stats);
         }
@@ -67,6 +70,8 @@ namespace Backend.Controllers
             if (ownerId == null) return Unauthorized();
 
             if (date == default) return BadRequest("date is required.");
+
+            date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
 
             var stats = await _statisticService.GetOwnerStatisticByHour(Guid.Parse(ownerId), date);
             return Ok(stats);
@@ -81,6 +86,9 @@ namespace Backend.Controllers
 
             if (startDate == default || endDate == default) return BadRequest("startDate and endDate are required.");
 
+            startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+
             var stats = await _statisticService.GetBarberStatisticByDate(masterId, Guid.Parse(ownerId), startDate, endDate);
             return Ok(stats);
         }
@@ -93,6 +101,8 @@ namespace Backend.Controllers
             if (ownerId == null) return Unauthorized();
 
             if (date == default) return BadRequest("date is required.");
+
+            date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
 
             var stats = await _statisticService.GetBarberStatisticByHour(masterId, Guid.Parse(ownerId), date);
             return Ok(stats);

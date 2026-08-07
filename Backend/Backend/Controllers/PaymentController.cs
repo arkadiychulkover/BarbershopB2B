@@ -60,6 +60,7 @@ namespace Backend.Controllers
             owner.LastPayment = DateTime.UtcNow;
             owner.PayedAt = DateTime.UtcNow;
             owner.NextPayment = DateTime.UtcNow.AddMonths(1);
+            owner.Status = Backend.Models.Enums.OwnerStatus.Active;
 
             await _context.SaveChangesAsync();
             return Ok("Payment verified and subscription activated.");

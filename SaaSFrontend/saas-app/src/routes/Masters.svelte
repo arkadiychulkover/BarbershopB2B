@@ -7,6 +7,10 @@
   let isLoading = true;
   let errorMsg = '';
   
+  let showAddForm = false;
+  let newMaster = { name: '', description: '' };
+  let isSaving = false;
+  
   onMount(async () => {
     try {
       masters = await apiRequest('/api/Barber/all');
@@ -29,6 +33,24 @@
       alert('Ошибка удаления: ' + e.message);
     }
   }
+
+  async function addMaster() {
+    isSaving = true;
+    try {
+      const res = await apiRequest('/api/Barber/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMaster)
+      });
+      masters = [...masters, { id: res.barberId, name: newMaster.name, description: newMaster.description, isActive: true }];
+      showAddForm = false;
+      newMaster = { name: '', description: '' };
+    } catch (e) {
+      alert('Ошибка добавления: ' + (e.message || 'Неизвестная ошибка'));
+    } finally {
+      isSaving = false;
+    }
+  }
 </script>
 
 <DashboardLayout>
@@ -39,9 +61,28 @@
           <h1>Команда мастеров</h1>
           <p>Управление списком мастеров вашего барбершопа.</p>
         </div>
-        <button class="btn btn-primary">Добавить мастера</button>
+        <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
+          {showAddForm ? 'Отмена' : 'Добавить мастера'}
+        </button>
       </div>
     </header>
+
+    {#if showAddForm}
+      <div class="card mb-4">
+        <h3>Добавление нового мастера</h3>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>Имя мастера</label>
+          <input type="text" class="input" bind:value={newMaster.name} placeholder="Например, Алексей" />
+        </div>
+        <div class="form-group">
+          <label>Описание / Должность</label>
+          <input type="text" class="input" bind:value={newMaster.description} placeholder="Например, Старший барбер" />
+        </div>
+        <button class="btn btn-primary" on:click={addMaster} disabled={isSaving || !newMaster.name}>
+          {isSaving ? 'Сохранение...' : 'Сохранить мастера'}
+        </button>
+      </div>
+    {/if}
 
     {#if isLoading}
       <p>Загрузка...</p>
@@ -50,7 +91,7 @@
     {:else if masters.length === 0}
       <div class="card empty-state">
         <p>У вас пока нет ни одного мастера.</p>
-        <button class="btn btn-primary mt-2">Добавить первого мастера</button>
+        <button class="btn btn-primary mt-2" on:click={() => showAddForm = true}>Добавить первого мастера</button>
       </div>
     {:else}
       <div class="grid">
@@ -87,6 +128,7 @@
   }
   
   .mt-2 { margin-top: 1rem; }
+  .mb-4 { margin-bottom: 2rem; }
   
   .grid {
     display: grid;

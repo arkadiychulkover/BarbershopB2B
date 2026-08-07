@@ -46,8 +46,7 @@
               "RelativeToolTip": "Backend\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-08-07T10:03:50.56Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-07T10:03:50.56Z"
             },
             {
               "$type": "Document",
@@ -59,8 +58,7 @@
               "RelativeToolTip": "Backend\\Controllers\\SettingsController.cs",
               "ViewState": "AgIAADUAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-07T10:03:01.63Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-07T10:03:01.63Z"
             },
             {
               "$type": "Document",
@@ -72,8 +70,7 @@
               "RelativeToolTip": "Backend\\Controllers\\RegestrationController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAE8AAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-07T09:59:28.488Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-07T09:59:28.488Z"
             },
             {
               "$type": "Document",
@@ -83,7 +80,7 @@
               "RelativeDocumentMoniker": "Backend\\Services\\TonService.cs",
               "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\TonService.cs",
               "RelativeToolTip": "Backend\\Services\\TonService.cs",
-              "ViewState": "AgIAACwAAAAAAAAAAAAYwD4AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACAAAAAAAAAAAAAQwDMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-07T09:09:42.576Z",
               "EditorCaption": ""
@@ -98,8 +95,7 @@
               "RelativeToolTip": "Backend\\Services\\StatisticService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-07T09:09:12.055Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-07T09:09:12.055Z"
             }
           ]
         }
