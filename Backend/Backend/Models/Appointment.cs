@@ -15,6 +15,9 @@ namespace Backend.Models
         public Guid ServiceId { get; set; }
         public Service Service { get; set; }
 
+        public Guid ReviewId { get; set; }
+        public Review? Review { get; set; }
+
         public DateTime Created { get; set; } = DateTime.UtcNow;
         public DateTime AppointmentDate { get; set; }
         public DateTime AppointmentEndDate { get; set; }

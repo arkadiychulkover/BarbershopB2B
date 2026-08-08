@@ -52,6 +52,11 @@ namespace Backend
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+            });
+
             app.UseHttpsRedirection();
             
             app.UseAuthentication();
