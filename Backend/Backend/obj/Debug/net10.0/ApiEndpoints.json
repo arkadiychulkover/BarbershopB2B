@@ -1,5 +1,26 @@
 [
   {
+    "ContainingType": "Backend.Controllers.TelegramController",
+    "Method": "RegisterBarber",
+    "RelativePath": "api/{tenant}/Telegram",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tenant",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "initData",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Backend.Controllers.BarberController",
     "Method": "GetBarberById",
     "RelativePath": "api/Barber/{barberId}",
@@ -33,6 +54,38 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "AddReview",
+    "RelativePath": "api/Barber/Add-Review",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BAddReviewRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "AddShift",
+    "RelativePath": "api/Barber/Add-Shift",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BAddShiftRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "GetBarbers",
     "RelativePath": "api/Barber/all",
     "HttpMethod": "GET",
@@ -59,6 +112,117 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "DeleteShift",
+    "RelativePath": "api/Barber/Delete-Shift/{shiftId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "shiftId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetReview",
+    "RelativePath": "api/Barber/Get-Review/{reviewId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "reviewId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetShift",
+    "RelativePath": "api/Barber/Get-Shift/{shiftId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "shiftId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "AddMyShift",
+    "RelativePath": "api/Barber/my-shift/add",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BMyShiftRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetMyShifts",
+    "RelativePath": "api/Barber/my-shift/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "DeleteMyShift",
+    "RelativePath": "api/Barber/my-shift/delete/{shiftId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "shiftId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UpdateMyShift",
+    "RelativePath": "api/Barber/my-shift/update/{shiftId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "shiftId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BMyShiftRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "UpdateBarber",
     "RelativePath": "api/Barber/update",
     "HttpMethod": "PUT",
@@ -68,6 +232,27 @@
       {
         "Name": "request",
         "Type": "Backend.DTOs.UpdateBarberRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UpdateShift",
+    "RelativePath": "api/Barber/Update-Shift/{shiftId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "shiftId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BAddShiftRequest",
         "IsRequired": true
       }
     ],

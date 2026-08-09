@@ -11,10 +11,11 @@ namespace Backend
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-            builder.Services.AddControllers();
+            var builder = WebApplication.CreateBuilder(args);            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                });
 
             builder.Services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -26,6 +27,7 @@ namespace Backend
 
             builder.Services.AddScoped<StatisticService>();
             builder.Services.AddScoped<TonService>();
+            builder.Services.AddScoped<TgValidationService>();
 
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings.GetValue<string>("Secret");
@@ -49,10 +51,7 @@ namespace Backend
                 };
             });
 
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            var app = builder.Build();            app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
             });

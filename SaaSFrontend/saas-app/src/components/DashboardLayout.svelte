@@ -16,18 +16,15 @@
     try {
       const settings = await apiRequest('/api/Settings');
       profileStore.set({
-        ownerId: settings.ownerName, // Using ownerName as placeholder
+        ownerId: settings.ownerName,
         status: settings.status,
         email: $profileStore.email || settings.email || ''
       });
-
-      // Status check
       if (settings.status !== 'Active' && $currentLocation !== '/payment') {
         push('/payment');
       }
     } catch (e) {
       console.error(e);
-      // handled by apiRequest (redirect to login)
     } finally {
       isLoading = false;
     }

@@ -30,8 +30,6 @@ namespace Backend.DTOs
         public decimal? DepositPercent { get; set; }
         public decimal MasterFee { get; set; }
         public string WalletAddress { get; set; }
-        
-        // Read-only settings / statuses
         public bool IsSubscribed { get; set; }
         public string Status { get; set; }
     }

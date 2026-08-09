@@ -8,7 +8,7 @@
   let errorMsg = '';
   
   let showAddForm = false;
-  let newMaster = { name: '', description: '' };
+  let newMaster = { name: '', description: '', telegramId: '' };
   let isSaving = false;
   
   onMount(async () => {
@@ -42,9 +42,9 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newMaster)
       });
-      masters = [...masters, { id: res.barberId, name: newMaster.name, description: newMaster.description, isActive: true }];
+      masters = [...masters, { id: res.barberId, name: newMaster.name, description: newMaster.description, telegramId: newMaster.telegramId, isActive: true }];
       showAddForm = false;
-      newMaster = { name: '', description: '' };
+      newMaster = { name: '', description: '', telegramId: '' };
     } catch (e) {
       alert('Ошибка добавления: ' + (e.message || 'Неизвестная ошибка'));
     } finally {
@@ -78,7 +78,11 @@
           <label>Описание / Должность</label>
           <input type="text" class="input" bind:value={newMaster.description} placeholder="Например, Старший барбер" />
         </div>
-        <button class="btn btn-primary" on:click={addMaster} disabled={isSaving || !newMaster.name}>
+        <div class="form-group">
+          <label>Telegram ID</label>
+          <input type="text" class="input" bind:value={newMaster.telegramId} placeholder="Например, 123456789" />
+        </div>
+        <button class="btn btn-primary" on:click={addMaster} disabled={isSaving || !newMaster.name || !newMaster.telegramId}>
           {isSaving ? 'Сохранение...' : 'Сохранить мастера'}
         </button>
       </div>
@@ -100,6 +104,9 @@
             <div class="master-info">
               <h3>{master.name}</h3>
               <p class="status" class:active={master.isActive}>{master.isActive ? 'Активен' : 'Неактивен'}</p>
+              {#if master.telegramId}
+                <p class="status" style="margin-top: 4px;">TG ID: {master.telegramId}</p>
+              {/if}
             </div>
             <div class="actions">
               <button class="btn btn-danger btn-sm" on:click={() => deleteMaster(master.id)}>Удалить</button>

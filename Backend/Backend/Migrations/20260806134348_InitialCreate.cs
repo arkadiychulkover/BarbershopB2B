@@ -5,12 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 #nullable disable
 
 namespace Backend.Migrations
-{
-    /// <inheritdoc />
-    public partial class InitialCreate : Migration
-    {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
+{    public partial class InitialCreate : Migration
+    {        protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
                 name: "BarbershopOwners",
@@ -291,10 +287,7 @@ namespace Backend.Migrations
                 name: "IX_Shifts_MasterId",
                 table: "Shifts",
                 column: "MasterId");
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
+        }        protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
                 name: "Reviews");

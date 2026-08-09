@@ -14,7 +14,7 @@
     try {
       const end = new Date();
       const start = new Date();
-      start.setDate(end.getDate() - 7); // Last 7 days
+      start.setDate(end.getDate() - 7);
       
       const startStr = start.toISOString().split('T')[0];
       const endStr = end.toISOString().split('T')[0];

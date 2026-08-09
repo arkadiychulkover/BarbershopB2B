@@ -25,6 +25,12 @@ namespace Backend.Controllers
             return Guid.TryParse(claim, out ownerId);
         }
 
+        private bool TryGetMasterId(out Guid masterId)
+        {
+            var claim = User.Claims.FirstOrDefault(c => c.Type == "MasterId")?.Value;
+            return Guid.TryParse(claim, out masterId);
+        }
+
         private bool TryGetClientId(out Guid clientId)
         {
             var claim = User.Claims.FirstOrDefault(c => c.Type == "ClientId")?.Value;
@@ -238,6 +244,88 @@ namespace Backend.Controllers
             return Ok(new { message = "Shift deleted successfully" });
         }
 
+        [HttpPost("my-shift/add")]
+        [Authorize]
+        public async Task<IActionResult> AddMyShift([FromBody] MyShiftRequest request)
+        {
+            if (!TryGetMasterId(out var masterId))
+                return Unauthorized();
+
+            bool overlap = await _context.Shifts.AnyAsync(s =>
+                s.MasterId == masterId &&
+                s.Date == request.Date &&
+                s.StartTime < request.EndTime &&
+                s.EndTime > request.StartTime);
+            if (overlap)
+                return Conflict(new { message = "Shift overlaps with an existing shift" });
+
+            var shift = new Shift
+            {
+                Id = Guid.NewGuid(),
+                MasterId = masterId,
+                Date = request.Date,
+                StartTime = request.StartTime,
+                EndTime = request.EndTime
+            };
+            _context.Shifts.Add(shift);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Shift added successfully", shiftId = shift.Id });
+        }
+
+        [HttpGet("my-shift/all")]
+        [Authorize]
+        public async Task<IActionResult> GetMyShifts()
+        {
+            if (!TryGetMasterId(out var masterId))
+                return Unauthorized();
+
+            var shifts = await _context.Shifts.Where(s => s.MasterId == masterId).ToListAsync();
+            return Ok(shifts);
+        }
+
+        [HttpPut("my-shift/update/{shiftId}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMyShift([FromRoute] Guid shiftId, [FromBody] MyShiftRequest request)
+        {
+            if (!TryGetMasterId(out var masterId))
+                return Unauthorized();
+
+            var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == shiftId && s.MasterId == masterId);
+            if (shift == null)
+                return NotFound(new { message = "Shift not found" });
+
+            bool overlap = await _context.Shifts.AnyAsync(s =>
+                s.Id != shiftId &&
+                s.MasterId == masterId &&
+                s.Date == request.Date &&
+                s.StartTime < request.EndTime &&
+                s.EndTime > request.StartTime);
+            if (overlap)
+                return Conflict(new { message = "Shift overlaps with an existing shift" });
+
+            shift.Date = request.Date;
+            shift.StartTime = request.StartTime;
+            shift.EndTime = request.EndTime;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Shift updated successfully" });
+        }
+
+        [HttpDelete("my-shift/delete/{shiftId}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteMyShift([FromRoute] Guid shiftId)
+        {
+            if (!TryGetMasterId(out var masterId))
+                return Unauthorized();
+
+            var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == shiftId && s.MasterId == masterId);
+            if (shift == null)
+                return NotFound(new { message = "Shift not found" });
+
+            _context.Shifts.Remove(shift);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Shift deleted successfully" });
+        }
+
         [HttpGet("Get-Review/{reviewId}")]
         [Authorize]
         public async Task<IActionResult> GetReview([FromRoute] Guid reviewId)
@@ -292,6 +380,13 @@ namespace Backend.Controllers
         public class AddShiftRequest
         {
             public Guid MasterId { get; set; }
+            public DateOnly Date { get; set; }
+            public TimeOnly StartTime { get; set; }
+            public TimeOnly EndTime { get; set; }
+        }
+
+        public class MyShiftRequest
+        {
             public DateOnly Date { get; set; }
             public TimeOnly StartTime { get; set; }
             public TimeOnly EndTime { get; set; }

@@ -20,11 +20,9 @@
       
       if (response && response.token) {
         setAuthToken(response.token);
-        
-        // Fetch settings to check Status
         const settings = await apiRequest('/api/Settings');
         profileStore.set({
-          ownerId: settings.ownerName, // Using ownerName as placeholder
+          ownerId: settings.ownerName,
           status: settings.status,
           email: email
         });

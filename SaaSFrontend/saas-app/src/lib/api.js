@@ -21,13 +21,10 @@ export async function apiRequest(endpoint, options = {}) {
     });
 
     if (response.status === 401) {
-      // Unauthorized - clear token and redirect to login
       setAuthToken(null);
       push('/login');
       throw new Error('Unauthorized');
     }
-
-    // Some endpoints might return empty body
     let data = null;
     if (response.status !== 204) {
       const contentType = response.headers.get('content-type');

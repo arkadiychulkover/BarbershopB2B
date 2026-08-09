@@ -4,12 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 #nullable disable
 
 namespace Backend.Migrations
-{
-    /// <inheritdoc />
-    public partial class UpdateSchema : Migration
-    {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
+{    public partial class UpdateSchema : Migration
+    {        protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
                 name: "PasswordHash",
@@ -50,10 +46,7 @@ namespace Backend.Migrations
                 name: "IX_Tranxactions_OwnerId",
                 table: "Tranxactions",
                 column: "OwnerId");
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
+        }        protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
                 name: "Tranxactions");

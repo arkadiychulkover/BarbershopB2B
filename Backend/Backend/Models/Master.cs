@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace Backend.Models
 {
@@ -29,6 +29,7 @@ namespace Backend.Models
         public decimal MoneyInWeek { get; set; } = 0;
         public decimal MoneyInMonth { get; set; } = 0;
 
+        [System.Text.Json.Serialization.JsonIgnore]
         public IPAddress Ip { get; set; }
     }
 }

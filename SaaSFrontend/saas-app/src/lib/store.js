@@ -1,6 +1,4 @@
 import { writable, readable } from 'svelte/store';
-
-// Retrieve token from localStorage if exists
 const storedToken = localStorage.getItem('jwt_token');
 
 export const authStore = writable({
@@ -13,8 +11,6 @@ export const profileStore = writable({
   status: null,
   email: null
 });
-
-// Helper to update token
 export function setAuthToken(token) {
   if (token) {
     localStorage.setItem('jwt_token', token);

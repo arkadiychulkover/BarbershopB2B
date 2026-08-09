@@ -3,28 +3,24 @@
   "WorkspaceRootPath": "D:\\BarbershopB2B\\Backend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\client.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\client.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\regestrationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\regestrationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\telegramcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\telegramcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\master.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\master.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\review.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\review.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\telegramuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\telegramuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\shift.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\shift.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\barbercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\barbercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\models\\appointment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\models\\appointment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\services\\tgvalidationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\services\\tgvalidationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,88 +30,75 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Client.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Client.cs",
-              "RelativeDocumentMoniker": "Backend\\Models\\Client.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Client.cs",
-              "RelativeToolTip": "Backend\\Models\\Client.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T14:04:07.344Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Appointment.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Appointment.cs",
-              "RelativeDocumentMoniker": "Backend\\Models\\Appointment.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Appointment.cs",
-              "RelativeToolTip": "Backend\\Models\\Appointment.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAArAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T13:32:14.407Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Review.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Review.cs",
-              "RelativeDocumentMoniker": "Backend\\Models\\Review.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Review.cs",
-              "RelativeToolTip": "Backend\\Models\\Review.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAaAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T13:32:02.898Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Shift.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Shift.cs",
-              "RelativeDocumentMoniker": "Backend\\Models\\Shift.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Shift.cs",
-              "RelativeToolTip": "Backend\\Models\\Shift.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T13:20:28.992Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{fbcae063-e2c0-4ab1-a516-996ea3dafb72}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
+              "Title": "RegestrationController.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\RegestrationController.cs",
+              "RelativeDocumentMoniker": "Backend\\Controllers\\RegestrationController.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\RegestrationController.cs",
+              "RelativeToolTip": "Backend\\Controllers\\RegestrationController.cs",
+              "ViewState": "AgIAAF4AAAAAAAAAAAAkwG8AAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-09T13:33:30.526Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "Master.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Master.cs",
               "RelativeDocumentMoniker": "Backend\\Models\\Master.cs",
               "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Master.cs",
               "RelativeToolTip": "Backend\\Models\\Master.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAAZAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAowAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T13:20:06.918Z",
+              "WhenOpened": "2026-08-09T13:19:59.822Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "TelegramUser.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\TelegramUser.cs",
+              "RelativeDocumentMoniker": "Backend\\Models\\TelegramUser.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\TelegramUser.cs",
+              "RelativeToolTip": "Backend\\Models\\TelegramUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-09T13:12:50.573Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "TelegramController.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\TelegramController.cs",
+              "RelativeDocumentMoniker": "Backend\\Controllers\\TelegramController.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\TelegramController.cs",
+              "RelativeToolTip": "Backend\\Controllers\\TelegramController.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAAAYwDUAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-09T08:33:24.255Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "BarberController.cs",
-              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\BarberController.cs",
-              "RelativeDocumentMoniker": "Backend\\Controllers\\BarberController.cs",
-              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\BarberController.cs",
-              "RelativeToolTip": "Backend\\Controllers\\BarberController.cs",
-              "ViewState": "AgIAAFIAAAAAAAAAAAAqwDEBAAAdAAAAAAAAAA==",
+              "Title": "TgValidationService.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\TgValidationService.cs",
+              "RelativeDocumentMoniker": "Backend\\Services\\TgValidationService.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\TgValidationService.cs",
+              "RelativeToolTip": "Backend\\Services\\TgValidationService.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAYwCIAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-08T13:16:43.922Z",
+              "WhenOpened": "2026-08-09T08:31:02.008Z",
               "EditorCaption": ""
             }
           ]

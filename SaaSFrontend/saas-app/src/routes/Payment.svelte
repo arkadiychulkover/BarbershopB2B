@@ -18,7 +18,7 @@
   let copied = false;
 
   let platformWalletAddress = '';
-  let subscriptionAmount = '10'; // Default, will be fetched
+  let subscriptionAmount = '10';
   
   $: paymentLink = `ton://transfer/${platformWalletAddress}?amount=${Number(subscriptionAmount) * 1000000000}`;
 
@@ -101,8 +101,6 @@
       });
       
       successMsg = 'Оплата успешно подтверждена!';
-      
-      // Update profile status
       profileStore.update(s => ({ ...s, status: 'Active' }));
       
       setTimeout(() => {
