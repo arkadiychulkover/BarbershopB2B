@@ -37,14 +37,27 @@
         method: 'GET',
         skipAuth: true
       });
-      setAuthStatus('barber', response.token);
-    } catch (error) {
-      if (error.status === 400 && error.message === 'User is not registered in the system.') {
-        setAuthStatus('client');
+      
+      const token = response.token;
+      let payload = {};
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        payload = JSON.parse(atob(base64));
+      } catch (e) {
+        console.error('Failed to parse token', e);
+      }
+
+      if (payload.MasterId) {
+        setAuthStatus('barber', token);
+      } else if (payload.UserId) {
+        setAuthStatus('client', token);
       } else {
-        console.error('Auth error:', error);
         setAuthStatus('error');
       }
+    } catch (error) {
+      console.error('Auth error:', error);
+      setAuthStatus('error');
     }
   }
 </script>

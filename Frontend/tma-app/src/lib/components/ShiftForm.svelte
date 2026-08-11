@@ -6,18 +6,27 @@
   
   const dispatch = createEventDispatcher();
   
-  let date = '';
+  let dayOfWeek = 1;
   let startTime = '';
   let endTime = '';
-  const today = new Date().toISOString().split('T')[0];
+
+  const daysOfWeekOptions = [
+    { value: 1, label: 'Понедельник' },
+    { value: 2, label: 'Вторник' },
+    { value: 3, label: 'Среда' },
+    { value: 4, label: 'Четверг' },
+    { value: 5, label: 'Пятница' },
+    { value: 6, label: 'Суббота' },
+    { value: 0, label: 'Воскресенье' }
+  ];
 
   onMount(() => {
     if (initialData) {
-      date = initialData.date;
+      dayOfWeek = initialData.dayOfWeek;
       startTime = initialData.startTime.substring(0, 5);
       endTime = initialData.endTime.substring(0, 5);
     } else {
-      date = today;
+      dayOfWeek = 1;
       startTime = '09:00';
       endTime = '18:00';
     }
@@ -30,7 +39,7 @@
     hideMainButton(onSubmit);
     hideBackButton(onCancel);
   });
-  $: isValid = date && startTime && endTime && (startTime < endTime);
+  $: isValid = (dayOfWeek >= 0 && dayOfWeek <= 6) && startTime && endTime && (startTime < endTime);
   import { tg } from '../telegram';
   $: {
     if (tg && tg.MainButton) {
@@ -48,7 +57,7 @@
     if (!isValid) return;
     
     const formData = {
-      date,
+      dayOfWeek,
       startTime: `${startTime}:00`,
       endTime: `${endTime}:00`
     };
@@ -65,8 +74,12 @@
   <h2>{initialData ? 'Редактирование смены' : 'Новая смена'}</h2>
   
   <div class="form-group">
-    <label for="date">Дата</label>
-    <input type="date" id="date" bind:value={date} min={today} />
+    <label for="dayOfWeek">День недели</label>
+    <select id="dayOfWeek" bind:value={dayOfWeek}>
+      {#each daysOfWeekOptions as option}
+        <option value={option.value}>{option.label}</option>
+      {/each}
+    </select>
   </div>
   
   <div class="time-inputs">
@@ -115,7 +128,7 @@
     margin-bottom: 6px;
   }
 
-  input {
+  input, select {
     background-color: var(--tg-theme-bg-color, #fff);
     color: var(--tg-theme-text-color, #000);
     border: 1px solid var(--tg-theme-hint-color, #ccc);
@@ -126,7 +139,7 @@
     -webkit-appearance: none;
   }
 
-  input:focus {
+  input:focus, select:focus {
     border-color: var(--tg-theme-button-color, #3390ec);
   }
   

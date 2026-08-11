@@ -8,8 +8,10 @@
   import Overview from './routes/Overview.svelte';
   import Settings from './routes/Settings.svelte';
   import Masters from './routes/Masters.svelte';
+  import Services from './routes/Services.svelte';
   import Statistics from './routes/Statistics.svelte';
   import BotSetup from './routes/BotSetup.svelte';
+  import Schedule from './routes/Schedule.svelte';
 
   const routes = {
     '/': Landing,
@@ -19,8 +21,10 @@
     '/dashboard': Overview,
     '/dashboard/settings': Settings,
     '/dashboard/masters': Masters,
+    '/dashboard/services': Services,
     '/dashboard/statistics': Statistics,
     '/dashboard/bot-setup': BotSetup,
+    '/dashboard/schedule': Schedule,
   };
 </script>
 

@@ -4,6 +4,11 @@
   import { showAlert, showConfirm, hapticSuccess, hapticError, hapticWarning } from '../lib/telegram';
   import ShiftCard from '../lib/components/ShiftCard.svelte';
   import ShiftForm from '../lib/components/ShiftForm.svelte';
+  import BarberServices from '../lib/components/BarberServices.svelte';
+  import BarberAppointments from '../lib/components/BarberAppointments.svelte';
+  import BarberReviews from '../lib/components/BarberReviews.svelte';
+
+  let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' = 'appointments';
 
   let shifts = [];
   let loading = true;
@@ -19,7 +24,11 @@
     try {
       shifts = await apiFetch('/api/Barber/my-shift/all');
       shifts.sort((a, b) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        if (a.dayOfWeek !== b.dayOfWeek) {
+            let aDay = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
+            let bDay = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
+            return aDay - bDay;
+        }
         return a.startTime.localeCompare(b.startTime);
       });
     } catch (error) {
@@ -30,8 +39,8 @@
     }
   }
   $: groupedShifts = shifts.reduce((acc, shift) => {
-    if (!acc[shift.date]) acc[shift.date] = [];
-    acc[shift.date].push(shift);
+    if (!acc[shift.dayOfWeek]) acc[shift.dayOfWeek] = [];
+    acc[shift.dayOfWeek].push(shift);
     return acc;
   }, {});
 
@@ -98,51 +107,91 @@
       }
     });
   }
-  function formatDate(dateStr: string) {
-    const [year, month, day] = dateStr.split('-');
-    return `${day}.${month}.${year}`;
+  const daysOfWeek = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  function formatDayOfWeek(day: number) {
+    return daysOfWeek[day] || '';
   }
 </script>
 
-{#if view === 'list'}
-  <div class="dashboard">
-    <div class="header">
-      <h1>Мои смены</h1>
-      <button class="add-btn" on:click={openNewForm}>+</button>
-    </div>
+<div class="dashboard">
+  <div class="tabs">
+    <button 
+      class="tab" 
+      class:active={activeTab === 'appointments'} 
+      on:click={() => activeTab = 'appointments'}
+    >
+      Мои записи
+    </button>
+    <button 
+      class="tab" 
+      class:active={activeTab === 'shifts'} 
+      on:click={() => activeTab = 'shifts'}
+    >
+      Мои смены
+    </button>
+    <button 
+      class="tab" 
+      class:active={activeTab === 'services'} 
+      on:click={() => activeTab = 'services'}
+    >
+      Мои услуги
+    </button>
+    <button 
+      class="tab" 
+      class:active={activeTab === 'reviews'} 
+      on:click={() => activeTab = 'reviews'}
+    >
+      Отзывы
+    </button>
+  </div>
 
-    {#if loading}
-      <div class="loading">Загрузка смен...</div>
-    {:else if shifts.length === 0}
-      <div class="empty-state">
-        <div class="icon">📅</div>
-        <p>У вас пока нет добавленных смен.</p>
-        <button class="primary-btn" on:click={openNewForm}>Создать первую смену</button>
-      </div>
-    {:else}
-      <div class="shifts-list">
-        {#each Object.entries(groupedShifts) as [date, dayShifts]}
-          <div class="date-group">
-            <h3 class="date-title">{formatDate(date)}</h3>
-            {#each dayShifts as shift (shift.id)}
-              <ShiftCard 
-                {shift} 
-                on:edit={openEditForm}
-                on:delete={handleDeleteShift}
-              />
+  {#if activeTab === 'shifts'}
+    <div class="shifts-content">
+      {#if view === 'list'}
+        {#if loading}
+          <div class="loading">Загрузка смен...</div>
+        {:else if shifts.length === 0}
+          <div class="empty-state">
+            <div class="icon">📅</div>
+            <p>У вас пока нет добавленных смен.</p>
+            <button class="primary-btn" on:click={openNewForm}>Создать первую смену</button>
+          </div>
+        {:else}
+          <div class="shifts-list">
+            {#each Object.entries(groupedShifts) as [day, dayShifts]}
+              <div class="date-group">
+                <h3 class="date-title">{formatDayOfWeek(Number(day))}</h3>
+                {#each dayShifts as shift (shift.id)}
+                  <ShiftCard 
+                    {shift} 
+                    on:edit={openEditForm}
+                    on:delete={handleDeleteShift}
+                  />
+                {/each}
+              </div>
             {/each}
           </div>
-        {/each}
-      </div>
+        {/if}
+      {:else}
+        <ShiftForm 
+          initialData={editingShift} 
+          on:save={handleSaveForm} 
+          on:cancel={handleCancelForm} 
+        />
+      {/if}
+    </div>
+    
+    {#if view === 'list' && !loading}
+      <button class="add-btn" on:click={openNewForm}>+</button>
     {/if}
-  </div>
-{:else}
-  <ShiftForm 
-    initialData={editingShift} 
-    on:save={handleSaveForm} 
-    on:cancel={handleCancelForm} 
-  />
-{/if}
+  {:else if activeTab === 'services'}
+    <BarberServices />
+  {:else if activeTab === 'appointments'}
+    <BarberAppointments />
+  {:else if activeTab === 'reviews'}
+    <BarberReviews />
+  {/if}
+</div>
 
 <style>
   .dashboard {
@@ -150,11 +199,29 @@
     padding-bottom: 80px; 
   }
 
-  .header {
+  .tabs {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
+    background: var(--tg-theme-bg-color, #fff);
+    border-bottom: 1px solid var(--tg-theme-hint-color, #eee);
+    margin: -16px -16px 16px -16px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 16px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--tg-theme-hint-color, #999);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .tab.active {
+    color: var(--tg-theme-button-color, #3390ec);
+    border-bottom-color: var(--tg-theme-button-color, #3390ec);
   }
 
   h1 {

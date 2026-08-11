@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  export let shift: { id: string, date: string, startTime: string, endTime: string };
+  export let shift: { id: string, dayOfWeek: number, startTime: string, endTime: string };
 
   const dispatch = createEventDispatcher();
   function formatTime(timeStr: string) {

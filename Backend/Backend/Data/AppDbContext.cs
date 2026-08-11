@@ -88,6 +88,11 @@ namespace Backend.Data
                 .WithMany()
                 .HasForeignKey(s => s.ServiceNameId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ServiceName>()
+                .HasOne(sn => sn.Owner)
+                .WithMany()
+                .HasForeignKey(sn => sn.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

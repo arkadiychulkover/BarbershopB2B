@@ -799,6 +799,19 @@
             "related": ".xml"
           }
         }
+      },
+      "Telegram.Bot/22.10.2.1": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Telegram.Bot.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Telegram.Bot.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
       }
     }
   },
@@ -2628,6 +2641,25 @@
         "system.identitymodel.tokens.jwt.8.19.2.nupkg.sha512",
         "system.identitymodel.tokens.jwt.nuspec"
       ]
+    },
+    "Telegram.Bot/22.10.2.1": {
+      "sha512": "ahioWueF0SG4Me2Tp76Ja3LgUpJL1DWHtlagbSlsL+o07SLNCSMQLsusLfukay4T9NpJHPsSgJVbjn2f1529Tw==",
+      "type": "package",
+      "path": "telegram.bot/22.10.2.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net6.0/Telegram.Bot.dll",
+        "lib/net6.0/Telegram.Bot.pdb",
+        "lib/net6.0/Telegram.Bot.xml",
+        "lib/netstandard2.0/Telegram.Bot.dll",
+        "lib/netstandard2.0/Telegram.Bot.pdb",
+        "lib/netstandard2.0/Telegram.Bot.xml",
+        "package-icon.png",
+        "telegram.bot.22.10.2.1.nupkg.sha512",
+        "telegram.bot.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -2637,7 +2669,8 @@
       "Microsoft.EntityFrameworkCore.Design >= 10.0.10",
       "Microsoft.EntityFrameworkCore.Tools >= 10.0.10",
       "Microsoft.VisualStudio.Azure.Containers.Tools.Targets >= 1.23.0",
-      "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.3"
+      "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.3",
+      "Telegram.Bot >= 22.10.2.1"
     ]
   },
   "packageFolders": {
@@ -2719,6 +2752,10 @@
           "Npgsql.EntityFrameworkCore.PostgreSQL": {
             "target": "Package",
             "version": "[10.0.3, )"
+          },
+          "Telegram.Bot": {
+            "target": "Package",
+            "version": "[22.10.2.1, )"
           }
         },
         "imports": [

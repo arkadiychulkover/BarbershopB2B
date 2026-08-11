@@ -1,4 +1,4 @@
-﻿using Backend.Models.Enums;
+using Backend.Models.Enums;
 
 namespace Backend.Models
 {
@@ -21,6 +21,8 @@ namespace Backend.Models
         public DateTime Created { get; set; } = DateTime.UtcNow;
         public DateTime AppointmentDate { get; set; }
         public DateTime AppointmentEndDate { get; set; }
+        
+        public bool ReminderSent { get; set; } = false;
 
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
 

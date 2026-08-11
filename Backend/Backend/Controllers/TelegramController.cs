@@ -27,7 +27,7 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> RegisterBarber(string tenant, string initData)
+        public async Task<IActionResult> RegisterTMA(string tenant, string initData)
         {
             if(tenant == null)
             {
@@ -48,21 +48,68 @@ namespace Backend.Controllers
                 return BadRequest("Invalid initialization data.");
             }
 
-            string userId = _tgValidationService.GetUserFromInitData(initData)?.Id.ToString() ?? string.Empty;
+            var tgUser = _tgValidationService.GetUserFromInitData(initData);
+            if (tgUser == null) return BadRequest("Invalid user data.");
+            
+            string userId = tgUser.Id.ToString();
+            string clientName = !string.IsNullOrWhiteSpace(tgUser.FirstName) 
+                ? $"{tgUser.FirstName} {tgUser.LastName}".Trim() 
+                : tgUser.Username ?? "Unknown Client";
+
             var master = await context.Masters.FirstOrDefaultAsync(m => m.TelegramId == userId);
+
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings.GetValue<string>("Secret");
 
             if (master == null) 
             {
-                return BadRequest("User is not registered in the system.");
+                var client = context.Clients.FirstOrDefault(c => c.TelegramId == userId);
+                string clientId = client?.Id.ToString() ?? string.Empty;
+
+                if (client == null) 
+                {
+                    clientId = Guid.NewGuid().ToString();
+                    Client newClient = new Client
+                    {
+                        Id = Guid.Parse(clientId),
+                        TelegramId = userId,
+                        OwnerId = Guid.Parse(tenant),
+                        Name = clientName
+                    };
+                    context.Clients.Add(newClient);
+                    await context.SaveChangesAsync();
+                    clientId = newClient.Id.ToString();
+                }                
+
+                var UserClaims = new[]
+                {
+                    new Claim("UserId", clientId),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                };
+
+                var ClientKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+                var ClientCreds = new SigningCredentials(ClientKey, SecurityAlgorithms.HmacSha256);
+
+                var ClientToken = new JwtSecurityToken(
+                    issuer: jwtSettings.GetValue<string>("Issuer"),
+                    audience: jwtSettings.GetValue<string>("Audience"),
+                    claims: UserClaims,
+                    expires: DateTime.UtcNow.AddDays(7),
+                    signingCredentials: ClientCreds
+                );
+
+                return Ok(new
+                {
+                    token = new JwtSecurityTokenHandler().WriteToken(ClientToken),
+                    expiration = ClientToken.ValidTo,
+                    message = "User registered successfully."
+                });
             }
 
             master.TelegramId = userId;
             master.Ip = HttpContext.Connection.RemoteIpAddress;
 
             await context.SaveChangesAsync();
-
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings.GetValue<string>("Secret");
 
             var claims = new[]
             {

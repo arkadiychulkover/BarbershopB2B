@@ -11,7 +11,8 @@
           "Microsoft.AspNetCore.Authentication.JwtBearer": "10.0.10",
           "Microsoft.EntityFrameworkCore": "10.0.10",
           "Microsoft.EntityFrameworkCore.Design": "10.0.10",
-          "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3"
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3",
+          "Telegram.Bot": "22.10.2.1"
         },
         "runtime": {
           "Backend.dll": {}
@@ -573,6 +574,14 @@
             "fileVersion": "8.19.2.26195"
           }
         }
+      },
+      "Telegram.Bot/22.10.2.1": {
+        "runtime": {
+          "lib/net6.0/Telegram.Bot.dll": {
+            "assemblyVersion": "22.10.2.1",
+            "fileVersion": "22.10.2.1"
+          }
+        }
       }
     }
   },
@@ -812,6 +821,13 @@
       "sha512": "sha512-gqhDC/icByKEutygpr+OFgAmjwTVowyzFjWB8K0q1ww8uFj5a1BQNL+QvijUl9uhq4p8OdDwcAIrjVC+eC9FVA==",
       "path": "system.identitymodel.tokens.jwt/8.19.2",
       "hashPath": "system.identitymodel.tokens.jwt.8.19.2.nupkg.sha512"
+    },
+    "Telegram.Bot/22.10.2.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ahioWueF0SG4Me2Tp76Ja3LgUpJL1DWHtlagbSlsL+o07SLNCSMQLsusLfukay4T9NpJHPsSgJVbjn2f1529Tw==",
+      "path": "telegram.bot/22.10.2.1",
+      "hashPath": "telegram.bot.22.10.2.1.nupkg.sha512"
     }
   }
 }

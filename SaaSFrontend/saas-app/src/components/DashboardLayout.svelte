@@ -3,7 +3,7 @@
   import { push, link } from 'svelte-spa-router';
   import { authStore, profileStore, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
-  import { LayoutDashboard, Settings, Users, BarChart3, Bot, LogOut } from 'lucide-svelte';
+  import { LayoutDashboard, Settings, Users, BarChart3, Bot, LogOut, Scissors, CalendarDays } from 'lucide-svelte';
   
   let isLoading = true;
 
@@ -58,6 +58,10 @@
           <LayoutDashboard size={20} />
           <span>Обзор</span>
         </a>
+        <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.includes('/schedule')}>
+          <CalendarDays size={20} />
+          <span>Расписание</span>
+        </a>
         <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.includes('/settings')}>
           <Settings size={20} />
           <span>Настройки</span>
@@ -65,6 +69,10 @@
         <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.includes('/masters')}>
           <Users size={20} />
           <span>Мастера</span>
+        </a>
+        <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.includes('/services')}>
+          <Scissors size={20} />
+          <span>Услуги</span>
         </a>
         <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.includes('/statistics')}>
           <BarChart3 size={20} />

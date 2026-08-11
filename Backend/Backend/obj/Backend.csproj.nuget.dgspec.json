@@ -79,6 +79,10 @@
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
               "version": "[10.0.3, )"
+            },
+            "Telegram.Bot": {
+              "target": "Package",
+              "version": "[22.10.2.1, )"
             }
           },
           "imports": [

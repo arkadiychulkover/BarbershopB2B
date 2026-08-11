@@ -28,6 +28,9 @@ namespace Backend
             builder.Services.AddScoped<StatisticService>();
             builder.Services.AddScoped<TonService>();
             builder.Services.AddScoped<TgValidationService>();
+            builder.Services.AddSingleton<BotService>();
+
+            builder.Services.AddHostedService<Backend.BackgroundServices.NotifycationBackgroundService>();
 
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings.GetValue<string>("Secret");

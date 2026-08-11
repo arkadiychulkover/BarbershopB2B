@@ -1,4 +1,4 @@
-﻿namespace Backend.Models
+namespace Backend.Models
 {
     public class Shift
     {
@@ -6,7 +6,7 @@
         public Guid MasterId { get; set; }
         public Master Master { get; set; }
 
-        public DateOnly Date { get; set; }
+        public DayOfWeek DayOfWeek { get; set; }
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
     }
