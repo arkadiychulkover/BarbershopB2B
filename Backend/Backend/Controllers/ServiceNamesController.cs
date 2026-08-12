@@ -1,17 +1,16 @@
 using Backend.Data;
 using Backend.DTOs;
+using Backend.Extensions;
 using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Owner")]
     public class ServiceNamesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -21,17 +20,10 @@ namespace Backend.Controllers
             _context = context;
         }
 
-        private bool TryGetOwnerId(out Guid ownerId)
-        {
-            var claim = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            return Guid.TryParse(claim, out ownerId);
-        }
-
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetServiceNames()
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             var serviceNames = await _context.ServiceNames
                 .Where(sn => sn.OwnerId == ownerId)
@@ -46,10 +38,9 @@ namespace Backend.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> CreateServiceName([FromBody] CreateServiceNameRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new { message = "Service name is required." });
@@ -72,10 +63,9 @@ namespace Backend.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
         public async Task<IActionResult> UpdateServiceName(Guid id, [FromBody] UpdateServiceNameRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             var serviceName = await _context.ServiceNames.FirstOrDefaultAsync(sn => sn.Id == id && sn.OwnerId == ownerId);
             if (serviceName == null) return NotFound(new { message = "Service name not found." });
@@ -94,10 +84,9 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
         public async Task<IActionResult> DeleteServiceName(Guid id)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             var serviceName = await _context.ServiceNames.FirstOrDefaultAsync(sn => sn.Id == id && sn.OwnerId == ownerId);
             if (serviceName == null) return NotFound(new { message = "Service name not found." });

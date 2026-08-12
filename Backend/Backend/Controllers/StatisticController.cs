@@ -1,7 +1,7 @@
 using Backend.Data;
+using Backend.Extensions;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +9,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Owner")]
     public class StatisticController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -21,19 +22,12 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetTranzactionHistory()
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null)
-            {
-                return Unauthorized();
-            }
-            var owner = await _context.BarbershopOwners.FindAsync(Guid.Parse(ownerId));
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
-            {
                 return NotFound(new { message = "Owner not found" });
-            }
 
             var transactions = await _context.Tranxactions
                 .Where(t => t.OwnerId == owner.Id)
@@ -44,67 +38,57 @@ namespace Backend.Controllers
         }
 
         [HttpGet("owner-statistic-daily")]
-        [Authorize]
         public async Task<IActionResult> GetOwnerStatistic([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             if (startDate == default || endDate == default)
-            {
                 return BadRequest("startDate and endDate are required.");
-            }
 
             startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
             endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
 
-            var stats = await _statisticService.GetOwnerStatisticByDate(Guid.Parse(ownerId), startDate, endDate);
+            var stats = await _statisticService.GetOwnerStatisticByDate(ownerId, startDate, endDate);
             return Ok(stats);
         }
 
         [HttpGet("owner-statistic-hourly")]
-        [Authorize]
         public async Task<IActionResult> GetOwnerStatisticHourly([FromQuery] DateTime date)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             if (date == default) return BadRequest("date is required.");
 
             date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
 
-            var stats = await _statisticService.GetOwnerStatisticByHour(Guid.Parse(ownerId), date);
+            var stats = await _statisticService.GetOwnerStatisticByHour(ownerId, date);
             return Ok(stats);
         }
 
         [HttpGet("barber-statistic-daily/{masterId}")]
-        [Authorize]
         public async Task<IActionResult> GetBarberStatisticDaily([FromRoute] Guid masterId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             if (startDate == default || endDate == default) return BadRequest("startDate and endDate are required.");
 
             startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
             endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
 
-            var stats = await _statisticService.GetBarberStatisticByDate(masterId, Guid.Parse(ownerId), startDate, endDate);
+            var stats = await _statisticService.GetBarberStatisticByDate(masterId, ownerId, startDate, endDate);
             return Ok(stats);
         }
 
         [HttpGet("barber-statistic-hourly/{masterId}")]
-        [Authorize]
         public async Task<IActionResult> GetBarberStatisticHourly([FromRoute] Guid masterId, [FromQuery] DateTime date)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             if (date == default) return BadRequest("date is required.");
 
             date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
 
-            var stats = await _statisticService.GetBarberStatisticByHour(masterId, Guid.Parse(ownerId), date);
+            var stats = await _statisticService.GetBarberStatisticByHour(masterId, ownerId, date);
             return Ok(stats);
         }
     }

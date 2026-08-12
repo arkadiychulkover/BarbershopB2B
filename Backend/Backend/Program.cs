@@ -11,7 +11,8 @@ namespace Backend
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);            builder.Services.AddControllers()
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
@@ -50,16 +51,19 @@ namespace Backend
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtSettings.GetValue<string>("Issuer"),
                     ValidAudience = jwtSettings.GetValue<string>("Audience"),
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role
                 };
             });
 
-            var app = builder.Build();            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            var app = builder.Build();
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
             });
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             
             app.UseAuthentication();
             app.UseAuthorization();

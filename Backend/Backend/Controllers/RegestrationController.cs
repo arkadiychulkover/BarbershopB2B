@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Backend.Extensions;
 
 namespace Backend.Controllers
 {
@@ -56,19 +57,16 @@ namespace Backend.Controllers
         }
 
         [HttpPost("change-password")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null)
-            {
+            var ownerId = User.GetUserId();
+            if (ownerId == Guid.Empty)
                 return Unauthorized();
-            }
-            var owner = await _context.BarbershopOwners.FindAsync(Guid.Parse(ownerId));
+
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
-            {
                 return NotFound();
-            }
             using var sha256 = SHA256.Create();
             string currentPasswordHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.CurrentPassword)));
             if (owner.PasswordHash != currentPasswordHash)
@@ -99,7 +97,8 @@ namespace Backend.Controllers
 
             var claims = new[]
             {
-                new Claim("OwnerId", owner.Id.ToString()),
+                new Claim("UserId", owner.Id.ToString()),
+                new Claim(ClaimTypes.Role, "Owner"),
                 new Claim(JwtRegisteredClaimNames.Sub, owner.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

@@ -1,9 +1,9 @@
 using Backend.Data;
+using Backend.DTOs;
+using Backend.Extensions;
 using Backend.Models;
 using Backend.Models.Enums;
-using Backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -15,27 +15,10 @@ namespace Backend.Controllers
     public class BarberController : ControllerBase
     {
         private readonly AppDbContext _context;
+
         public BarberController(AppDbContext context)
         {
             _context = context;
-        }
-
-        private bool TryGetOwnerId(out Guid ownerId)
-        {
-            var claim = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            return Guid.TryParse(claim, out ownerId);
-        }
-
-        private bool TryGetMasterId(out Guid masterId)
-        {
-            var claim = User.Claims.FirstOrDefault(c => c.Type == "MasterId")?.Value;
-            return Guid.TryParse(claim, out masterId);
-        }
-
-        private bool TryGetClientId(out Guid clientId)
-        {
-            var claim = User.Claims.FirstOrDefault(c => c.Type == "ClientId")?.Value;
-            return Guid.TryParse(claim, out clientId);
         }
 
         private async Task<Guid> GetOrCreateDummyClientAsync(Guid ownerId)
@@ -57,13 +40,13 @@ namespace Backend.Controllers
             return dummyClient.Id;
         }
 
+        // ─── Owner: Barber Management ──────────────────────────────────────────────
+
         [HttpPost("add")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> AddBarber([FromBody] AddBarberRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -83,12 +66,10 @@ namespace Backend.Controllers
         }
 
         [HttpPut("update")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> UpdateBarber([FromBody] UpdateBarberRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -107,12 +88,10 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("delete")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> DeleteBarber([FromBody] DeleteBarberRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -127,12 +106,10 @@ namespace Backend.Controllers
         }
 
         [HttpGet("all")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetBarbers()
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -142,12 +119,10 @@ namespace Backend.Controllers
         }
 
         [HttpGet("{barberId}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetBarberById([FromRoute] Guid barberId)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -159,13 +134,13 @@ namespace Backend.Controllers
             return Ok(barber);
         }
 
+        // ─── Owner: Shift Management ───────────────────────────────────────────────
+
         [HttpPost("Add-Shift")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> AddShift([FromBody] AddShiftRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -196,12 +171,10 @@ namespace Backend.Controllers
         }
 
         [HttpGet("Get-Shift/{shiftId}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetShift([FromRoute] Guid shiftId)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -214,12 +187,10 @@ namespace Backend.Controllers
         }
 
         [HttpPut("Update-Shift/{shiftId}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> UpdateShift([FromRoute] Guid shiftId, [FromBody] AddShiftRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -245,12 +216,10 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("Delete-Shift/{shiftId}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> DeleteShift([FromRoute] Guid shiftId)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -264,12 +233,13 @@ namespace Backend.Controllers
             return Ok(new { message = "Shift deleted successfully" });
         }
 
+        // ─── Master: Shift Management ──────────────────────────────────────────────
+
         [HttpPost("my-shift/add")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> AddMyShift([FromBody] MyShiftRequest request)
         {
-            if (!TryGetMasterId(out var masterId))
-                return Unauthorized();
+            var masterId = User.GetUserId();
 
             bool overlap = await _context.Shifts.AnyAsync(s =>
                 s.MasterId == masterId &&
@@ -293,22 +263,19 @@ namespace Backend.Controllers
         }
 
         [HttpGet("my-shift/all")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> GetMyShifts()
         {
-            if (!TryGetMasterId(out var masterId))
-                return Unauthorized();
-
+            var masterId = User.GetUserId();
             var shifts = await _context.Shifts.Where(s => s.MasterId == masterId).ToListAsync();
             return Ok(shifts);
         }
 
         [HttpPut("my-shift/update/{shiftId}")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> UpdateMyShift([FromRoute] Guid shiftId, [FromBody] MyShiftRequest request)
         {
-            if (!TryGetMasterId(out var masterId))
-                return Unauthorized();
+            var masterId = User.GetUserId();
 
             var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == shiftId && s.MasterId == masterId);
             if (shift == null)
@@ -331,11 +298,10 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("my-shift/delete/{shiftId}")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> DeleteMyShift([FromRoute] Guid shiftId)
         {
-            if (!TryGetMasterId(out var masterId))
-                return Unauthorized();
+            var masterId = User.GetUserId();
 
             var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == shiftId && s.MasterId == masterId);
             if (shift == null)
@@ -346,13 +312,13 @@ namespace Backend.Controllers
             return Ok(new { message = "Shift deleted successfully" });
         }
 
+        // ─── Owner: Reviews ────────────────────────────────────────────────────────
+
         [HttpGet("Get-Review/{reviewId}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetReview([FromRoute] Guid reviewId)
         {
-            if (!TryGetOwnerId(out var ownerId))
-                return Unauthorized();
-
+            var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
@@ -365,11 +331,10 @@ namespace Backend.Controllers
         }
 
         [HttpPost("Add-Review")]
-        [Authorize]
+        [Authorize(Roles = "Client")]
         public async Task<IActionResult> AddReview([FromBody] AddReviewRequest request)
         {
-            if (!TryGetClientId(out var clientId))
-                return Unauthorized();
+            var clientId = User.GetUserId();
 
             var client = await _context.Clients.FindAsync(clientId);
             if (client == null)
@@ -397,17 +362,20 @@ namespace Backend.Controllers
             return Ok(new { message = "Review added successfully", reviewId = review.Id });
         }
 
+        // ─── Master: Reviews & Services ────────────────────────────────────────────
+
         [HttpGet("my-reviews")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> GetMyReviews()
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
 
             var reviews = await _context.Reviews
                 .Include(r => r.Client)
                 .Where(r => r.MasterId == masterId)
                 .OrderByDescending(r => r.CreatedAt)
-                .Select(r => new {
+                .Select(r => new
+                {
                     r.Id,
                     r.Rating,
                     r.Comment,
@@ -418,11 +386,12 @@ namespace Backend.Controllers
 
             return Ok(reviews);
         }
+
         [HttpGet("my-services")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> GetMyServices()
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
 
             var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId);
             if (master == null) return NotFound(new { message = "Master not found." });
@@ -438,7 +407,7 @@ namespace Backend.Controllers
             var response = serviceNames.Select(sn =>
             {
                 var service = myServices.FirstOrDefault(s => s.ServiceNameId == sn.Id);
-                return new Backend.DTOs.MasterServiceDto
+                return new MasterServiceDto
                 {
                     ServiceNameId = sn.Id,
                     Name = sn.Name,
@@ -454,10 +423,10 @@ namespace Backend.Controllers
         }
 
         [HttpPut("my-services/{serviceNameId}")]
-        [Authorize]
-        public async Task<IActionResult> UpdateMyService(Guid serviceNameId, [FromBody] Backend.DTOs.UpdateMasterServiceRequest request)
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> UpdateMyService(Guid serviceNameId, [FromBody] UpdateMasterServiceRequest request)
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
 
             var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId);
             if (master == null) return NotFound(new { message = "Master not found." });
@@ -490,15 +459,16 @@ namespace Backend.Controllers
             }
 
             await _context.SaveChangesAsync();
-
             return Ok(new { message = "Service updated successfully." });
         }
 
+        // ─── Master: Appointments ──────────────────────────────────────────────────
+
         [HttpGet("get-master-appointments")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> GetMasterAppointments()
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
 
             var appointments = await _context.Appointments
                 .Include(a => a.Client)
@@ -507,7 +477,7 @@ namespace Backend.Controllers
                 .Where(a => a.MasterId == masterId)
                 .ToListAsync();
 
-            var response = appointments.Select(a => new Backend.DTOs.AppointmentDto
+            var response = appointments.Select(a => new AppointmentDto
             {
                 Id = a.Id,
                 ClientId = a.ClientId,
@@ -516,7 +486,8 @@ namespace Backend.Controllers
                 AppointmentEndDate = a.AppointmentEndDate,
                 Status = a.Status,
                 ReminderSent = a.ReminderSent,
-                ServiceId = a.ServiceId
+                ServiceId = a.ServiceId,
+                PhotoResultUrl = a.PhotoResultUrl
             }).ToList();
 
             return Ok(response);
@@ -549,13 +520,13 @@ namespace Backend.Controllers
             var endOfDay = startOfDay.AddDays(1);
 
             var overlappingAppointments = await _context.Appointments
-                .Where(a => a.MasterId == masterId 
+                .Where(a => a.MasterId == masterId
                             && a.AppointmentDate >= startOfDay
                             && a.AppointmentDate < endOfDay
                             && a.Status != AppointmentStatus.Cancelled)
                 .ToListAsync();
 
-            bool isOverlap = overlappingAppointments.Any(a => 
+            bool isOverlap = overlappingAppointments.Any(a =>
                 request.AppointmentDate < a.AppointmentEndDate && appointmentEndDateTime > a.AppointmentDate);
 
             if (isOverlap)
@@ -574,10 +545,9 @@ namespace Backend.Controllers
                 OwnerProfit = 0,
                 DepositPaid = false
             };
-            
+
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
-
             return Ok(new { message = "Appointment created successfully", appointmentId = appointment.Id });
         }
 
@@ -600,7 +570,7 @@ namespace Backend.Controllers
             }
             else
             {
-                finalClientId = appointment.ClientId; // keep existing if not changing
+                finalClientId = appointment.ClientId;
             }
 
             var appointmentEndDateTime = request.AppointmentDate.AddMinutes(service.Duration);
@@ -609,13 +579,13 @@ namespace Backend.Controllers
 
             var overlappingAppointments = await _context.Appointments
                 .Where(a => a.Id != appointmentId
-                            && a.MasterId == masterId 
+                            && a.MasterId == masterId
                             && a.AppointmentDate >= startOfDay
                             && a.AppointmentDate < endOfDay
                             && a.Status != AppointmentStatus.Cancelled)
                 .ToListAsync();
 
-            bool isOverlap = overlappingAppointments.Any(a => 
+            bool isOverlap = overlappingAppointments.Any(a =>
                 request.AppointmentDate < a.AppointmentEndDate && appointmentEndDateTime > a.AppointmentDate);
 
             if (isOverlap && request.Status != AppointmentStatus.Cancelled)
@@ -632,45 +602,47 @@ namespace Backend.Controllers
         }
 
         [HttpPost("my-appointments/add")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> AddMyAppointment([FromBody] BarberAppointmentRequest request)
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
             return await CreateAppointmentInternal(masterId, request);
         }
 
         [HttpPut("my-appointments/update/{id}")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> UpdateMyAppointment(Guid id, [FromBody] BarberAppointmentRequest request)
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
             return await UpdateAppointmentInternal(id, masterId, request);
         }
 
         [HttpDelete("my-appointments/delete/{id}")]
-        [Authorize]
+        [Authorize(Roles = "Master")]
         public async Task<IActionResult> DeleteMyAppointment(Guid id)
         {
-            if (!TryGetMasterId(out var masterId)) return Unauthorized();
+            var masterId = User.GetUserId();
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id && a.MasterId == masterId);
             if (appointment == null) return NotFound(new { message = "Appointment not found" });
-            
+
             _context.Appointments.Remove(appointment);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Appointment deleted successfully" });
         }
 
+        // ─── Owner: Appointments ───────────────────────────────────────────────────
+
         [HttpGet("admin-appointments/all")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetAdminAppointments()
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             var appointments = await _context.Appointments
                 .Include(a => a.Client)
                 .Include(a => a.Master)
                 .Where(a => a.Master.OwnerId == ownerId)
-                .Select(a => new Backend.DTOs.AppointmentDto
+                .Select(a => new AppointmentDto
                 {
                     Id = a.Id,
                     ClientId = a.ClientId,
@@ -679,7 +651,8 @@ namespace Backend.Controllers
                     AppointmentEndDate = a.AppointmentEndDate,
                     Status = a.Status,
                     ReminderSent = a.ReminderSent,
-                    ServiceId = a.ServiceId
+                    ServiceId = a.ServiceId,
+                    PhotoResultUrl = a.PhotoResultUrl
                 })
                 .ToListAsync();
 
@@ -687,10 +660,10 @@ namespace Backend.Controllers
         }
 
         [HttpPost("admin-appointments/add")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> AddAdminAppointment([FromBody] BarberAppointmentRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
             if (!request.MasterId.HasValue) return BadRequest(new { message = "MasterId is required" });
 
             var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == request.MasterId.Value && m.OwnerId == ownerId);
@@ -700,38 +673,40 @@ namespace Backend.Controllers
         }
 
         [HttpPut("admin-appointments/update/{id}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> UpdateAdminAppointment(Guid id, [FromBody] BarberAppointmentRequest request)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
-            
+            var ownerId = User.GetUserId();
+
             var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == id);
-            if (appointment == null || appointment.Master.OwnerId != ownerId) 
+            if (appointment == null || appointment.Master.OwnerId != ownerId)
                 return NotFound(new { message = "Appointment not found" });
 
             return await UpdateAppointmentInternal(id, appointment.MasterId, request);
         }
 
         [HttpDelete("admin-appointments/delete/{id}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> DeleteAdminAppointment(Guid id)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
-            
+            var ownerId = User.GetUserId();
+
             var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == id);
-            if (appointment == null || appointment.Master.OwnerId != ownerId) 
+            if (appointment == null || appointment.Master.OwnerId != ownerId)
                 return NotFound(new { message = "Appointment not found" });
-            
+
             _context.Appointments.Remove(appointment);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Appointment deleted successfully" });
         }
 
+        // ─── Owner: Admin Services ─────────────────────────────────────────────────
+
         [HttpGet("admin-services/{masterId}")]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetAdminServices(Guid masterId)
         {
-            if (!TryGetOwnerId(out var ownerId)) return Unauthorized();
+            var ownerId = User.GetUserId();
 
             var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId && m.OwnerId == ownerId);
             if (master == null) return NotFound(new { message = "Master not found" });
@@ -742,7 +717,7 @@ namespace Backend.Controllers
             var response = serviceNames.Select(sn =>
             {
                 var service = myServices.FirstOrDefault(s => s.ServiceNameId == sn.Id);
-                return new Backend.DTOs.MasterServiceDto
+                return new MasterServiceDto
                 {
                     ServiceNameId = sn.Id,
                     Name = sn.Name,
@@ -756,6 +731,49 @@ namespace Backend.Controllers
 
             return Ok(response);
         }
+
+        // ─── Master/Owner: Photo Upload ────────────────────────────────────────────
+
+        [HttpPost("put-photo/{appointmentId}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> PostPhoto(Guid appointmentId, IFormFile photo)
+        {
+            if (photo == null || photo.Length == 0)
+                return BadRequest(new { message = "Photo is required" });
+
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == appointmentId);
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found" });
+
+            if (isOwner && appointment.Master.OwnerId != userId)
+                return Unauthorized();
+
+            if (!isOwner && appointment.MasterId != userId)
+                return Unauthorized();
+
+            string dir = Path.Combine("wwwroot", "results");
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            string fileName = Guid.NewGuid().ToString();
+            string extension = Path.GetExtension(photo.FileName);
+            string path = Path.Combine(dir, $"{fileName}{extension}");
+
+            using var readstream = photo.OpenReadStream();
+            using var fs = new FileStream(path, FileMode.Create);
+            await readstream.CopyToAsync(fs);
+
+            string photoUrl = $"/results/{fileName}{extension}";
+            appointment.PhotoResultUrl = photoUrl;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { photoUrl });
+        }
+
+        // ─── Request Models ────────────────────────────────────────────────────────
 
         public class AddShiftRequest
         {

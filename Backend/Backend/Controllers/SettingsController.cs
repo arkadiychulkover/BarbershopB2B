@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.DTOs;
+using Backend.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Owner")]
     public class SettingsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -17,13 +19,10 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetSettings()
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null) return Unauthorized();
-
-            var owner = await _context.BarbershopOwners.FindAsync(Guid.Parse(ownerId));
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null) return NotFound("Owner not found.");
 
             var response = new SettingsResponse
@@ -48,13 +47,10 @@ namespace Backend.Controllers
         }
 
         [HttpPut]
-        [Authorize]
         public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsRequest request)
         {
-            var ownerId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (ownerId == null) return Unauthorized();
-
-            var owner = await _context.BarbershopOwners.FindAsync(Guid.Parse(ownerId));
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null) return NotFound("Owner not found.");
 
             owner.BarbershopName = request.BarbershopName;

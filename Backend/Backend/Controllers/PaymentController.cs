@@ -1,7 +1,7 @@
 using Backend.Data;
+using Backend.Extensions;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
@@ -27,35 +27,28 @@ namespace Backend.Controllers
         [AllowAnonymous]
         public IActionResult GetSubscriptionPrice()
         {
-            return Ok(new { 
+            return Ok(new
+            {
                 price = _subscriptionAmount,
                 platformWalletAddress = _configuration["Ton:Address"]
             });
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> VerifyPayment([FromBody] string txhHash)
         {
             if (string.IsNullOrWhiteSpace(txhHash))
-            {
                 return BadRequest("Transaction hash is required.");
-            }
+
             bool isValid = await _ton.CheckTranzaction(txhHash, _subscriptionAmount);
             if (!isValid)
-            {
                 return BadRequest("Invalid transaction.");
-            }
-            var userId = User.Claims.FirstOrDefault(c => c.Type == "OwnerId")?.Value;
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
-            var owner = await _context.BarbershopOwners.FindAsync(Guid.Parse(userId));
+
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
-            {
                 return NotFound("User not found.");
-            }
 
             owner.LastPayment = DateTime.UtcNow;
             owner.PayedAt = DateTime.UtcNow;

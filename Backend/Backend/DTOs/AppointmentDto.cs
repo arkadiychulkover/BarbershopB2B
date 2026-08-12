@@ -12,5 +12,6 @@ namespace Backend.DTOs
         public AppointmentStatus Status { get; set; }
         public bool ReminderSent { get; set; }
         public Guid ServiceId { get; set; }
+        public string? PhotoResultUrl { get; set; }
     }
 }

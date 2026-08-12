@@ -1,18 +1,16 @@
 using Backend.Data;
 using Backend.DTOs;
+using Backend.Extensions;
 using Backend.Models;
 using Backend.Models.Enums;
-using Microsoft.AspNetCore.Http;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Collections.Generic;
-using Backend.Services;
 
 namespace Backend.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Client")]
     [Route("api/[controller]")]
     [ApiController]
     public class ClientsController : ControllerBase
@@ -29,11 +27,7 @@ namespace Backend.Controllers
         [HttpPost("Zapisatsa")]
         public async Task<IActionResult> Zapisatsa([FromBody] BookAppointmentRequest request)
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var clientId))
-            {
-                return Unauthorized("User is not authenticated or invalid token.");
-            }
+            var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
 
@@ -41,57 +35,44 @@ namespace Backend.Controllers
                 .Include(m => m.Owner)
                 .FirstOrDefaultAsync(m => m.Id == request.MasterId);
             if (master == null)
-            {
                 return NotFound("Master not found.");
-            }
 
             var service = await context.Services
                 .Include(s => s.ServiceName)
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.MasterId == request.MasterId);
             if (service == null || !service.IsActive)
-            {
                 return NotFound("Service not found or is inactive for this master.");
-            }
 
             var dayOfWeek = request.AppointmentDate.DayOfWeek;
             var shift = await context.Shifts.FirstOrDefaultAsync(s => s.MasterId == request.MasterId && s.DayOfWeek == dayOfWeek);
             if (shift == null)
-            {
                 return BadRequest("The master does not have a shift on this date.");
-            }
 
             var appointmentStartTime = TimeOnly.FromDateTime(request.AppointmentDate);
             var appointmentEndTime = appointmentStartTime.AddMinutes(service.Duration);
 
             if (appointmentStartTime < shift.StartTime || appointmentEndTime > shift.EndTime)
-            {
                 return BadRequest("The requested time is outside the master's working hours.");
-            }
 
             if (request.AppointmentDate < DateTime.UtcNow)
-            {
                 return BadRequest("Cannot book an appointment in the past.");
-            }
 
             var appointmentEndDateTime = request.AppointmentDate.AddMinutes(service.Duration);
-
             var startOfDay = DateTime.SpecifyKind(request.AppointmentDate.Date, DateTimeKind.Utc);
             var endOfDay = startOfDay.AddDays(1);
 
             var overlappingAppointments = await context.Appointments
-                .Where(a => a.MasterId == request.MasterId 
+                .Where(a => a.MasterId == request.MasterId
                             && a.AppointmentDate >= startOfDay
                             && a.AppointmentDate < endOfDay
                             && a.Status != AppointmentStatus.Cancelled)
                 .ToListAsync();
 
-            bool isOverlap = overlappingAppointments.Any(a => 
+            bool isOverlap = overlappingAppointments.Any(a =>
                 request.AppointmentDate < a.AppointmentEndDate && appointmentEndDateTime > a.AppointmentDate);
 
             if (isOverlap)
-            {
                 return BadRequest("The requested time overlaps with another appointment.");
-            }
 
             var appointment = new Appointment
             {
@@ -118,15 +99,11 @@ namespace Backend.Controllers
                     var clientInfo = await context.Clients.FindAsync(clientId);
                     var clientName = clientInfo?.Name ?? "Клиент";
                     var message = $"Новая запись!\nК вам записался {clientName} на услугу «{service.ServiceName.Name}».\nВремя: {timeStr}.";
-                    
+
                     if (long.TryParse(master.TelegramId, out long chatId))
-                    {
                         await _botService.SendMessageAsync(master.Owner.BotToken, chatId, message);
-                    }
                 }
-                catch
-                {
-                }
+                catch { }
             }
 
             return Ok(new { Message = "Appointment booked successfully", AppointmentId = appointment.Id });
@@ -135,13 +112,11 @@ namespace Backend.Controllers
         [HttpGet("Masters")]
         public async Task<IActionResult> GetMasters()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var clientId))
-                return Unauthorized("User is not authenticated or invalid token.");
+            var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var client = await context.Clients.FindAsync(clientId);
-            if (client == null) return Unauthorized("Client not found.");
+            if (client == null) return NotFound("Client not found.");
 
             var masters = await context.Masters
                 .Where(m => m.OwnerId == client.OwnerId && m.IsActive)
@@ -192,7 +167,7 @@ namespace Backend.Controllers
             var endOfDay = startOfDay.AddDays(1);
 
             var appointments = await context.Appointments
-                .Where(a => a.MasterId == masterId 
+                .Where(a => a.MasterId == masterId
                             && a.AppointmentDate >= startOfDay
                             && a.AppointmentDate < endOfDay
                             && a.Status != AppointmentStatus.Cancelled)
@@ -200,21 +175,19 @@ namespace Backend.Controllers
 
             var availableSlots = new List<string>();
             var currentTime = shift.StartTime;
-            
+
             while (currentTime.AddMinutes(service.Duration) <= shift.EndTime)
             {
                 var slotEnd = currentTime.AddMinutes(service.Duration);
                 var slotStartDateTime = startOfDay.Add(currentTime.ToTimeSpan());
                 var slotEndDateTime = startOfDay.Add(slotEnd.ToTimeSpan());
 
-                bool isOverlap = appointments.Any(a => 
+                bool isOverlap = appointments.Any(a =>
                     slotStartDateTime < a.AppointmentEndDate && slotEndDateTime > a.AppointmentDate);
 
                 if (!isOverlap && slotStartDateTime > DateTime.UtcNow)
-                {
                     availableSlots.Add(currentTime.ToString("HH:mm"));
-                }
-                
+
                 currentTime = currentTime.AddMinutes(30);
             }
 
@@ -224,9 +197,7 @@ namespace Backend.Controllers
         [HttpGet("get-my-appointments")]
         public async Task<IActionResult> GetMyAppointments()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var clientId))
-                return Unauthorized("User is not authenticated or invalid token.");
+            var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var appointments = await context.Appointments
@@ -253,9 +224,7 @@ namespace Backend.Controllers
         [HttpDelete("cancel-appointment")]
         public async Task<IActionResult> CancelAppointment([FromQuery] Guid appointmentId)
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var clientId))
-                return Unauthorized("User is not authenticated or invalid token.");
+            var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var appointment = await context.Appointments
@@ -273,17 +242,18 @@ namespace Backend.Controllers
             appointment.Status = AppointmentStatus.Cancelled;
             await context.SaveChangesAsync();
 
-            await _botService.SendMessageAsync(appointment.Master.Owner.BotToken, long.Parse(appointment.Master.TelegramId), $"Клиент отменил запись на услугу «{appointment.Service.ServiceName.Name}» в {appointment.AppointmentDate:HH:mm}.");
+            await _botService.SendMessageAsync(
+                appointment.Master.Owner.BotToken,
+                long.Parse(appointment.Master.TelegramId),
+                $"Клиент отменил запись на услугу «{appointment.Service.ServiceName.Name}» в {appointment.AppointmentDate:HH:mm}.");
 
             return Ok(new { Message = "Appointment cancelled successfully" });
         }
 
         [HttpPost("submit-review")]
-        public async Task<IActionResult> PostReview([FromBody] ReviewDTO review) 
+        public async Task<IActionResult> PostReview([FromBody] ReviewDTO review)
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var clientId))
-                return Unauthorized("User is not authenticated or invalid token.");
+            var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
 
@@ -309,10 +279,10 @@ namespace Backend.Controllers
                 Rating = review.Rating,
                 Comment = review.Comment
             };
-            
+
             context.Reviews.Add(newReview);
             appointment.ReviewId = newReview.Id;
-            
+
             int reviewsCount = await context.Reviews.CountAsync(r => r.MasterId == review.BarberId);
             decimal totalRating = await context.Reviews
                 .Where(r => r.MasterId == review.BarberId)

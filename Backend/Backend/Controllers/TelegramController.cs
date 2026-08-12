@@ -84,6 +84,7 @@ namespace Backend.Controllers
                 var UserClaims = new[]
                 {
                     new Claim("UserId", clientId),
+                    new Claim(ClaimTypes.Role, "Client"),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 };
 
@@ -113,7 +114,8 @@ namespace Backend.Controllers
 
             var claims = new[]
             {
-                new Claim("MasterId", master.Id.ToString()),
+                new Claim("UserId", master.Id.ToString()),
+                new Claim(ClaimTypes.Role, "Master"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
