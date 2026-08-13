@@ -53,3 +53,23 @@ export async function apiFetch(endpoint, options = {}) {
         return text;
     }
 }
+
+/**
+ * Fetches an image path as a Blob and returns a local object URL.
+ * Needed when the backend is behind ngrok or similar tunnels that
+ * block unauthenticated static-file requests.
+ * IMPORTANT: caller must call URL.revokeObjectURL() when done.
+ */
+export async function fetchImageBlob(path: string): Promise<string> {
+    const headers = new Headers();
+    if (currentToken) {
+        headers.set('Authorization', `Bearer ${currentToken}`);
+    }
+    // ngrok requires this header to skip the browser warning page
+    headers.set('ngrok-skip-browser-warning', 'true');
+
+    const response = await fetch(`${BASE_URL}${path}`, { headers });
+    if (!response.ok) throw new Error(`Image fetch failed: ${response.status}`);
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+}

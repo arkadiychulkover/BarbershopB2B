@@ -175,6 +175,22 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetClientHistory",
+    "RelativePath": "api/Barber/client-history/{clientId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "clientId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "DeleteBarber",
     "RelativePath": "api/Barber/delete",
     "HttpMethod": "DELETE",
@@ -201,6 +217,22 @@
         "Name": "shiftId",
         "Type": "System.Guid",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetAllAppointments",
+    "RelativePath": "api/Barber/get-appointments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tgId",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -400,6 +432,27 @@
         "Name": "request",
         "Type": "Backend.Controllers.BarberController\u002BMyShiftRequest",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "PostPhoto",
+    "RelativePath": "api/Barber/put-photo/{appointmentId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appointmentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "photo",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

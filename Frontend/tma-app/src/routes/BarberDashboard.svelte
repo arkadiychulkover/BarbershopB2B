@@ -7,8 +7,10 @@
   import BarberServices from '../lib/components/BarberServices.svelte';
   import BarberAppointments from '../lib/components/BarberAppointments.svelte';
   import BarberReviews from '../lib/components/BarberReviews.svelte';
+  import ClientHistory from '../lib/components/ClientHistory.svelte';
 
   let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' = 'appointments';
+  let clientHistoryId: string | null = null;
 
   let shifts = [];
   let loading = true;
@@ -187,13 +189,30 @@
   {:else if activeTab === 'services'}
     <BarberServices />
   {:else if activeTab === 'appointments'}
-    <BarberAppointments />
+    <BarberAppointments on:openClientHistory={(e) => { clientHistoryId = e.detail; }} />
   {:else if activeTab === 'reviews'}
     <BarberReviews />
   {/if}
 </div>
 
+{#if clientHistoryId}
+  <div class="history-overlay">
+    <ClientHistory
+      clientId={clientHistoryId}
+      on:back={() => clientHistoryId = null}
+    />
+  </div>
+{/if}
+
 <style>
+  .history-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+    z-index: 200;
+    overflow-y: auto;
+  }
+
   .dashboard {
     padding: 16px;
     padding-bottom: 80px; 

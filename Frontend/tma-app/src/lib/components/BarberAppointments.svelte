@@ -1,8 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { apiFetch } from '../api';
   import { showAlert, showConfirm, hapticSuccess, hapticError, hapticWarning } from '../telegram';
-  
+  import SecureImage from './SecureImage.svelte';
+
+  const dispatch = createEventDispatcher();
+
   let innerWidth = 0;
   $: isDesktop = innerWidth >= 768;
 
@@ -15,6 +18,14 @@
   
   let view: 'list' | 'form' = 'list';
   let editingAppt = null;
+
+  // expanded card id (mobile list)
+  let expandedId: string | null = null;
+
+  // photo upload state per appointment
+  let uploadingId: string | null = null;
+  let photoInputEl: HTMLInputElement;
+  let pendingPhotoApptId: string | null = null;
   
   // form state
   let formDateStr = '';
@@ -27,7 +38,7 @@
   function getMonday(d) {
     d = new Date(d);
     var day = d.getDay(),
-        diff = d.getDate() - day + (day == 0 ? -6: 1); // adjust when day is sunday
+        diff = d.getDate() - day + (day == 0 ? -6: 1);
     return new Date(d.setDate(diff));
   }
   
@@ -54,9 +65,7 @@
         apiFetch('/api/Barber/get-master-appointments'),
         apiFetch('/api/Barber/my-services')
       ]);
-      
       appointments = apptsData;
-      // only active services with an ID
       services = servicesData.filter(s => s.serviceId && s.isActive);
     } catch (error) {
       console.error(error);
@@ -100,8 +109,13 @@
   }
 
   $: currentDayAppts = getApptsForDayDate(currentDate);
+
+  function toggleExpand(apptId: string) {
+    expandedId = expandedId === apptId ? null : apptId;
+  }
     
   function openNewForm(dateToUse) {
+    expandedId = null;
     editingAppt = null;
     formDateStr = new Date(dateToUse.getTime() - dateToUse.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     formTime = '10:00';
@@ -111,6 +125,7 @@
   }
   
   function openEditForm(appt) {
+    expandedId = null;
     editingAppt = appt;
     const d = new Date(appt.appointmentDate);
     formDateStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
@@ -182,6 +197,53 @@
       }
     });
   }
+
+  function triggerPhotoUpload(apptId: string) {
+    pendingPhotoApptId = apptId;
+    photoInputEl.value = '';
+    photoInputEl.click();
+  }
+
+  async function handlePhotoSelected(event) {
+    const file = event.target.files?.[0];
+    if (!file || !pendingPhotoApptId) return;
+
+    uploadingId = pendingPhotoApptId;
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const { authStore } = await import('../stores/auth');
+      let token = null;
+      const unsub = authStore.subscribe(s => { token = s.token; });
+      unsub();
+
+      const res = await fetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      hapticSuccess();
+      await loadData();
+      // keep card expanded after upload
+      expandedId = pendingPhotoApptId;
+    } catch(e) {
+      hapticError();
+      showAlert('Ошибка загрузки фото: ' + (e.message || 'неизвестная ошибка'));
+    } finally {
+      uploadingId = null;
+      pendingPhotoApptId = null;
+    }
+  }
+
+  function statusLabel(status: number): string {
+    if (status === 1) return 'Выполнено';
+    if (status === 2) return 'Отменено';
+    return 'Запланировано';
+  }
 </script>
 
 <svelte:window bind:innerWidth />
@@ -251,23 +313,102 @@
           <button class="primary-btn" on:click={() => openNewForm(currentDate)}>Добавить запись</button>
         </div>
       {:else}
-        <div class="appointments-list">
+        <!-- hidden photo file input -->
+      <input
+        type="file"
+        accept="image/*"
+        style="display:none"
+        bind:this={photoInputEl}
+        on:change={handlePhotoSelected}
+      />
+
+      <div class="appointments-list">
           {#each currentDayAppts as appt}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="appt-card mobile status-{appt.status}" on:click={() => openEditForm(appt)}>
-              <div class="appt-time">
-                {new Date(appt.appointmentDate).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+            <div
+              class="appt-card mobile status-{appt.status}"
+              class:expanded={expandedId === appt.id}
+              on:click={() => toggleExpand(appt.id)}
+            >
+              <div class="card-main-row">
+                <div class="appt-time">
+                  {new Date(appt.appointmentDate).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}
+                </div>
+                <div class="appt-details">
+                  <div class="service-name">{appt.serviceName || services.find(s => s.serviceId === appt.serviceId)?.name || 'Услуга'}</div>
+                  <div class="client-name">
+                    {#if appt.clientName && appt.clientTelegramId !== 'WALKIN'}
+                      {appt.clientName}
+                    {:else}
+                      Гость (Вручную)
+                    {/if}
+                  </div>
+                </div>
+                <div class="card-right">
+                  <div class="status-icon">
+                    {#if appt.status === 1}✓
+                    {:else if appt.status === 2}✕
+                    {/if}
+                  </div>
+                  <div class="expand-arrow" class:open={expandedId === appt.id}>›</div>
+                </div>
               </div>
-              <div class="appt-details">
-                <div class="service-name">{services.find(s => s.serviceId === appt.serviceId)?.name || 'Услуга'}</div>
-                <div class="client-name">{appt.clientId ? 'Забронировано' : 'Гость (Вручную)'}</div>
-              </div>
-              <div class="status-icon">
-                {#if appt.status === 1}✓
-                {:else if appt.status === 2}✕
-                {/if}
-              </div>
+
+              {#if expandedId === appt.id}
+                <div class="card-expanded" on:click|stopPropagation>
+                  <div class="expand-divider"></div>
+
+                  <div class="expand-meta">
+                    <span class="meta-badge status-badge-{appt.status}">
+                      {statusLabel(appt.status)}
+                    </span>
+                    <button class="edit-link" on:click={() => openEditForm(appt)}>✏️ Редактировать</button>
+                  </div>
+
+                  {#if appt.clientTelegramId && appt.clientTelegramId !== 'WALKIN'}
+                    <div class="client-tg-row">
+                      <span class="client-tg-label">Клиент:</span>
+                      <!-- svelte-ignore a11y-click-events-have-key-events -->
+                      <!-- svelte-ignore a11y-no-static-element-interactions -->
+                      <span
+                        class="client-tg-id"
+                        on:click={() => dispatch('openClientHistory', appt.clientId)}
+                      >👤 {appt.clientName || appt.clientTelegramId} · @{appt.clientTelegramId} →</span>
+                    </div>
+                  {/if}
+
+                  {#if appt.photoResultUrl}
+                    <div class="photo-preview-wrap">
+                      <SecureImage
+                        src={appt.photoResultUrl}
+                        alt="Результат"
+                        className="photo-preview"
+                        style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;"
+                      />
+                      <button
+                        class="change-photo-btn"
+                        on:click={() => triggerPhotoUpload(appt.id)}
+                        disabled={uploadingId === appt.id}
+                      >
+                        {uploadingId === appt.id ? '⏳ Загрузка...' : '🔄 заменить фото'}
+                      </button>
+                    </div>
+                  {:else}
+                    <button
+                      class="attach-photo-btn"
+                      on:click={() => triggerPhotoUpload(appt.id)}
+                      disabled={uploadingId === appt.id}
+                    >
+                      {#if uploadingId === appt.id}
+                        <span class="spinner"></span> Загрузка...
+                      {:else}
+                        📎 Прикрепить результат
+                      {/if}
+                    </button>
+                  {/if}
+                </div>
+              {/if}
             </div>
           {/each}
         </div>
@@ -365,19 +506,22 @@
   }
   
   .appt-card {
-    display: flex;
     background: var(--tg-theme-bg-color, #fff);
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     border-left: 4px solid var(--tg-theme-button-color, #3390ec);
     cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    overflow: hidden;
   }
   .appt-card.mobile {
-    padding: 16px;
-    align-items: center;
-    gap: 16px;
+    padding: 0;
+  }
+  .appt-card.mobile.expanded {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   }
   .appt-card.compact {
+    display: flex;
     padding: 8px;
     flex-direction: column;
     align-items: flex-start;
@@ -387,19 +531,181 @@
   
   .appt-card.status-1 {
     border-left-color: #4CAF50;
-    opacity: 0.8;
   }
-  
   .appt-card.status-2 {
     border-left-color: #F44336;
-    opacity: 0.5;
+    opacity: 0.55;
   }
+
+  /* Mobile card rows */
+  .card-main-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .card-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .expand-arrow {
+    font-size: 22px;
+    color: var(--tg-theme-hint-color, #aaa);
+    transition: transform 0.25s;
+    line-height: 1;
+    user-select: none;
+  }
+  .expand-arrow.open {
+    transform: rotate(90deg);
+  }
+  
+  /* Expanded section */
+  .card-expanded {
+    padding: 0 16px 16px;
+    animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .expand-divider {
+    height: 1px;
+    background: var(--tg-theme-hint-color, #eee);
+    opacity: 0.4;
+    margin-bottom: 12px;
+  }
+
+  .expand-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .meta-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .status-badge-0 { background: rgba(51,144,236,0.12); color: #3390ec; }
+  .status-badge-1 { background: rgba(76,175,80,0.15);  color: #4CAF50; }
+  .status-badge-2 { background: rgba(244,67,54,0.12);  color: #F44336; }
+
+  .edit-link {
+    background: none;
+    border: none;
+    color: var(--tg-theme-link-color, #3390ec);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .client-tg-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+
+  .client-tg-label {
+    font-size: 13px;
+    color: var(--tg-theme-hint-color, #999);
+    flex-shrink: 0;
+  }
+
+  .client-tg-id {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tg-theme-button-color, #3390ec);
+    cursor: pointer;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .client-tg-id:hover {
+    text-decoration: underline;
+  }
+
+  .attach-photo-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px dashed var(--tg-theme-button-color, #3390ec);
+    background: rgba(51,144,236,0.05);
+    color: var(--tg-theme-button-color, #3390ec);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .attach-photo-btn:hover {
+    background: rgba(51,144,236,0.1);
+  }
+  .attach-photo-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .photo-preview-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .photo-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--tg-theme-hint-color, #eee);
+  }
+  .change-photo-btn {
+    background: none;
+    border: 1px solid var(--tg-theme-hint-color, #ccc);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 13px;
+    color: var(--tg-theme-hint-color, #888);
+    cursor: pointer;
+  }
+  .change-photo-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .future-note {
+    text-align: center;
+    font-size: 13px;
+    color: var(--tg-theme-hint-color, #aaa);
+    padding: 8px 0;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   
   .appt-time {
     font-weight: 700;
     color: var(--tg-theme-text-color, #000);
   }
-  .mobile .appt-time {
+  .mobile .card-main-row .appt-time {
     font-size: 18px;
     min-width: 60px;
   }

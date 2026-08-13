@@ -472,7 +472,8 @@ namespace Backend.Controllers
 
             var appointments = await _context.Appointments
                 .Include(a => a.Client)
-                .ThenInclude(c => c.Owner)
+                .Include(a => a.Service)
+                    .ThenInclude(s => s.ServiceName)
                 .Include(a => a.Master)
                 .Where(a => a.MasterId == masterId)
                 .ToListAsync();
@@ -481,13 +482,17 @@ namespace Backend.Controllers
             {
                 Id = a.Id,
                 ClientId = a.ClientId,
+                ClientName = a.Client?.Name,
+                ClientTelegramId = a.Client?.TelegramId,
                 MasterId = a.MasterId,
                 AppointmentDate = a.AppointmentDate,
                 AppointmentEndDate = a.AppointmentEndDate,
                 Status = a.Status,
                 ReminderSent = a.ReminderSent,
                 ServiceId = a.ServiceId,
-                PhotoResultUrl = a.PhotoResultUrl
+                ServiceName = a.Service?.ServiceName?.Name,
+                PhotoResultUrl = a.PhotoResultUrl,
+                ResultNote = a.ResultNote
             }).ToList();
 
             return Ok(response);
@@ -607,6 +612,49 @@ namespace Backend.Controllers
         {
             var masterId = User.GetUserId();
             return await CreateAppointmentInternal(masterId, request);
+        }
+
+        [HttpGet("client-history/{clientId}")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> GetClientHistory(Guid clientId)
+        {
+            var masterId = User.GetUserId();
+            var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master == null) return NotFound(new { message = "Master not found" });
+
+            // Ensure client belongs to same barbershop
+            var client = await _context.Clients.FirstOrDefaultAsync(c => c.Id == clientId && c.OwnerId == master.OwnerId);
+            if (client == null) return NotFound(new { message = "Client not found" });
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Service)
+                    .ThenInclude(s => s.ServiceName)
+                .Include(a => a.Master)
+                .Where(a => a.ClientId == clientId)
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a => new AppointmentDto
+                {
+                    Id = a.Id,
+                    ClientId = a.ClientId,
+                    ClientName = client.Name,
+                    ClientTelegramId = client.TelegramId,
+                    MasterId = a.MasterId,
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentEndDate = a.AppointmentEndDate,
+                    Status = a.Status,
+                    ReminderSent = a.ReminderSent,
+                    ServiceId = a.ServiceId,
+                    ServiceName = a.Service != null ? a.Service.ServiceName.Name : null,
+                    PhotoResultUrl = a.PhotoResultUrl,
+                    ResultNote = a.ResultNote
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                client = new { client.Id, client.Name, client.TelegramId, client.Phone, client.Notes },
+                appointments
+            });
         }
 
         [HttpPut("my-appointments/update/{id}")]
@@ -732,8 +780,6 @@ namespace Backend.Controllers
             return Ok(response);
         }
 
-        // ─── Master/Owner: Photo Upload ────────────────────────────────────────────
-
         [HttpPost("put-photo/{appointmentId}")]
         [Authorize(Roles = "Master,Owner")]
         public async Task<IActionResult> PostPhoto(Guid appointmentId, IFormFile photo)
@@ -754,6 +800,13 @@ namespace Backend.Controllers
             if (!isOwner && appointment.MasterId != userId)
                 return Unauthorized();
 
+            // TODO: раскомментировать после тестирования
+            // if (appointment.AppointmentDate > DateTime.UtcNow)
+            //     return BadRequest(new { message = "Нельзя прикрепить фото к будущей записи" });
+
+            // if (appointment.Status == AppointmentStatus.Cancelled)
+            //     return BadRequest(new { message = "Нельзя прикрепить фото к отменённой записи" });
+
             string dir = Path.Combine("wwwroot", "results");
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
@@ -773,7 +826,57 @@ namespace Backend.Controllers
             return Ok(new { photoUrl });
         }
 
-        // ─── Request Models ────────────────────────────────────────────────────────
+        [HttpGet("get-appointments")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> GetAllAppointments([FromQuery] string tgId)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            Guid ownerId;
+            if (isOwner)
+            {
+                ownerId = userId;
+            }
+            else
+            {
+                var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == userId);
+                if (master == null) return NotFound(new { message = "Master not found" });
+                ownerId = master.OwnerId;
+            }
+
+            var client = await _context.Clients.FirstOrDefaultAsync(c => c.TelegramId == tgId && c.OwnerId == ownerId);
+            if (client == null) return NotFound(new { message = "Client not found" });
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Service)
+                    .ThenInclude(s => s.ServiceName)
+                .Where(a => a.ClientId == client.Id)
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a => new AppointmentDto
+                {
+                    Id = a.Id,
+                    ClientId = a.ClientId,
+                    ClientName = client.Name,
+                    ClientTelegramId = client.TelegramId,
+                    MasterId = a.MasterId,
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentEndDate = a.AppointmentEndDate,
+                    Status = a.Status,
+                    ReminderSent = a.ReminderSent,
+                    ServiceId = a.ServiceId,
+                    ServiceName = a.Service != null ? a.Service.ServiceName.Name : null,
+                    PhotoResultUrl = a.PhotoResultUrl,
+                    ResultNote = a.ResultNote
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                client = new { client.Id, client.Name, client.TelegramId, client.Phone, client.Notes },
+                appointments
+            });
+        }
 
         public class AddShiftRequest
         {

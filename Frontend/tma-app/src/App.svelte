@@ -39,18 +39,21 @@
       });
       
       const token = response.token;
-      let payload = {};
+      let role = '';
       try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        payload = JSON.parse(atob(base64));
+        const payload = JSON.parse(atob(base64));
+        // The role claim is stored under the full ClaimTypes.Role URI by ASP.NET Core
+        const roleClaim = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+        role = payload[roleClaim] || payload['role'] || payload['Role'] || '';
       } catch (e) {
         console.error('Failed to parse token', e);
       }
 
-      if (payload.MasterId) {
+      if (role === 'Master') {
         setAuthStatus('barber', token);
-      } else if (payload.UserId) {
+      } else if (role === 'Client') {
         setAuthStatus('client', token);
       } else {
         setAuthStatus('error');

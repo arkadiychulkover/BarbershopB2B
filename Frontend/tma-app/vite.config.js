@@ -9,6 +9,11 @@ export default defineConfig({
         target: 'http://localhost:5111',
         changeOrigin: true,
         secure: false,
+      },
+      '/results': {
+        target: 'http://localhost:5111',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }
