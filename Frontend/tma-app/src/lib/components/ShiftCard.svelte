@@ -32,42 +32,56 @@
     width: 100%;
     text-align: left;
     font-family: inherit;
-    border: none;
+    border: 1px solid var(--border-subtle);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 12px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 16px 18px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 10px;
     cursor: pointer;
-    transition: opacity 0.2s;
+    box-shadow: var(--shadow-glass);
+    transition: all 0.2s var(--ease-spring);
+  }
+
+  .shift-card:hover {
+    border-color: var(--border-glass);
   }
 
   .shift-card:active {
-    opacity: 0.7;
+    transform: scale(0.98);
   }
 
   .time-range {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 18px;
-    font-weight: 500;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
   }
 
   .separator {
-    color: var(--tg-theme-hint-color, #999);
+    color: var(--pastel-rose);
   }
 
   .delete-btn {
-    background-color: var(--tg-theme-destructive-text-color, #ff3b30);
-    color: white;
-    border: none;
+    background: var(--pastel-coral-dim);
+    color: var(--pastel-coral);
+    border: 1px solid rgba(232, 130, 130, 0.2);
     padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .delete-btn:active {
+    transform: scale(0.94);
   }
 </style>

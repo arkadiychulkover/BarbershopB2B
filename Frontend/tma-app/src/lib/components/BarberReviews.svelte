@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { apiFetch } from '../api';
+  import Icon from './Icon.svelte';
   
   let reviews = [];
   let loading = true;
@@ -17,15 +18,6 @@
       loading = false;
     }
   });
-  
-  function renderStars(rating) {
-    let stars = '';
-    for(let i=1; i<=5; i++) {
-        if (i <= rating) stars += '★';
-        else stars += '☆';
-    }
-    return stars;
-  }
 </script>
 
 <div class="reviews-container">
@@ -35,7 +27,9 @@
     <div class="status-msg error">{error}</div>
   {:else if reviews.length === 0}
     <div class="empty-state">
-      <div class="icon">⭐</div>
+      <div class="icon">
+        <Icon name="star" size={36} color="var(--pastel-amber)" />
+      </div>
       <p>У вас пока нет отзывов.</p>
     </div>
   {:else}
@@ -46,7 +40,15 @@
             <span class="client-name">{review.clientName}</span>
             <span class="review-date">{new Date(review.createdAt).toLocaleDateString('ru-RU')}</span>
           </div>
-          <div class="review-rating">{renderStars(review.rating)}</div>
+          <div class="review-rating">
+            {#each [1, 2, 3, 4, 5] as star}
+              <Icon 
+                name={star <= review.rating ? 'star' : 'star-outline'} 
+                size={16} 
+                color="var(--pastel-amber)" 
+              />
+            {/each}
+          </div>
           {#if review.comment}
             <div class="review-comment">{review.comment}</div>
           {/if}
@@ -60,35 +62,48 @@
   .reviews-container {
     height: 100%;
     overflow-y: auto;
-    padding-bottom: 24px;
+    padding: 4px 0 30px;
+    animation: fadeIn 0.3s var(--ease-spring);
   }
   
   .status-msg, .empty-state {
     text-align: center;
-    padding: 40px 20px;
-    color: var(--tg-theme-hint-color, #999);
+    padding: 50px 20px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
   }
   
   .error {
-    color: #F44336;
+    color: var(--pastel-coral);
   }
   
   .empty-state .icon {
-    font-size: 48px;
-    margin-bottom: 16px;
+    font-size: 40px;
+    margin-bottom: 12px;
   }
   
   .reviews-list {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
   }
   
   .review-card {
-    background: var(--tg-theme-bg-color, #fff);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-glass);
+    border: 1px solid var(--border-subtle);
+    transition: border-color 0.2s;
+  }
+
+  .review-card:hover {
+    border-color: var(--border-glass);
   }
   
   .review-header {
@@ -99,26 +114,32 @@
   }
   
   .client-name {
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--tg-theme-text-color, #000);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary);
   }
   
   .review-date {
     font-size: 12px;
-    color: var(--tg-theme-hint-color, #999);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
   }
   
   .review-rating {
-    color: #FFC107;
-    font-size: 18px;
+    color: var(--pastel-amber);
+    font-size: 16px;
     margin-bottom: 8px;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--pastel-amber-glow);
   }
   
   .review-comment {
     font-size: 14px;
-    color: var(--tg-theme-text-color, #000);
-    line-height: 1.4;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    background: var(--bg-surface-elevated);
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
   }
 </style>

@@ -18,6 +18,17 @@ namespace Backend
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 });
 
+            // CORS configuration for TMA and Web frontends
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             builder.Services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
                 
@@ -32,9 +43,10 @@ namespace Backend
             builder.Services.AddSingleton<BotService>();
 
             builder.Services.AddHostedService<Backend.BackgroundServices.NotifycationBackgroundService>();
+            builder.Services.AddHostedService<Backend.BackgroundServices.SubscriptionBackgroundService>();
 
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings.GetValue<string>("Secret");
+            var secretKey = jwtSettings.GetValue<string>("Secret") ?? "DefaultSecretKeyForDevelopmentOnlyAtLeast32BytesLong!";
 
             builder.Services.AddAuthentication(options =>
             {
@@ -57,14 +69,27 @@ namespace Backend
             });
 
             var app = builder.Build();
+
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
             });
 
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler(handler => handler.Run(async context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync("{\"error\":\"Internal Server Error\"}");
+                }));
+            }
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             
+            app.UseCors();
+
             app.UseAuthentication();
             app.UseAuthorization();
             

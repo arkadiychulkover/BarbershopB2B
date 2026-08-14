@@ -1,17 +1,16 @@
 using Backend.Data;
 using Backend.DTOs;
+using Backend.Extensions;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
-using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using Backend.Extensions;
 
 namespace Backend.Controllers
 {
@@ -21,6 +20,7 @@ namespace Backend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
+
         public RegestrationController(AppDbContext context, IConfiguration configuration)
         {
             _context = context;
@@ -35,23 +35,31 @@ namespace Backend.Controllers
                 return BadRequest(ModelState);
             }
 
-            using var sha256 = SHA256.Create();
-            string passwordHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password)));
+            var cleanEmail = request.Email.Trim().ToLowerInvariant();
+            bool emailExists = await _context.BarbershopOwners.AnyAsync(o => o.Email.ToLower() == cleanEmail);
+            if (emailExists)
+            {
+                return BadRequest(new { message = "Пользователь с таким email уже зарегистрирован." });
+            }
+
+            string passwordHash = PasswordSecurity.HashPassword(request.Password);
+
             _context.BarbershopOwners.Add(new BarbershopOwner
             {
-                OwnerName = request.OwnerName,
-                PhoneNumber = request.PhoneNumber,
-                Email = request.Email,
-                TelegramId = request.TelegramId,
-                BarbershopName = request.BarbershopName,
-                BarbershopAddress = request.BarbershopAddress,
-                BarbershopDescription = request.BarbershopDescription,
-                BotToken = request.BotToken,
-                BotUsername = request.BotUsername,
-                TimeZone = request.TimeZone,
+                OwnerName = request.OwnerName?.Trim(),
+                PhoneNumber = request.PhoneNumber?.Trim(),
+                Email = cleanEmail,
+                TelegramId = request.TelegramId?.Trim(),
+                BarbershopName = request.BarbershopName?.Trim(),
+                BarbershopAddress = request.BarbershopAddress?.Trim(),
+                BarbershopDescription = request.BarbershopDescription?.Trim(),
+                BotToken = request.BotToken?.Trim(),
+                BotUsername = request.BotUsername?.Trim(),
+                TimeZone = string.IsNullOrWhiteSpace(request.TimeZone) ? "Europe/Kyiv" : request.TimeZone.Trim(),
                 PasswordHash = passwordHash,
                 WalletAddress = ""
             });
+
             await _context.SaveChangesAsync();
             return Ok(new { message = "Registration successful" });
         }
@@ -67,15 +75,15 @@ namespace Backend.Controllers
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound();
-            using var sha256 = SHA256.Create();
-            string currentPasswordHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.CurrentPassword)));
-            if (owner.PasswordHash != currentPasswordHash)
+
+            if (!PasswordSecurity.VerifyPassword(request.CurrentPassword, owner.PasswordHash))
             {
                 return BadRequest(new { message = "Current password is incorrect" });
             }
-            string newPasswordHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.NewPassword)));
-            owner.PasswordHash = newPasswordHash;
+
+            owner.PasswordHash = PasswordSecurity.HashPassword(request.NewPassword);
             await _context.SaveChangesAsync();
+
             return Ok(new { message = "Password changed successfully" });
         }
 
@@ -84,13 +92,19 @@ namespace Backend.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var owner = await _context.BarbershopOwners.FirstOrDefaultAsync(o => o.Email == request.Email);
+            var cleanEmail = request.Email.Trim().ToLowerInvariant();
+            var owner = await _context.BarbershopOwners.FirstOrDefaultAsync(o => o.Email.ToLower() == cleanEmail);
             if (owner == null) return Unauthorized(new { message = "Invalid email or password" });
 
-            using var sha256 = SHA256.Create();
-            string passwordHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password)));
+            if (!PasswordSecurity.VerifyPassword(request.Password, owner.PasswordHash))
+                return Unauthorized(new { message = "Invalid email or password" });
 
-            if (owner.PasswordHash != passwordHash) return Unauthorized(new { message = "Invalid email or password" });
+            // Upgrade legacy SHA-256 hash to PBKDF2 with salt automatically
+            if (PasswordSecurity.NeedsUpgrade(owner.PasswordHash))
+            {
+                owner.PasswordHash = PasswordSecurity.HashPassword(request.Password);
+                await _context.SaveChangesAsync();
+            }
 
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings.GetValue<string>("Secret");
@@ -121,8 +135,6 @@ namespace Backend.Controllers
             });
         }
     }
-
-
 
     public class ChangePasswordRequest
     {

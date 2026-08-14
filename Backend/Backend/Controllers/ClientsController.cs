@@ -24,6 +24,42 @@ namespace Backend.Controllers
             _botService = botService;
         }
 
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var clientId = User.GetUserId();
+
+            using var context = await _dbContextFactory.CreateDbContextAsync();
+            var client = await context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId);
+            if (client == null) return NotFound("Client not found.");
+
+            return Ok(new ClientProfileDto
+            {
+                Id = client.Id,
+                Name = client.Name,
+                Phone = client.Phone,
+                TelegramId = client.TelegramId
+            });
+        }
+
+        [HttpPost("update-phone")]
+        public async Task<IActionResult> UpdatePhone([FromBody] UpdateClientPhoneRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request?.Phone))
+                return BadRequest("Номер телефона не может быть пустым.");
+
+            var clientId = User.GetUserId();
+
+            using var context = await _dbContextFactory.CreateDbContextAsync();
+            var client = await context.Clients.FindAsync(clientId);
+            if (client == null) return NotFound("Client not found.");
+
+            client.Phone = request.Phone.Trim();
+            await context.SaveChangesAsync();
+
+            return Ok(new { Message = "Phone updated successfully", Phone = client.Phone });
+        }
+
         [HttpPost("Zapisatsa")]
         public async Task<IActionResult> Zapisatsa([FromBody] BookAppointmentRequest request)
         {
@@ -31,11 +67,21 @@ namespace Backend.Controllers
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
 
+            var client = await context.Clients.FindAsync(clientId);
+            if (client == null)
+                return NotFound("Client not found.");
+
+            if (string.IsNullOrWhiteSpace(client.Phone))
+                return BadRequest("Для записи необходимо указать номер телефона.");
+
             var master = await context.Masters
                 .Include(m => m.Owner)
                 .FirstOrDefaultAsync(m => m.Id == request.MasterId);
             if (master == null)
                 return NotFound("Master not found.");
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Запись невозможна: подписка заведения не активна или истекла." });
 
             var service = await context.Services
                 .Include(s => s.ServiceName)
@@ -44,7 +90,7 @@ namespace Backend.Controllers
                 return NotFound("Service not found or is inactive for this master.");
 
             var dayOfWeek = request.AppointmentDate.DayOfWeek;
-            var shift = await context.Shifts.FirstOrDefaultAsync(s => s.MasterId == request.MasterId && s.DayOfWeek == dayOfWeek);
+            var shift = await context.Shifts.AsNoTracking().FirstOrDefaultAsync(s => s.MasterId == request.MasterId && s.DayOfWeek == dayOfWeek);
             if (shift == null)
                 return BadRequest("The master does not have a shift on this date.");
 
@@ -58,55 +104,63 @@ namespace Backend.Controllers
                 return BadRequest("Cannot book an appointment in the past.");
 
             var appointmentEndDateTime = request.AppointmentDate.AddMinutes(service.Duration);
-            var startOfDay = DateTime.SpecifyKind(request.AppointmentDate.Date, DateTimeKind.Utc);
-            var endOfDay = startOfDay.AddDays(1);
 
-            var overlappingAppointments = await context.Appointments
-                .Where(a => a.MasterId == request.MasterId
-                            && a.AppointmentDate >= startOfDay
-                            && a.AppointmentDate < endOfDay
-                            && a.Status != AppointmentStatus.Cancelled)
-                .ToListAsync();
-
-            bool isOverlap = overlappingAppointments.Any(a =>
-                request.AppointmentDate < a.AppointmentEndDate && appointmentEndDateTime > a.AppointmentDate);
-
-            if (isOverlap)
-                return BadRequest("The requested time overlaps with another appointment.");
-
-            var appointment = new Appointment
+            // ACID transaction check to prevent race conditions / double bookings
+            await using var transaction = await context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            try
             {
-                Id = Guid.NewGuid(),
-                MasterId = request.MasterId,
-                ClientId = clientId,
-                ServiceId = request.ServiceId,
-                AppointmentDate = request.AppointmentDate,
-                AppointmentEndDate = appointmentEndDateTime,
-                Status = AppointmentStatus.Scheduled,
-                MasterProfit = 0,
-                OwnerProfit = 0,
-                DepositPaid = false
-            };
+                bool isOverlap = await context.Appointments.AnyAsync(a =>
+                    a.MasterId == request.MasterId
+                    && a.Status != AppointmentStatus.Cancelled
+                    && request.AppointmentDate < a.AppointmentEndDate
+                    && appointmentEndDateTime > a.AppointmentDate);
 
-            context.Appointments.Add(appointment);
-            await context.SaveChangesAsync();
-
-            if (!string.IsNullOrEmpty(master.TelegramId) && !string.IsNullOrEmpty(master.Owner?.BotToken))
-            {
-                try
+                if (isOverlap)
                 {
-                    var timeStr = request.AppointmentDate.ToString("HH:mm");
-                    var clientInfo = await context.Clients.FindAsync(clientId);
-                    var clientName = clientInfo?.Name ?? "Клиент";
-                    var message = $"Новая запись!\nК вам записался {clientName} на услугу «{service.ServiceName.Name}».\nВремя: {timeStr}.";
-
-                    if (long.TryParse(master.TelegramId, out long chatId))
-                        await _botService.SendMessageAsync(master.Owner.BotToken, chatId, message);
+                    await transaction.RollbackAsync();
+                    return BadRequest("The requested time overlaps with another appointment.");
                 }
-                catch { }
-            }
 
-            return Ok(new { Message = "Appointment booked successfully", AppointmentId = appointment.Id });
+                var appointment = new Appointment
+                {
+                    Id = Guid.NewGuid(),
+                    MasterId = request.MasterId,
+                    ClientId = clientId,
+                    ServiceId = request.ServiceId,
+                    AppointmentDate = request.AppointmentDate,
+                    AppointmentEndDate = appointmentEndDateTime,
+                    Status = AppointmentStatus.Scheduled,
+                    MasterProfit = 0,
+                    OwnerProfit = 0,
+                    DepositPaid = false
+                };
+
+                context.Appointments.Add(appointment);
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                if (!string.IsNullOrEmpty(master.TelegramId) && !string.IsNullOrEmpty(master.Owner?.BotToken))
+                {
+                    try
+                    {
+                        var timeStr = request.AppointmentDate.ToString("HH:mm");
+                        var clientName = client.Name ?? "Клиент";
+                        var clientPhoneStr = !string.IsNullOrWhiteSpace(client.Phone) ? $" ({client.Phone})" : "";
+                        var message = $"Новая запись!\nК вам записался {clientName}{clientPhoneStr} на услугу «{service.ServiceName?.Name}».\nВремя: {timeStr}.";
+
+                        if (long.TryParse(master.TelegramId, out long chatId))
+                            await _botService.SendMessageAsync(master.Owner.BotToken, chatId, message);
+                    }
+                    catch { }
+                }
+
+                return Ok(new { Message = "Appointment booked successfully", AppointmentId = appointment.Id });
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         [HttpGet("Masters")]
@@ -115,10 +169,14 @@ namespace Backend.Controllers
             var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
-            var client = await context.Clients.FindAsync(clientId);
+            var client = await context.Clients.Include(c => c.Owner).AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId);
             if (client == null) return NotFound("Client not found.");
 
+            if (client.Owner == null || !client.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var masters = await context.Masters
+                .AsNoTracking()
                 .Where(m => m.OwnerId == client.OwnerId && m.IsActive)
                 .Select(m => new ClientMasterDto
                 {
@@ -136,7 +194,14 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetServices(Guid masterId)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
+            var master = await context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master == null) return NotFound("Master not found.");
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var services = await context.Services
+                .AsNoTracking()
                 .Include(s => s.ServiceName)
                 .Where(s => s.MasterId == masterId && s.IsActive)
                 .Select(s => new ClientServiceDto
@@ -156,17 +221,25 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetAvailableTimeSlots([FromQuery] Guid masterId, [FromQuery] Guid serviceId, [FromQuery] DateTime date)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
-            var service = await context.Services.FirstOrDefaultAsync(s => s.Id == serviceId && s.MasterId == masterId);
+            var service = await context.Services
+                .AsNoTracking()
+                .Include(s => s.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(s => s.Id == serviceId && s.MasterId == masterId);
             if (service == null || !service.IsActive) return NotFound("Service not found.");
 
+            if (service.Master?.Owner == null || !service.Master.Owner.HasActiveSubscription())
+                return Ok(new List<string>());
+
             var dayOfWeek = date.DayOfWeek;
-            var shift = await context.Shifts.FirstOrDefaultAsync(s => s.MasterId == masterId && s.DayOfWeek == dayOfWeek);
+            var shift = await context.Shifts.AsNoTracking().FirstOrDefaultAsync(s => s.MasterId == masterId && s.DayOfWeek == dayOfWeek);
             if (shift == null) return Ok(new List<string>());
 
             var startOfDay = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
             var endOfDay = startOfDay.AddDays(1);
 
             var appointments = await context.Appointments
+                .AsNoTracking()
                 .Where(a => a.MasterId == masterId
                             && a.AppointmentDate >= startOfDay
                             && a.AppointmentDate < endOfDay
@@ -201,6 +274,7 @@ namespace Backend.Controllers
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var appointments = await context.Appointments
+                .AsNoTracking()
                 .Where(a => a.ClientId == clientId)
                 .Include(a => a.Master)
                 .Include(a => a.Service)
@@ -242,10 +316,17 @@ namespace Backend.Controllers
             appointment.Status = AppointmentStatus.Cancelled;
             await context.SaveChangesAsync();
 
-            await _botService.SendMessageAsync(
-                appointment.Master.Owner.BotToken,
-                long.Parse(appointment.Master.TelegramId),
-                $"Клиент отменил запись на услугу «{appointment.Service.ServiceName.Name}» в {appointment.AppointmentDate:HH:mm}.");
+            if (appointment.Master?.Owner != null && appointment.Master.Owner.HasActiveSubscription() && !string.IsNullOrEmpty(appointment.Master.Owner.BotToken) && !string.IsNullOrEmpty(appointment.Master.TelegramId))
+            {
+                try
+                {
+                    await _botService.SendMessageAsync(
+                        appointment.Master.Owner.BotToken,
+                        long.Parse(appointment.Master.TelegramId),
+                        $"Клиент отменил запись на услугу «{appointment.Service.ServiceName.Name}» в {appointment.AppointmentDate:HH:mm}.");
+                }
+                catch { }
+            }
 
             return Ok(new { Message = "Appointment cancelled successfully" });
         }
@@ -259,10 +340,15 @@ namespace Backend.Controllers
 
             var appointment = await context.Appointments
                 .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
                 .FirstOrDefaultAsync(a => a.Id == review.AppointmentId && a.ClientId == clientId);
-            var master = await context.Masters.FindAsync(review.BarberId);
+            var master = await context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == review.BarberId);
 
             if (appointment == null) return NotFound("Appointment not found.");
+            if (master == null) return NotFound("Master not found.");
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
             if (appointment.Status != AppointmentStatus.Completed)
                 return BadRequest("Cannot review an appointment that is not completed.");
@@ -300,6 +386,7 @@ namespace Backend.Controllers
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var reviews = await context.Reviews
+                .AsNoTracking()
                 .Where(r => r.MasterId == barberId)
                 .Select(r => new
                 {
@@ -317,7 +404,7 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetMasterRating([FromQuery] Guid barberId)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
-            var master = await context.Masters.FindAsync(barberId);
+            var master = await context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == barberId);
             if (master == null) return NotFound("Master not found.");
             return Ok(new { Rating = master.Rating });
         }

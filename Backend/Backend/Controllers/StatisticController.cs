@@ -29,7 +29,11 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Доступ к истории транзакций ограничен." });
+
             var transactions = await _context.Tranxactions
+                .AsNoTracking()
                 .Where(t => t.OwnerId == owner.Id)
                 .OrderByDescending(t => t.Time)
                 .ToListAsync();
@@ -41,6 +45,12 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetOwnerStatistic([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null)
+                return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Доступ к аналитике ограничен." });
 
             if (startDate == default || endDate == default)
                 return BadRequest("startDate and endDate are required.");
@@ -56,6 +66,12 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetOwnerStatisticHourly([FromQuery] DateTime date)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null)
+                return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Доступ к аналитике ограничен." });
 
             if (date == default) return BadRequest("date is required.");
 
@@ -69,6 +85,12 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetBarberStatisticDaily([FromRoute] Guid masterId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null)
+                return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Доступ к аналитике ограничен." });
 
             if (startDate == default || endDate == default) return BadRequest("startDate and endDate are required.");
 
@@ -83,6 +105,12 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetBarberStatisticHourly([FromRoute] Guid masterId, [FromQuery] DateTime date)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null)
+                return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Доступ к аналитике ограничен." });
 
             if (date == default) return BadRequest("date is required.");
 

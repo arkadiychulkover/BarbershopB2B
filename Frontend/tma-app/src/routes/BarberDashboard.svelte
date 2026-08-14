@@ -8,6 +8,7 @@
   import BarberAppointments from '../lib/components/BarberAppointments.svelte';
   import BarberReviews from '../lib/components/BarberReviews.svelte';
   import ClientHistory from '../lib/components/ClientHistory.svelte';
+  import Icon from '../lib/components/Icon.svelte';
 
   let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' = 'appointments';
   let clientHistoryId: string | null = null;
@@ -116,83 +117,99 @@
 </script>
 
 <div class="dashboard">
-  <div class="tabs">
-    <button 
-      class="tab" 
-      class:active={activeTab === 'appointments'} 
-      on:click={() => activeTab = 'appointments'}
-    >
-      Мои записи
-    </button>
-    <button 
-      class="tab" 
-      class:active={activeTab === 'shifts'} 
-      on:click={() => activeTab = 'shifts'}
-    >
-      Мои смены
-    </button>
-    <button 
-      class="tab" 
-      class:active={activeTab === 'services'} 
-      on:click={() => activeTab = 'services'}
-    >
-      Мои услуги
-    </button>
-    <button 
-      class="tab" 
-      class:active={activeTab === 'reviews'} 
-      on:click={() => activeTab = 'reviews'}
-    >
-      Отзывы
-    </button>
+  <div class="tabs-wrapper">
+    <div class="tabs">
+      <button 
+        class="tab" 
+        class:active={activeTab === 'appointments'} 
+        on:click={() => activeTab = 'appointments'}
+      >
+        <span class="tab-icon"><Icon name="scissors" size={15} /></span>
+        <span class="tab-label">Записи</span>
+      </button>
+      <button 
+        class="tab" 
+        class:active={activeTab === 'shifts'} 
+        on:click={() => activeTab = 'shifts'}
+      >
+        <span class="tab-icon"><Icon name="calendar" size={15} /></span>
+        <span class="tab-label">Смены</span>
+      </button>
+      <button 
+        class="tab" 
+        class:active={activeTab === 'services'} 
+        on:click={() => activeTab = 'services'}
+      >
+        <span class="tab-icon"><Icon name="services" size={15} /></span>
+        <span class="tab-label">Услуги</span>
+      </button>
+      <button 
+        class="tab" 
+        class:active={activeTab === 'reviews'} 
+        on:click={() => activeTab = 'reviews'}
+      >
+        <span class="tab-icon"><Icon name="star" size={15} /></span>
+        <span class="tab-label">Отзывы</span>
+      </button>
+    </div>
   </div>
 
-  {#if activeTab === 'shifts'}
-    <div class="shifts-content">
-      {#if view === 'list'}
-        {#if loading}
-          <div class="loading">Загрузка смен...</div>
-        {:else if shifts.length === 0}
-          <div class="empty-state">
-            <div class="icon">📅</div>
-            <p>У вас пока нет добавленных смен.</p>
-            <button class="primary-btn" on:click={openNewForm}>Создать первую смену</button>
-          </div>
-        {:else}
-          <div class="shifts-list">
-            {#each Object.entries(groupedShifts) as [day, dayShifts]}
-              <div class="date-group">
-                <h3 class="date-title">{formatDayOfWeek(Number(day))}</h3>
-                {#each dayShifts as shift (shift.id)}
-                  <ShiftCard 
-                    {shift} 
-                    on:edit={openEditForm}
-                    on:delete={handleDeleteShift}
-                  />
-                {/each}
+  <div class="dashboard-content">
+    {#if activeTab === 'shifts'}
+      <div class="shifts-content">
+        {#if view === 'list'}
+          {#if loading}
+            <div class="loading-wrap">
+              <div class="spinner-sm"></div>
+              <p>Загрузка смен...</p>
+            </div>
+          {:else if shifts.length === 0}
+            <div class="empty-state">
+              <div class="empty-icon-circle">
+                <Icon name="calendar" size={28} color="var(--pastel-rose)" />
               </div>
-            {/each}
-          </div>
+              <p class="empty-title">У вас пока нет смен</p>
+              <p class="empty-subtitle">Создайте свой первый рабочий график на неделю</p>
+              <button class="primary-btn" on:click={openNewForm}>+ Создать смену</button>
+            </div>
+          {:else}
+            <div class="shifts-list">
+              {#each Object.entries(groupedShifts) as [day, dayShifts]}
+                <div class="date-group">
+                  <h3 class="date-title">{formatDayOfWeek(Number(day))}</h3>
+                  {#each dayShifts as shift (shift.id)}
+                    <ShiftCard 
+                      {shift} 
+                      on:edit={openEditForm}
+                      on:delete={handleDeleteShift}
+                    />
+                  {/each}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        {:else}
+          <ShiftForm 
+            initialData={editingShift} 
+            on:save={handleSaveForm} 
+            on:cancel={handleCancelForm} 
+          />
         {/if}
-      {:else}
-        <ShiftForm 
-          initialData={editingShift} 
-          on:save={handleSaveForm} 
-          on:cancel={handleCancelForm} 
-        />
+      </div>
+      
+      {#if view === 'list' && !loading}
+        <button class="floating-add-btn" on:click={openNewForm} title="Добавить смену">
+          <span>+</span>
+        </button>
       {/if}
-    </div>
-    
-    {#if view === 'list' && !loading}
-      <button class="add-btn" on:click={openNewForm}>+</button>
+    {:else if activeTab === 'services'}
+      <BarberServices />
+    {:else if activeTab === 'appointments'}
+      <BarberAppointments on:openClientHistory={(e) => { clientHistoryId = e.detail; }} />
+    {:else if activeTab === 'reviews'}
+      <BarberReviews />
     {/if}
-  {:else if activeTab === 'services'}
-    <BarberServices />
-  {:else if activeTab === 'appointments'}
-    <BarberAppointments on:openClientHistory={(e) => { clientHistoryId = e.detail; }} />
-  {:else if activeTab === 'reviews'}
-    <BarberReviews />
-  {/if}
+  </div>
 </div>
 
 {#if clientHistoryId}
@@ -205,68 +222,130 @@
 {/if}
 
 <style>
-  .history-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--tg-theme-secondary-bg-color, #f5f5f5);
-    z-index: 200;
-    overflow-y: auto;
+  .dashboard {
+    padding: 0 0 80px 0;
+    min-height: 100vh;
+    background-color: var(--bg-canvas);
   }
 
-  .dashboard {
-    padding: 16px;
-    padding-bottom: 80px; 
+  .tabs-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 12px 14px 8px;
+    background: rgba(12, 14, 18, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .tabs {
     display: flex;
-    background: var(--tg-theme-bg-color, #fff);
-    border-bottom: 1px solid var(--tg-theme-hint-color, #eee);
-    margin: -16px -16px 16px -16px;
+    gap: 6px;
+    background: rgba(23, 26, 35, 0.7);
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-subtle);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .tab {
     flex: 1;
-    padding: 16px;
-    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    background: transparent;
     border: none;
-    border-bottom: 3px solid transparent;
-    color: var(--tg-theme-hint-color, #999);
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
     font-weight: 600;
-    font-size: 15px;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s var(--ease-spring);
+    white-space: nowrap;
+  }
+
+  .tab-icon {
+    font-size: 14px;
+  }
+
+  .tab:hover {
+    color: var(--text-primary);
   }
 
   .tab.active {
-    color: var(--tg-theme-button-color, #3390ec);
-    border-bottom-color: var(--tg-theme-button-color, #3390ec);
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+    transform: scale(1.02);
   }
 
-  h1 {
-    font-size: 24px;
-    margin: 0;
+  .tab:active {
+    transform: scale(0.96);
   }
 
-  .add-btn {
-    background-color: var(--tg-theme-button-color, #3390ec);
-    color: var(--tg-theme-button-text-color, #ffffff);
-    width: 40px;
-    height: 40px;
+  .dashboard-content {
+    padding: 16px;
+  }
+
+  .history-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-canvas);
+    z-index: 300;
+    overflow-y: auto;
+    animation: fadeIn 0.25s var(--ease-spring);
+  }
+
+  .floating-add-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 24px;
+    width: 54px;
+    height: 54px;
     border-radius: 50%;
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
     border: none;
-    font-size: 24px;
+    font-size: 28px;
+    font-weight: 400;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px var(--pastel-rose-glow), 0 2px 6px rgba(0,0,0,0.4);
+    transition: all 0.25s var(--ease-spring);
+    z-index: 90;
   }
 
-  .loading {
-    text-align: center;
-    padding: 40px;
-    color: var(--tg-theme-hint-color, #999);
+  .floating-add-btn:hover {
+    transform: scale(1.06) translateY(-2px);
+    box-shadow: 0 12px 30px var(--pastel-rose-glow);
+  }
+
+  .floating-add-btn:active {
+    transform: scale(0.94);
+  }
+
+  .loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+    gap: 12px;
+  }
+
+  .spinner-sm {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
+    border-radius: 50%;
+    animation: spinSmooth 0.85s linear infinite;
   }
 
   .empty-state {
@@ -274,29 +353,59 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 60px 24px;
     text-align: center;
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-glass);
+    margin: 8px 0;
   }
 
-  .empty-state .icon {
-    font-size: 48px;
+  .empty-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--pastel-rose-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
     margin-bottom: 16px;
+    border: 1px solid rgba(223, 158, 142, 0.2);
   }
 
-  .empty-state p {
-    color: var(--tg-theme-hint-color, #999);
-    margin-bottom: 24px;
+  .empty-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+  }
+
+  .empty-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+    max-width: 280px;
+    line-height: 1.4;
   }
 
   .primary-btn {
-    background-color: var(--tg-theme-button-color, #3390ec);
-    color: var(--tg-theme-button-text-color, #ffffff);
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
     border: none;
     padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+    transition: all 0.2s var(--ease-spring);
+  }
+
+  .primary-btn:active {
+    transform: scale(0.96);
   }
 
   .date-group {
@@ -304,9 +413,11 @@
   }
 
   .date-title {
-    font-size: 16px;
-    color: var(--tg-theme-hint-color, #999);
-    margin-bottom: 12px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pastel-rose);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px 4px;
   }
 </style>

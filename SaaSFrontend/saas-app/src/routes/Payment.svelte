@@ -4,7 +4,19 @@
   import { apiRequest } from '../lib/api';
   import { profileStore } from '../lib/store';
   import QRCode from 'qrcode';
-  import { Copy, Check } from 'lucide-svelte';
+  import { 
+    Copy, 
+    Check, 
+    Wallet, 
+    Coins, 
+    CheckCircle2, 
+    AlertCircle, 
+    ShieldCheck, 
+    ArrowRight, 
+    Sparkles, 
+    ExternalLink,
+    Edit3
+  } from 'lucide-svelte';
 
   let canvas;
   let txHash = '';
@@ -33,7 +45,7 @@
       subscriptionAmount = priceRes.price || '10';
       platformWalletAddress = priceRes.platformWalletAddress || '';
     } catch (e) {
-      errorMsg = 'Не удалось загрузить настройки профиля';
+      errorMsg = 'Не удалось загрузить данные для оплаты';
     } finally {
       isLoading = false;
       if (userWalletAddress) {
@@ -46,10 +58,10 @@
     setTimeout(() => {
       if (canvas && platformWalletAddress) {
         QRCode.toCanvas(canvas, paymentLink, {
-          width: 250,
+          width: 220,
           margin: 1,
           color: {
-            dark: '#000000',
+            dark: '#0c0e12',
             light: '#ffffff'
           }
         }, (error) => {
@@ -63,7 +75,7 @@
     if (!platformWalletAddress) return;
     navigator.clipboard.writeText(platformWalletAddress);
     copied = true;
-    setTimeout(() => copied = false, 2000);
+    setTimeout(() => copied = false, 2500);
   }
 
   async function handleSaveWallet() {
@@ -81,7 +93,7 @@
       renderQR();
       setTimeout(() => successMsg = '', 4000);
     } catch(e) {
-      errorMsg = e.message || 'Ошибка сохранения';
+      errorMsg = e.message || 'Ошибка сохранения кошелька';
     } finally {
       isSaving = false;
     }
@@ -94,13 +106,13 @@
     errorMsg = '';
     
     try {
-      const response = await apiRequest('/api/Payment', {
+      await apiRequest('/api/Payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(txHash)
       });
       
-      successMsg = 'Оплата успешно подтверждена!';
+      successMsg = 'Оплата успешно подтверждена! Добро пожаловать!';
       profileStore.update(s => ({ ...s, status: 'Active' }));
       
       setTimeout(() => {
@@ -108,7 +120,7 @@
       }, 2000);
       
     } catch (err) {
-      errorMsg = err.message || 'Ошибка проверки транзакции';
+      errorMsg = err.message || 'Ошибка проверки транзакции. Убедитесь, что платеж прошел в сети TON.';
     } finally {
       isLoading = false;
     }
@@ -117,76 +129,129 @@
 
 <div class="payment-container">
   <div class="card payment-card">
-    <h2>Оплата подписки</h2>
+    <div class="brand-header">
+      <span class="brand-dot"></span>
+      <span class="brand-name">BarbershopB2B</span>
+    </div>
+
+    <div class="header-center">
+      <h2>Активация подписки</h2>
+      <p class="subtitle">Полный доступ к Telegram Mini App, управлению мастерами и финансовой аналитике</p>
+    </div>
     
     {#if isLoading && !settings}
-      <div class="loader-container">
-        <p>Загрузка...</p>
+      <div class="loading-wrap">
+        <div class="spinner-sm"></div>
+        <p>Загрузка данных...</p>
       </div>
     {:else}
-
       {#if errorMsg}
-        <div class="alert alert-danger">{errorMsg}</div>
+        <div class="alert alert-danger">
+          <AlertCircle size={18} />
+          <span>{errorMsg}</span>
+        </div>
       {/if}
       
       {#if successMsg}
-        <div class="alert alert-success">{successMsg}</div>
+        <div class="alert alert-success">
+          <CheckCircle2 size={18} />
+          <span>{successMsg}</span>
+        </div>
       {/if}
 
       {#if !settings?.walletAddress}
         <div class="wallet-setup">
-          <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Перед тем как оплатить подписку, пожалуйста, укажите ваш TON-кошелек. С него мы будем ожидать поступление средств.</p>
-          <form on:submit|preventDefault={handleSaveWallet} class="verify-form" style="border-top: none; padding-top: 0;">
+          <div class="notice-box">
+            <Wallet size={20} class="notice-icon" />
+            <p>Укажите ваш TON-кошелек перед оплатой. С него платформа будет автоматически сопоставлять входящие транзакции.</p>
+          </div>
+
+          <form on:submit|preventDefault={handleSaveWallet} class="verify-form">
             <div class="form-group">
-              <label for="userWalletAddress">Кошелёк для оплаты подписки</label>
-              <input id="userWalletAddress" type="text" class="input" bind:value={userWalletAddress} required placeholder="Введите ваш TON кошелек (EQ... / UQ...)" />
+              <label for="userWalletAddress">Ваш TON-кошелек</label>
+              <div class="input-icon-wrap">
+                <Wallet size={16} class="input-icon" />
+                <input 
+                  id="userWalletAddress" 
+                  type="text" 
+                  class="input has-icon" 
+                  bind:value={userWalletAddress} 
+                  required 
+                  placeholder="EQ... или UQ..." 
+                />
+              </div>
             </div>
+
             <button type="submit" class="btn btn-primary submit-btn" disabled={isSaving || !userWalletAddress}>
-              {isSaving ? 'Сохранение...' : 'Сохранить и перейти к оплате'}
+              <span>{isSaving ? 'Сохранение...' : 'Сохранить и перейти к оплате'}</span>
+              <ArrowRight size={17} />
             </button>
           </form>
         </div>
       {:else}
-        <div class="wallet-setup" style="margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(255,255,255,0.05); border-radius: 8px;">
-          <p style="margin: 0; font-size: 0.9rem;">
-            Вы оплачиваете с кошелька: <strong title={settings.walletAddress}>{settings.walletAddress.substring(0, 8)}...{settings.walletAddress.substring(settings.walletAddress.length - 4)}</strong> 
-            <button class="btn-link" style="margin-left: 0.5rem; background: none; border: none; color: var(--accent); cursor: pointer; text-decoration: underline;" on:click={() => settings.walletAddress = ''}>Изменить</button>
-          </p>
+        <!-- Wallet connected pill -->
+        <div class="connected-wallet-strip">
+          <div class="strip-left">
+            <Wallet size={16} class="strip-icon" />
+            <span>Оплата с кошелька:</span>
+            <strong>{settings.walletAddress.substring(0, 6)}...{settings.walletAddress.substring(settings.walletAddress.length - 4)}</strong>
+          </div>
+          <button class="edit-link" on:click={() => settings.walletAddress = ''}>
+            <Edit3 size={13} />
+            <span>Изменить</span>
+          </button>
         </div>
 
-        <div class="payment-info">
+        <!-- Payment Info Card -->
+        <div class="payment-info-box">
           <div class="qr-container">
             <canvas bind:this={canvas}></canvas>
           </div>
           
           <div class="details">
-            <p>Для активации подписки отправьте <strong>{subscriptionAmount} TON</strong> на адрес платформы:</p>
+            <div class="amount-badge">
+              <Coins size={16} />
+              <span>Сумма к оплате: <strong>{subscriptionAmount} TON</strong></span>
+            </div>
+            
+            <p class="address-label">Адрес для перевода:</p>
             <div class="wallet-address-box">
               <code>{platformWalletAddress}</code>
-              <button class="btn-icon" on:click={copyAddress} title="Скопировать">
+              <button class="copy-btn" on:click={copyAddress} title="Скопировать адрес">
                 {#if copied}
-                  <Check size={18} color="var(--success)" />
+                  <Check size={16} class="check-icon" />
                 {:else}
-                  <Copy size={18} />
+                  <Copy size={16} />
                 {/if}
               </button>
             </div>
-            <p class="hint">Или отсканируйте QR-код в вашем кошельке (Tonkeeper, Tonhub и др.)</p>
+            
+            <p class="hint">Отсканируйте QR-код в кошельке (Tonkeeper, MyTonWallet, Tonhub) или отправьте средства вручную.</p>
           </div>
         </div>
 
+        <!-- Transaction Hash Form -->
         <form on:submit|preventDefault={handleVerify} class="verify-form">
           <div class="form-group">
-            <label for="txHash">Хэш транзакции (BOC или TX ID)</label>
-            <input id="txHash" type="text" class="input" bind:value={txHash} required placeholder="Введите хэш после отправки средств" />
+            <label for="txHash">Хэш транзакции (Transaction Hash или BOC)</label>
+            <input 
+              id="txHash" 
+              type="text" 
+              class="input" 
+              bind:value={txHash} 
+              required 
+              placeholder="Вставьте хэш отправленной транзакции" 
+            />
           </div>
 
           <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading || !txHash}>
-            {isLoading ? 'Проверка...' : 'Я оплатил, проверить'}
+            <span>{isLoading ? 'Проверка блокчейна...' : 'Подтвердить оплату'}</span>
+            {#if !isLoading}
+              <ShieldCheck size={18} />
+            {/if}
           </button>
         </form>
       {/if}
-      
     {/if}
   </div>
 </div>
@@ -197,127 +262,274 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 2rem 1rem;
-    background-color: var(--bg-color);
+    padding: 3rem 1.5rem;
+    background-color: var(--bg-canvas);
+    background-image: 
+      radial-gradient(ellipse 70% 50% at 50% 20%, rgba(223, 158, 142, 0.08), transparent 70%),
+      radial-gradient(ellipse 50% 50% at 85% 85%, rgba(152, 193, 169, 0.05), transparent 70%);
   }
   
   .payment-card {
     width: 100%;
-    max-width: 600px;
+    max-width: 640px;
+    padding: 2.75rem 2.5rem;
+    animation: fadeIn 0.35s var(--ease-spring);
+  }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .brand-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pastel-rose), var(--pastel-sage));
+    box-shadow: 0 0 10px var(--pastel-rose-glow);
+  }
+
+  .brand-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
   }
   
-  .payment-card h2 {
+  .header-center {
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .header-center h2 {
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
   }
   
-  .payment-info {
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .notice-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    background: var(--bg-surface-elevated);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 1.75rem;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  :global(.notice-icon) {
+    color: var(--pastel-amber);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .connected-wallet-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-surface-elevated);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 1.5rem;
+    font-size: 0.88rem;
+  }
+
+  .strip-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+  }
+
+  .strip-left strong {
+    color: var(--text-primary);
+  }
+
+  :global(.strip-icon) {
+    color: var(--pastel-sage);
+  }
+
+  .edit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: none;
+    color: var(--pastel-rose);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Payment Info Box */
+  .payment-info-box {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
+    padding: 2rem;
+    background: var(--bg-surface-elevated);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
     margin-bottom: 2rem;
-    padding: 1.5rem;
-    background-color: var(--bg-tertiary);
-    border-radius: var(--border-radius);
   }
   
   .qr-container {
-    background: white;
-    padding: 0.5rem;
-    border-radius: 8px;
+    background: #ffffff;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .details {
     text-align: center;
     width: 100%;
   }
+
+  .amount-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-pill);
+    background: var(--pastel-amber-dim);
+    color: var(--pastel-amber);
+    border: 1px solid rgba(229, 190, 138, 0.25);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+  }
+
+  .address-label {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4rem;
+  }
   
   .wallet-address-box {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: var(--bg-color);
-    padding: 0.75rem 1rem;
-    border-radius: var(--border-radius);
-    margin: 1rem 0;
-    border: 1px solid var(--border-color);
+    background-color: var(--bg-canvas);
+    padding: 0.75rem 1.1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+    gap: 0.75rem;
   }
   
   .wallet-address-box code {
     word-break: break-all;
     font-family: monospace;
-    font-size: 0.9rem;
-    color: var(--text-primary);
+    font-size: 0.88rem;
+    color: var(--pastel-rose);
   }
   
-  .btn-icon {
-    background: none;
-    border: none;
+  .copy-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 4px;
+    padding: 0.45rem;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    margin-left: 1rem;
     flex-shrink: 0;
   }
   
-  .btn-icon:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+  .copy-btn:hover {
+    background-color: var(--bg-surface-hover);
+    color: var(--pastel-rose);
+    border-color: var(--border-glass);
+  }
+
+  :global(.check-icon) {
+    color: var(--pastel-sage);
   }
   
   .hint {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
+    line-height: 1.5;
   }
   
   .verify-form {
-    border-top: 1px solid var(--border-color);
-    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
   
   .form-group {
-    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
   }
   
   label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     color: var(--text-secondary);
+  }
+
+  .input-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.input-icon) {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .input.has-icon {
+    padding-left: 2.75rem;
   }
   
   .submit-btn {
     width: 100%;
+    padding: 0.85rem 1.5rem;
+    font-size: 1rem;
+    margin-top: 0.5rem;
   }
-  
-  .alert {
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .alert-danger {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-  
-  .alert-success {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-  }
-  
-  .loader-container {
-    text-align: center;
-    padding: 2rem;
+
+  .loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 0;
     color: var(--text-secondary);
+    gap: 1rem;
+  }
+
+  .spinner-sm {
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spinSmooth 0.85s linear infinite;
   }
 </style>

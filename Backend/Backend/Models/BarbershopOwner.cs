@@ -38,7 +38,13 @@ namespace Backend.Models
         public DateTime PayedAt { get; set; }
         public DateTime NextPayment { get; set; }
         public DateTime LastPayment { get; set; }
-        public bool IsSubscribed => NextPayment > DateTime.UtcNow;
+        
+        public bool IsSubscribed => HasActiveSubscription();
+
+        public bool HasActiveSubscription()
+        {
+            return Status == OwnerStatus.Active && !IsBlocked && NextPayment > DateTime.UtcNow;
+        }
 
         public decimal MasterFee { get; set; }
     }

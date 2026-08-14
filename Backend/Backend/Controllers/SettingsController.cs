@@ -1,6 +1,7 @@
 using Backend.Data;
 using Backend.DTOs;
 using Backend.Extensions;
+using Backend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,13 @@ namespace Backend.Controllers
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null) return NotFound("Owner not found.");
 
+            // Real-time synchronization of expired status
+            if (owner.Status == OwnerStatus.Active && owner.NextPayment <= DateTime.UtcNow)
+            {
+                owner.Status = OwnerStatus.Frozen;
+                await _context.SaveChangesAsync();
+            }
+
             var response = new SettingsResponse
             {
                 BarbershopName = owner.BarbershopName,
@@ -39,7 +47,7 @@ namespace Backend.Controllers
                 DepositPercent = owner.DepositPercent,
                 MasterFee = owner.MasterFee,
                 WalletAddress = owner.WalletAddress,
-                IsSubscribed = owner.IsSubscribed,
+                IsSubscribed = owner.HasActiveSubscription(),
                 Status = owner.Status.ToString()
             };
 
@@ -52,6 +60,11 @@ namespace Backend.Controllers
             var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null) return NotFound("Owner not found.");
+
+            if (!owner.HasActiveSubscription())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Изменение настроек заблокировано." });
+            }
 
             owner.BarbershopName = request.BarbershopName;
             owner.BarbershopAddress = request.BarbershopAddress;

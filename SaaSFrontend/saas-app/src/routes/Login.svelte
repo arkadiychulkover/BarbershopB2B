@@ -2,6 +2,7 @@
   import { push } from 'svelte-spa-router';
   import { apiRequest } from '../lib/api';
   import { setAuthToken, profileStore } from '../lib/store';
+  import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-svelte';
 
   let email = '';
   let password = '';
@@ -43,31 +44,63 @@
 
 <div class="auth-container">
   <div class="card auth-card">
+    <div class="brand-header">
+      <span class="brand-dot"></span>
+      <span class="brand-name">BarbershopB2B</span>
+    </div>
+
     <h2>Вход в кабинет</h2>
-    <p class="subtitle">С возвращением в BarbershopB2B</p>
+    <p class="subtitle">Управляйте барбершопом и онлайн-записями</p>
     
     {#if errorMsg}
-      <div class="alert alert-danger">{errorMsg}</div>
+      <div class="alert alert-danger">
+        <AlertCircle size={18} />
+        <span>{errorMsg}</span>
+      </div>
     {/if}
 
     <form on:submit|preventDefault={handleLogin}>
       <div class="form-group">
         <label for="email">Email</label>
-        <input id="email" type="email" class="input" bind:value={email} required />
+        <div class="input-icon-wrap">
+          <Mail size={17} class="input-icon" />
+          <input 
+            id="email" 
+            type="email" 
+            class="input has-icon" 
+            bind:value={email} 
+            placeholder="name@barbershop.com" 
+            required 
+          />
+        </div>
       </div>
 
       <div class="form-group">
         <label for="password">Пароль</label>
-        <input id="password" type="password" class="input" bind:value={password} required />
+        <div class="input-icon-wrap">
+          <Lock size={17} class="input-icon" />
+          <input 
+            id="password" 
+            type="password" 
+            class="input has-icon" 
+            bind:value={password} 
+            placeholder="••••••••" 
+            required 
+          />
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading}>
-        {isLoading ? 'Вход...' : 'Войти'}
+        <span>{isLoading ? 'Проверка...' : 'Войти в систему'}</span>
+        {#if !isLoading}
+          <ArrowRight size={17} />
+        {/if}
       </button>
     </form>
     
     <div class="auth-links">
-      Нет аккаунта? <a href="#/register">Зарегистрироваться</a>
+      <span>Еще нет аккаунта?</span>
+      <a href="#/register">Зарегистрироваться</a>
     </div>
   </div>
 </div>
@@ -78,59 +111,103 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 1rem;
-    background-color: var(--bg-color);
+    padding: 1.5rem;
+    background-color: var(--bg-canvas);
+    background-image: 
+      radial-gradient(ellipse 60% 50% at 50% 20%, rgba(223, 158, 142, 0.08), transparent 70%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(179, 183, 219, 0.05), transparent 70%);
   }
   
   .auth-card {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
+    padding: 2.5rem 2.25rem;
+    animation: fadeIn 0.35s var(--ease-spring);
+  }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .brand-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pastel-rose), var(--pastel-sage));
+    box-shadow: 0 0 10px var(--pastel-rose-glow);
+  }
+
+  .brand-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
   }
   
   .auth-card h2 {
     text-align: center;
-    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 0.4rem;
   }
   
   .subtitle {
     text-align: center;
     color: var(--text-secondary);
+    font-size: 0.92rem;
     margin-bottom: 2rem;
   }
   
   .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.35rem;
   }
   
   label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
+    margin-bottom: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     color: var(--text-secondary);
+  }
+
+  .input-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.input-icon) {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .input.has-icon {
+    padding-left: 2.75rem;
   }
   
   .submit-btn {
     width: 100%;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
+    padding: 0.85rem 1.5rem;
+    font-size: 1rem;
   }
   
   .auth-links {
-    margin-top: 1.5rem;
+    margin-top: 1.75rem;
     text-align: center;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
   }
-  
-  .alert {
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .alert-danger {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+
+  .auth-links a {
+    font-weight: 600;
   }
 </style>

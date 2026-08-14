@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { fetchImageBlob } from '../api';
+  import Icon from './Icon.svelte';
 
   export let src: string;        // server path, e.g. /results/abc.jpg
   export let alt: string = '';
@@ -42,7 +43,9 @@
 {#if loading}
   <div class="si-placeholder {className}" {style}></div>
 {:else if failed || !blobUrl}
-  <div class="si-error {className}" {style}>⚠️</div>
+  <div class="si-error {className}" {style}>
+    <Icon name="alert" size={20} color="var(--pastel-coral)" />
+  </div>
 {:else}
   <!-- svelte-ignore a11y-img-redundant-alt -->
   <img src={blobUrl} {alt} class={className} {style} />

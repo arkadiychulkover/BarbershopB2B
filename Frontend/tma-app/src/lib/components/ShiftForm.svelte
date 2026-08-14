@@ -101,51 +101,72 @@
 
 <style>
   .shift-form {
-    padding: 20px;
+    padding: 24px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-glass);
+    animation: fadeIn 0.3s var(--ease-spring);
   }
 
   h2 {
     margin-top: 0;
     margin-bottom: 24px;
     font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
   }
 
   .form-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
     flex: 1;
   }
 
   .time-inputs {
     display: flex;
-    gap: 16px;
+    gap: 14px;
   }
 
   label {
-    font-size: 14px;
-    color: var(--tg-theme-hint-color, #999);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
     margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   input, select {
-    background-color: var(--tg-theme-bg-color, #fff);
-    color: var(--tg-theme-text-color, #000);
-    border: 1px solid var(--tg-theme-hint-color, #ccc);
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 16px;
+    background-color: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: var(--font-family);
     outline: none;
-    -webkit-appearance: none;
+    transition: border-color 0.2s;
   }
 
   input:focus, select:focus {
-    border-color: var(--tg-theme-button-color, #3390ec);
+    border-color: var(--border-active);
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a3a9bf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
   }
   
   .error-msg {
-    color: var(--tg-theme-destructive-text-color, #ff3b30);
-    font-size: 14px;
+    color: var(--pastel-coral);
+    font-size: 13px;
     margin-top: 8px;
+    font-weight: 500;
   }
 </style>

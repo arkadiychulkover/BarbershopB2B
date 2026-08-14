@@ -2,6 +2,18 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
+  import { 
+    ChevronLeft, 
+    ChevronRight, 
+    Plus, 
+    Calendar, 
+    Clock, 
+    Scissors, 
+    CheckCircle2, 
+    Trash2,
+    Sparkles,
+    User
+  } from 'lucide-svelte';
   
   let masters = [];
   let selectedMasterId = '';
@@ -25,7 +37,7 @@
   function getMonday(d) {
     d = new Date(d);
     var day = d.getDay(),
-        diff = d.getDate() - day + (day == 0 ? -6: 1); // adjust when day is sunday
+        diff = d.getDate() - day + (day == 0 ? -6: 1);
     return new Date(d.setDate(diff));
   }
   
@@ -40,6 +52,13 @@
   }
   
   $: days = getDaysOfWeek(currentWeekStart);
+
+  function isToday(date) {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  }
   
   onMount(async () => {
     try {
@@ -86,7 +105,6 @@
   function getApptsForDay(date) {
     const dateString = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     return appointments.filter(a => {
-        // Handle timezone issues properly by comparing just the dates
         const apptDate = new Date(a.appointmentDate);
         const apptDateString = new Date(apptDate.getTime() - apptDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
         return apptDateString === dateString;
@@ -162,46 +180,78 @@
   <div class="schedule-page">
     <header class="page-header">
       <div class="header-left">
-        <h1>Расписание</h1>
+        <h1>Расписание мастеров</h1>
         <div class="controls">
-          <select class="input master-select" bind:value={selectedMasterId}>
-            {#each masters as m}
-              <option value={m.id}>{m.name}</option>
-            {/each}
-          </select>
+          <div class="select-wrap">
+            <User size={16} class="select-icon" />
+            <select class="input master-select" bind:value={selectedMasterId}>
+              {#each masters as m}
+                <option value={m.id}>{m.name}</option>
+              {/each}
+            </select>
+          </div>
+
           <div class="week-nav">
-            <button class="btn btn-secondary" on:click={prevWeek}>&larr;</button>
+            <button class="nav-arrow-btn" on:click={prevWeek} title="Предыдущая неделя">
+              <ChevronLeft size={18} />
+            </button>
             <span class="week-label">
-              {days[0].toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'})} - 
-              {days[6].toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'})}
+              {days[0].toLocaleDateString('ru-RU', {day:'2-digit', month:'short'})} — {days[6].toLocaleDateString('ru-RU', {day:'2-digit', month:'short'})}
             </span>
-            <button class="btn btn-secondary" on:click={nextWeek}>&rarr;</button>
+            <button class="nav-arrow-btn" on:click={nextWeek} title="Следующая неделя">
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
       </div>
-      <button class="btn btn-primary" on:click={() => openAddModal(new Date())}>Новая запись</button>
+
+      <button class="btn btn-primary" on:click={() => openAddModal(new Date())}>
+        <Plus size={18} />
+        <span>Новая запись</span>
+      </button>
     </header>
 
     {#if isLoading}
-      <div class="loading">Загрузка...</div>
+      <div class="loading-wrap">
+        <div class="spinner-sm"></div>
+        <p>Загрузка расписания...</p>
+      </div>
     {:else}
       <div class="calendar-grid">
         {#each days as day}
-          <div class="day-col">
+          <div class="day-col" class:is-today={isToday(day)}>
             <div class="day-header">
-              <div class="day-name">{day.toLocaleDateString('ru-RU', {weekday: 'long'})}</div>
-              <div class="day-date">{day.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'})}</div>
+              <div class="day-name">{day.toLocaleDateString('ru-RU', {weekday: 'short'})}</div>
+              <div class="day-date" class:today-pill={isToday(day)}>
+                {day.toLocaleDateString('ru-RU', {day:'numeric', month:'numeric'})}
+              </div>
             </div>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="day-body" on:click={() => openAddModal(day)}>
               {#each getApptsForDay(day) as appt}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div class="appt-card status-{appt.status}" on:click|stopPropagation={() => openEditModal(appt)}>
                   <div class="appt-time">
-                    {new Date(appt.appointmentDate).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})} - 
-                    {new Date(appt.appointmentEndDate).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
+                    <Clock size={12} />
+                    <span>
+                      {new Date(appt.appointmentDate).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})} - 
+                      {new Date(appt.appointmentEndDate).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
+                    </span>
                   </div>
                   <div class="appt-service">
                     {services.find(s => s.serviceId === appt.serviceId)?.name || 'Услуга'}
                   </div>
+                  {#if appt.clientName}
+                    <div class="appt-client">
+                      {appt.clientName}
+                    </div>
+                  {/if}
+                </div>
+              {:else}
+                <div class="empty-slot">
+                  <span>+ Запись</span>
                 </div>
               {/each}
             </div>
@@ -212,9 +262,14 @@
   </div>
   
   {#if showModal}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="modal-backdrop" on:click={() => showModal = false}>
       <div class="modal-content card" on:click|stopPropagation>
-        <h2>{editingAppt ? 'Редактировать запись' : 'Новая запись'}</h2>
+        <div class="modal-header">
+          <h2>{editingAppt ? 'Редактировать запись' : 'Новая запись'}</h2>
+          <p class="modal-subtitle">Заполните детали визита клиента к мастеру</p>
+        </div>
         
         <div class="form-group">
           <label>Дата</label>
@@ -244,7 +299,10 @@
         <div class="modal-actions mt-4">
           <button class="btn btn-primary" on:click={saveAppt}>Сохранить</button>
           {#if editingAppt}
-            <button class="btn btn-danger" on:click={deleteAppt}>Удалить</button>
+            <button class="btn btn-danger" on:click={deleteAppt}>
+              <Trash2 size={16} />
+              <span>Удалить</span>
+            </button>
           {/if}
           <button class="btn btn-secondary" on:click={() => showModal = false}>Отмена</button>
         </div>
@@ -258,120 +316,299 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    animation: fadeIn 0.3s var(--ease-spring);
   }
+
   .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: flex-end;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1.25rem;
   }
-  .header-left h1 { margin-bottom: 1rem; }
+
+  .header-left h1 { 
+    font-size: 2.2rem;
+    margin-bottom: 1rem; 
+  }
+
   .controls {
     display: flex;
     gap: 1rem;
     align-items: center;
+    flex-wrap: wrap;
   }
+
+  .select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.select-icon) {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
   .master-select {
-    width: 250px;
+    width: 240px;
+    padding-left: 2.6rem;
   }
+
   .week-nav {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    background: var(--bg-secondary);
-    padding: 0.25rem;
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
+    gap: 0.75rem;
+    background: var(--bg-surface);
+    backdrop-filter: blur(14px);
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-subtle);
   }
+
+  .nav-arrow-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .nav-arrow-btn:hover {
+    color: var(--pastel-rose);
+    border-color: var(--border-glass);
+    background: var(--bg-surface-hover);
+  }
+
   .week-label {
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    padding: 0 0.4rem;
   }
+
+  .loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 0;
+    color: var(--text-secondary);
+    gap: 1rem;
+  }
+
+  .spinner-sm {
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spinSmooth 0.85s linear infinite;
+  }
+
+  /* Calendar Grid */
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: var(--border-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
+    gap: 10px;
+    background: transparent;
   }
+
+  @media (max-width: 1024px) {
+    .calendar-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+  }
+
   .day-col {
-    background: var(--bg-color);
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
-    min-height: 600px;
+    min-height: 540px;
+    overflow: hidden;
+    transition: all 0.2s;
   }
+
+  .day-col.is-today {
+    border-color: rgba(223, 158, 142, 0.35);
+    box-shadow: 0 0 20px rgba(223, 158, 142, 0.08);
+  }
+
   .day-header {
-    background: var(--bg-secondary);
-    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1rem 0.75rem;
     text-align: center;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-subtle);
   }
+
   .day-name {
     text-transform: capitalize;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
   }
+
   .day-date {
-    font-size: 0.875rem;
-    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
     margin-top: 0.25rem;
+    display: inline-block;
   }
+
+  .today-pill {
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 2px 8px var(--pastel-rose-glow);
+  }
+
   .day-body {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    cursor: crosshair;
-  }
-  .day-body:hover {
-    background: rgba(255,255,255,0.02);
-  }
-  .appt-card {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-left: 4px solid var(--accent);
-    padding: 0.75rem;
-    border-radius: 6px;
+    gap: 0.65rem;
     cursor: pointer;
-    transition: transform 0.1s;
   }
+
+  .appt-card {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-left: 3.5px solid var(--pastel-amber);
+    padding: 0.75rem 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+  }
+
   .appt-card:hover {
     transform: translateY(-2px);
-    border-color: var(--accent-muted);
+    border-color: var(--border-glass);
+    box-shadow: var(--shadow-sm);
   }
-  .status-1 { border-left-color: var(--success); } /* Completed */
-  .status-2 { border-left-color: var(--danger); opacity: 0.6; } /* Cancelled */
+
+  .status-1 { 
+    border-left-color: var(--pastel-sage); 
+  }
+  .status-2 { 
+    border-left-color: var(--pastel-coral); 
+    opacity: 0.55; 
+  }
   
   .appt-time {
     font-size: 0.75rem;
+    font-weight: 600;
     color: var(--text-muted);
     margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
   }
+
   .appt-service {
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
   }
-  
+
+  .appt-client {
+    font-size: 0.78rem;
+    color: var(--pastel-rose);
+    margin-top: 0.2rem;
+  }
+
+  .empty-slot {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    border: 1px dashed transparent;
+    border-radius: var(--radius-sm);
+    min-height: 60px;
+  }
+
+  .day-body:hover .empty-slot {
+    opacity: 0.7;
+    border-color: var(--border-subtle);
+  }
+
+  /* Modal */
   .modal-backdrop {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(12, 14, 18, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.2s ease;
   }
+
   .modal-content {
-    width: 400px;
-    max-width: 90vw;
+    width: 440px;
+    max-width: 92vw;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    padding: 2.25rem 2rem;
+    box-shadow: var(--shadow-lg);
   }
-  .modal-content h2 { margin-bottom: 1.5rem; }
+
+  .modal-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-header h2 { 
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .modal-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
   .modal-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
   }
-  .mt-2 { margin-top: 1rem; }
-  .mt-4 { margin-top: 2rem; }
+
+  .mt-2 { margin-top: 0.85rem; }
+  .mt-4 { margin-top: 1.5rem; }
 </style>

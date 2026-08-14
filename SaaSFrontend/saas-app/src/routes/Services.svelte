@@ -2,6 +2,16 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
+  import { 
+    Scissors, 
+    Plus, 
+    Trash2, 
+    Edit2, 
+    Check, 
+    X, 
+    AlertCircle,
+    Sparkles
+  } from 'lucide-svelte';
   
   let services = [];
   let isLoading = true;
@@ -90,40 +100,79 @@
 </script>
 
 <DashboardLayout>
-  <div class="services">
+  <div class="services-page">
     <header class="page-header">
-      <div class="header-content">
-        <div>
-          <h1>Справочник услуг</h1>
-          <p>Управление базовыми названиями услуг вашего барбершопа. Мастера смогут настроить цену и длительность для каждой из них.</p>
-        </div>
-        <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
-          {showAddForm ? 'Отмена' : 'Добавить услугу'}
-        </button>
+      <div class="header-left">
+        <h1>Каталог услуг</h1>
+        <p class="header-subtitle">Базовые наименования услуг. Каждый мастер может задавать для них свою цену и время выполнения.</p>
       </div>
+      <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
+        {#if showAddForm}
+          <X size={18} />
+          <span>Скрыть форму</span>
+        {:else}
+          <Plus size={18} />
+          <span>Добавить услугу</span>
+        {/if}
+      </button>
     </header>
 
     {#if showAddForm}
-      <div class="card mb-4">
-        <h3>Добавление новой услуги</h3>
-        <div class="form-group" style="margin-top: 1rem;">
-          <label>Название услуги</label>
-          <input type="text" class="input" bind:value={newServiceName} placeholder="Например, Стрижка машинкой" />
+      <div class="card add-card mb-4">
+        <div class="card-head">
+          <h3>Создание услуги</h3>
+          <p>Введите общее название (например: Мужская стрижка, Стрижка бороды, Королевское бритье)</p>
         </div>
-        <button class="btn btn-primary" on:click={addService} disabled={isSaving || !newServiceName.trim()}>
-          {isSaving ? 'Сохранение...' : 'Сохранить услугу'}
-        </button>
+
+        <form on:submit|preventDefault={addService}>
+          <div class="form-group">
+            <label for="newService">Название услуги</label>
+            <div class="input-icon-wrap">
+              <Scissors size={16} class="input-icon" />
+              <input 
+                id="newService" 
+                type="text" 
+                class="input has-icon" 
+                bind:value={newServiceName} 
+                placeholder="Стрижка ножницами и машинкой" 
+                required 
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" disabled={isSaving || !newServiceName.trim()}>
+              {isSaving ? 'Сохранение...' : 'Создать услугу'}
+            </button>
+            <button type="button" class="btn btn-secondary" on:click={() => showAddForm = false}>
+              Отмена
+            </button>
+          </div>
+        </form>
       </div>
     {/if}
 
     {#if isLoading}
-      <p>Загрузка...</p>
+      <div class="loading-wrap">
+        <div class="spinner-sm"></div>
+        <p>Загрузка каталога услуг...</p>
+      </div>
     {:else if errorMsg}
-      <div class="alert alert-danger">{errorMsg}</div>
+      <div class="alert alert-danger">
+        <AlertCircle size={18} />
+        <span>{errorMsg}</span>
+      </div>
     {:else if services.length === 0}
       <div class="card empty-state">
-        <p>У вас пока нет ни одной добавленной услуги.</p>
-        <button class="btn btn-primary mt-2" on:click={() => showAddForm = true}>Создать первую услугу</button>
+        <div class="empty-icon-circle">
+          <Scissors size={32} />
+        </div>
+        <h3>Услуги пока не созданы</h3>
+        <p>Добавьте первые базовые услуги барбершопа, чтобы мастера могли прикрепить к ним прайс-лист.</p>
+        <button class="btn btn-primary mt-2" on:click={() => showAddForm = true}>
+          <Plus size={17} />
+          <span>Создать первую услугу</span>
+        </button>
       </div>
     {:else}
       <div class="grid">
@@ -131,20 +180,39 @@
           <div class="card service-card">
             {#if editingServiceId === service.id}
               <div class="edit-mode">
+                <label class="edit-label">Редактирование названия</label>
                 <input type="text" class="input" bind:value={editingServiceName} />
-                <div class="actions mt-2">
-                  <button class="btn btn-primary" on:click={saveEdit}>Сохранить</button>
-                  <button class="btn btn-secondary" on:click={cancelEdit}>Отмена</button>
+                <div class="actions mt-3">
+                  <button class="btn btn-primary btn-sm" on:click={saveEdit}>
+                    <Check size={15} />
+                    <span>Сохранить</span>
+                  </button>
+                  <button class="btn btn-secondary btn-sm" on:click={cancelEdit}>
+                    <span>Отмена</span>
+                  </button>
                 </div>
               </div>
             {:else}
               <div class="view-mode">
-                <div class="service-info">
-                  <h3>{service.name}</h3>
+                <div class="service-top">
+                  <div class="service-icon-wrap">
+                    <Scissors size={20} />
+                  </div>
+                  <div class="service-info">
+                    <h3>{service.name}</h3>
+                    <span class="service-status">В каталоге заведения</span>
+                  </div>
                 </div>
+
                 <div class="actions">
-                  <button class="btn btn-secondary" on:click={() => startEdit(service)}>Изменить</button>
-                  <button class="btn btn-danger" on:click={() => deleteService(service.id)}>Удалить</button>
+                  <button class="btn btn-secondary btn-sm" on:click={() => startEdit(service)}>
+                    <Edit2 size={14} />
+                    <span>Изменить</span>
+                  </button>
+                  <button class="btn btn-danger btn-sm" on:click={() => deleteService(service.id)}>
+                    <Trash2 size={14} />
+                    <span>Удалить</span>
+                  </button>
                 </div>
               </div>
             {/if}
@@ -156,83 +224,207 @@
 </DashboardLayout>
 
 <style>
-  .services {
-    animation: fadeIn 0.3s ease-out;
+  .services-page {
+    animation: fadeIn 0.3s var(--ease-spring);
   }
-  
+
   .page-header {
-    margin-bottom: 2rem;
-  }
-  
-  .header-content {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: flex-end;
+    margin-bottom: 2.25rem;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
-  
-  .header-content h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text-color);
-    margin: 0 0 0.5rem 0;
+
+  .header-left h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.35rem;
   }
-  
-  .header-content p {
+
+  .header-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    max-width: 680px;
+  }
+
+  .add-card {
+    padding: 2rem;
+    margin-bottom: 2.25rem;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .card-head {
+    margin-bottom: 1.5rem;
+  }
+
+  .card-head h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-head p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .input-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.input-icon) {
+    position: absolute;
+    left: 1rem;
     color: var(--text-muted);
-    margin: 0;
+    pointer-events: none;
   }
-  
+
+  .input.has-icon {
+    padding-left: 2.75rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 0;
+    color: var(--text-secondary);
+    gap: 1rem;
+  }
+
+  .spinner-sm {
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spinSmooth 0.85s linear infinite;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  .empty-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    border: 1px solid rgba(223, 158, 142, 0.25);
+    box-shadow: 0 0 20px var(--pastel-rose-glow);
+  }
+
+  .empty-state h3 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+  }
+
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
     gap: 1.5rem;
   }
-  
+
   .service-card {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    padding: 1.75rem;
+    min-height: 160px;
   }
 
-  .service-info h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.25rem;
-  }
-  
   .view-mode, .edit-mode {
     display: flex;
     flex-direction: column;
     height: 100%;
+    justify-content: space-between;
+  }
+
+  .service-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .service-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--pastel-lavender-dim);
+    color: var(--pastel-lavender);
+    border: 1px solid rgba(179, 183, 219, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .service-info h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .service-status {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .edit-label {
+    font-size: 0.82rem;
+    color: var(--pastel-rose);
+    margin-bottom: 0.4rem;
   }
 
   .actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.6rem;
+    justify-content: flex-end;
     margin-top: auto;
-    padding-top: 1rem;
-  }
-  
-  .btn-danger {
-    background: rgba(239, 68, 68, 0.1);
-    color: rgb(239, 68, 68);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-  
-  .btn-danger:hover {
-    background: rgba(239, 68, 68, 0.2);
-  }
-  
-  .empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-  }
-  
-  .empty-state p {
-    color: var(--text-muted);
-    margin-bottom: 1rem;
   }
 
-  .mt-2 {
+  .btn-sm {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .mt-3 {
     margin-top: 1rem;
   }
 </style>

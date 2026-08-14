@@ -2,6 +2,16 @@ namespace Backend.DTOs
 {
     public record BookAppointmentRequest(Guid MasterId, Guid ServiceId, DateTime AppointmentDate);
 
+    public record UpdateClientPhoneRequest(string Phone);
+
+    public class ClientProfileDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string? Phone { get; set; }
+        public string TelegramId { get; set; }
+    }
+
     public class ClientMasterDto
     {
         public Guid Id { get; set; }

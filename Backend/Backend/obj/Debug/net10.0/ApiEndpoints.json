@@ -175,6 +175,80 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "AddAppointmentComment",
+    "RelativePath": "api/Barber/appointment-comment/{appointmentId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appointmentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BAppointmentCommentRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetAppointmentComment",
+    "RelativePath": "api/Barber/appointment-comment/{appointmentId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appointmentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UpdateAppointmentComment",
+    "RelativePath": "api/Barber/appointment-comment/{appointmentId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appointmentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BAppointmentCommentRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "DeleteAppointmentComment",
+    "RelativePath": "api/Barber/appointment-comment/{appointmentId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "appointmentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "GetClientHistory",
     "RelativePath": "api/Barber/client-history/{clientId}",
     "HttpMethod": "GET",
@@ -590,6 +664,16 @@
   },
   {
     "ContainingType": "Backend.Controllers.ClientsController",
+    "Method": "GetProfile",
+    "RelativePath": "api/Clients/profile",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.ClientsController",
     "Method": "GetServices",
     "RelativePath": "api/Clients/Services/{masterId}",
     "HttpMethod": "GET",
@@ -615,6 +699,22 @@
       {
         "Name": "review",
         "Type": "Backend.Controllers.ReviewDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.ClientsController",
+    "Method": "UpdatePhone",
+    "RelativePath": "api/Clients/update-phone",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.DTOs.UpdateClientPhoneRequest",
         "IsRequired": true
       }
     ],

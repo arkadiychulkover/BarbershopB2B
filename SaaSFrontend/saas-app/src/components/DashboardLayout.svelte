@@ -1,11 +1,24 @@
 <script>
   import { onMount } from 'svelte';
-  import { push, link } from 'svelte-spa-router';
+  import { push } from 'svelte-spa-router';
   import { authStore, profileStore, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
-  import { LayoutDashboard, Settings, Users, BarChart3, Bot, LogOut, Scissors, CalendarDays } from 'lucide-svelte';
+  import { 
+    LayoutDashboard, 
+    Settings, 
+    Users, 
+    BarChart3, 
+    Bot, 
+    LogOut, 
+    Scissors, 
+    CalendarDays, 
+    Menu, 
+    X, 
+    ShieldCheck 
+  } from 'lucide-svelte';
   
   let isLoading = true;
+  let isMobileOpen = false;
 
   onMount(async () => {
     if (!$authStore.isAuthenticated) {
@@ -36,64 +49,106 @@
       push('/login');
     });
   }
+
+  function closeMobile() {
+    isMobileOpen = false;
+  }
 </script>
 
 {#if isLoading}
   <div class="loader-container">
     <div class="spinner"></div>
-    <p>Загрузка...</p>
+    <p class="loader-text">Загрузка платформы...</p>
   </div>
 {:else}
   <div class="dashboard-layout">
-    <aside class="sidebar">
+    <!-- Mobile header bar -->
+    <header class="mobile-header">
+      <div class="mobile-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">BarbershopB2B</span>
+      </div>
+      <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Меню">
+        {#if isMobileOpen}
+          <X size={22} />
+        {:else}
+          <Menu size={22} />
+        {/if}
+      </button>
+    </header>
+
+    <!-- Mobile overlay -->
+    {#if isMobileOpen}
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="mobile-backdrop" on:click={closeMobile}></div>
+    {/if}
+
+    <!-- Sidebar -->
+    <aside class="sidebar" class:mobile-open={isMobileOpen}>
       <div class="logo">
-        <h2>BarbershopB2B</h2>
-        <span class="badge">
-          {$profileStore.status || 'Unknown'}
+        <div class="brand-wrapper">
+          <span class="brand-dot"></span>
+          <h2>BarbershopB2B</h2>
+        </div>
+        <span class="badge" class:active={$profileStore.status === 'Active'}>
+          <ShieldCheck size={12} />
+          {$profileStore.status || 'Status'}
         </span>
       </div>
 
       <nav class="nav-menu">
-        <a href="#/dashboard" class="nav-item" class:active={$currentLocation === '/dashboard' || $currentLocation === '/dashboard/'}>
-          <LayoutDashboard size={20} />
+        <a href="#/dashboard" class="nav-item" class:active={$currentLocation === '/dashboard' || $currentLocation === '/dashboard/'} on:click={closeMobile}>
+          <LayoutDashboard size={19} />
           <span>Обзор</span>
         </a>
-        <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.includes('/schedule')}>
-          <CalendarDays size={20} />
+        <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.includes('/schedule')} on:click={closeMobile}>
+          <CalendarDays size={19} />
           <span>Расписание</span>
         </a>
-        <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.includes('/settings')}>
-          <Settings size={20} />
-          <span>Настройки</span>
-        </a>
-        <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.includes('/masters')}>
-          <Users size={20} />
+        <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.includes('/masters')} on:click={closeMobile}>
+          <Users size={19} />
           <span>Мастера</span>
         </a>
-        <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.includes('/services')}>
-          <Scissors size={20} />
+        <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.includes('/services')} on:click={closeMobile}>
+          <Scissors size={19} />
           <span>Услуги</span>
         </a>
-        <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.includes('/statistics')}>
-          <BarChart3 size={20} />
+        <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.includes('/statistics')} on:click={closeMobile}>
+          <BarChart3 size={19} />
           <span>Статистика</span>
         </a>
-        <a href="#/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.includes('/bot-setup')}>
-          <Bot size={20} />
-          <span>Настройка бота</span>
+        <a href="#/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.includes('/bot-setup')} on:click={closeMobile}>
+          <Bot size={19} />
+          <span>Telegram Бот</span>
+        </a>
+        <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.includes('/settings')} on:click={closeMobile}>
+          <Settings size={19} />
+          <span>Настройки</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
-        <button class="nav-item logout" on:click={handleLogout}>
-          <LogOut size={20} />
+        <div class="user-pill">
+          <div class="user-avatar">
+            {($profileStore.ownerId || $profileStore.email || 'B')[0].toUpperCase()}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{$profileStore.ownerId || 'Владелец'}</span>
+            <span class="user-email">{$profileStore.email || 'barber@shop.com'}</span>
+          </div>
+        </div>
+        <button class="logout-btn" on:click={handleLogout} title="Выйти из аккаунта">
+          <LogOut size={17} />
           <span>Выйти</span>
         </button>
       </div>
     </aside>
 
     <main class="main-content">
-      <slot></slot>
+      <div class="content-wrapper">
+        <slot></slot>
+      </div>
     </main>
   </div>
 {/if}
@@ -105,122 +160,306 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: var(--bg-color);
+    background-color: var(--bg-canvas);
   }
   
   .spinner {
-    border: 4px solid var(--border-color);
-    border-top: 4px solid var(--accent);
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    width: 44px;
+    height: 44px;
+    animation: spinSmooth 0.85s linear infinite;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0 20px var(--pastel-rose-glow);
   }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+
+  .loader-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
   }
 
   .dashboard-layout {
     display: flex;
     min-height: 100vh;
-    background-color: var(--bg-color);
+    background-color: var(--bg-canvas);
   }
   
+  /* Mobile Header */
+  .mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(22, 26, 35, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 1.25rem;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+  }
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+  }
+
+  .mobile-menu-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 14, 18, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 140;
+    animation: fadeIn 0.2s ease;
+  }
+
+  /* Sidebar */
   .sidebar {
-    width: 260px;
-    background-color: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
+    width: 270px;
+    background: rgba(20, 24, 33, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
     position: fixed;
     height: 100vh;
     left: 0;
     top: 0;
+    z-index: 150;
+    transition: transform 0.3s var(--ease-spring);
   }
   
   .logo {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem 1.4rem;
+    border-bottom: 1px solid var(--border-subtle);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
+
+  .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .brand-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pastel-rose), var(--pastel-sage));
+    box-shadow: 0 0 10px var(--pastel-rose-glow);
+  }
   
   .logo h2 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
+    font-weight: 700;
     margin: 0;
-    color: var(--accent);
+    background: linear-gradient(135deg, #ffffff 40%, var(--pastel-rose) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   
   .badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 1rem;
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--success);
+    font-size: 0.72rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--pastel-amber-dim);
+    color: var(--pastel-amber);
+    border: 1px solid rgba(229, 190, 138, 0.2);
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
   }
 
+  .badge.active {
+    background-color: var(--pastel-sage-dim);
+    color: var(--pastel-sage);
+    border-color: rgba(152, 193, 169, 0.25);
+    box-shadow: 0 0 12px var(--pastel-sage-glow);
+  }
   
   .nav-menu {
-    padding: 1rem 0;
+    padding: 1.25rem 0.85rem;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow-y: auto;
   }
   
   .nav-item {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1rem;
     color: var(--text-secondary);
-    gap: 0.75rem;
-    transition: all 0.2s;
+    gap: 0.85rem;
+    transition: all 0.22s var(--ease-spring);
     background: transparent;
-    border: none;
-    width: 100%;
-    text-align: left;
-    font-size: 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.93rem;
+    font-weight: 600;
   }
   
   .nav-item:hover {
     color: var(--text-primary);
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.04);
+    transform: translateX(3px);
   }
   
   .nav-item.active {
-    color: var(--accent);
-    background-color: var(--accent-muted);
-    border-right: 3px solid var(--accent);
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
+    box-shadow: 0 4px 16px var(--pastel-rose-glow);
+  }
+
+  .nav-item.active:hover {
+    transform: none;
   }
   
+  /* Sidebar Footer */
   .sidebar-footer {
-    padding: 1rem 0;
-    border-top: 1px solid var(--border-color);
+    padding: 1.2rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pastel-rose-dim), var(--pastel-lavender-dim));
+    border: 1px solid rgba(223, 158, 142, 0.3);
+    color: var(--pastel-rose);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .user-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-email {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
-  .logout:hover {
-    color: var(--danger);
-    background-color: rgba(239, 68, 68, 0.05);
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem;
+    background: var(--pastel-coral-dim);
+    color: var(--pastel-coral);
+    border: 1px solid rgba(232, 130, 130, 0.2);
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.2s;
   }
   
+  .logout-btn:hover {
+    background: rgba(232, 130, 130, 0.2);
+    border-color: var(--pastel-coral);
+  }
+
+  .logout-btn:active {
+    transform: scale(0.97);
+  }
+  
+  /* Main Content */
   .main-content {
     flex: 1;
-    margin-left: 260px;
-    padding: 2rem;
-    overflow-y: auto;
+    margin-left: 270px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .content-wrapper {
+    flex: 1;
+    padding: 2.25rem 2.5rem 3rem;
+    max-width: 1350px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    animation: fadeIn 0.3s var(--ease-spring);
   }
   
-  @media (max-width: 768px) {
+  @media (max-width: 900px) {
+    .mobile-header {
+      display: flex;
+    }
+
     .sidebar {
       transform: translateX(-100%);
-      transition: transform 0.3s;
-      z-index: 100;
+    }
+
+    .sidebar.mobile-open {
+      transform: translateX(0);
+      box-shadow: 10px 0 40px rgba(0, 0, 0, 0.7);
     }
     
     .main-content {
       margin-left: 0;
+      padding-top: 60px;
+    }
+
+    .content-wrapper {
+      padding: 1.5rem 1.25rem 2.5rem;
     }
   }
 </style>

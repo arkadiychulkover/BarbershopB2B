@@ -22,11 +22,14 @@ namespace Backend.Services
         public async Task<Dictionary<DateTime, DailyStatisticDto>> GetOwnerStatisticByDate(Guid ownerId, DateTime startDate, DateTime endDate)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+            var start = startDate.Date;
+            var end = endDate.Date.AddDays(1);
 
             var appointments = await context.Appointments
+                .AsNoTracking()
                 .Where(a => a.Master.OwnerId == ownerId
-                         && a.AppointmentDate >= startDate
-                         && a.AppointmentDate <= endDate
+                         && a.AppointmentDate >= start
+                         && a.AppointmentDate < end
                          && a.Status == Models.Enums.AppointmentStatus.Completed)
                 .Select(a => new { a.AppointmentDate, a.OwnerProfit, a.MasterProfit, a.ClientId })
                 .ToListAsync();
@@ -64,6 +67,7 @@ namespace Backend.Services
             var targetDate = date.Date;
 
             var appointments = await context.Appointments
+                .AsNoTracking()
                 .Where(a => a.Master.OwnerId == ownerId
                          && a.AppointmentDate >= targetDate
                          && a.AppointmentDate < targetDate.AddDays(1)
@@ -98,12 +102,15 @@ namespace Backend.Services
         public async Task<Dictionary<DateTime, DailyStatisticDto>> GetBarberStatisticByDate(Guid masterId, Guid ownerId, DateTime startDate, DateTime endDate)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+            var start = startDate.Date;
+            var end = endDate.Date.AddDays(1);
 
             var appointments = await context.Appointments
+                .AsNoTracking()
                 .Where(a => a.MasterId == masterId
                          && a.Master.OwnerId == ownerId
-                         && a.AppointmentDate >= startDate
-                         && a.AppointmentDate <= endDate
+                         && a.AppointmentDate >= start
+                         && a.AppointmentDate < end
                          && a.Status == Models.Enums.AppointmentStatus.Completed)
                 .Select(a => new { a.AppointmentDate, a.OwnerProfit, a.MasterProfit, a.ClientId })
                 .ToListAsync();
@@ -138,6 +145,7 @@ namespace Backend.Services
             var targetDate = date.Date;
 
             var appointments = await context.Appointments
+                .AsNoTracking()
                 .Where(a => a.MasterId == masterId
                          && a.Master.OwnerId == ownerId
                          && a.AppointmentDate >= targetDate

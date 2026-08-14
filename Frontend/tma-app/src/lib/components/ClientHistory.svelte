@@ -2,6 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { apiFetch, fetchImageBlob } from '../api';
   import SecureImage from './SecureImage.svelte';
+  import Icon from './Icon.svelte';
 
   export let clientId: string;
 
@@ -44,6 +45,53 @@
     });
   }
 
+  let editingCommentId: string | null = null;
+  let commentText = '';
+
+  function openCommentEdit(appt: any) {
+    editingCommentId = appt.id;
+    commentText = appt.resultNote || '';
+  }
+
+  function cancelCommentEdit() {
+    editingCommentId = null;
+  }
+
+  async function saveComment(apptId: string) {
+    try {
+      const res = await apiFetch(`/api/Barber/appointment-comment/${apptId}`, {
+        method: 'POST',
+        body: { comment: commentText }
+      });
+      const index = appointments.findIndex(a => a.id === apptId);
+      if (index !== -1) {
+        appointments[index].resultNote = res.comment;
+        appointments = [...appointments];
+      }
+      editingCommentId = null;
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка при сохранении комментария');
+    }
+  }
+
+  async function deleteComment(apptId: string) {
+    if (!confirm('Удалить комментарий?')) return;
+    try {
+      await apiFetch(`/api/Barber/appointment-comment/${apptId}`, {
+        method: 'DELETE'
+      });
+      const index = appointments.findIndex(a => a.id === apptId);
+      if (index !== -1) {
+        appointments[index].resultNote = null;
+        appointments = [...appointments];
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка при удалении комментария');
+    }
+  }
+
   // split appointments by upcoming vs past
   $: upcoming = appointments.filter(a => new Date(a.appointmentDate) >= new Date() && a.status !== 2);
   $: past = appointments.filter(a => new Date(a.appointmentDate) < new Date() || a.status === 2);
@@ -57,14 +105,17 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="lightbox" on:click={() => lightboxSrc = null}>
     <SecureImage src={lightboxSrc} alt="Результат" className="lightbox-img" style="max-height:85vh;object-fit:contain;" />
-    <button class="lightbox-close" on:click={() => lightboxSrc = null}>✕</button>
+    <button class="lightbox-close" on:click={() => lightboxSrc = null}>
+      <Icon name="x" size={20} />
+    </button>
   </div>
 {/if}
 
 <div class="history-page">
   <div class="history-header">
     <button class="back-btn" on:click={() => dispatch('back')}>
-      ← Назад
+      <Icon name="chevron-left" size={16} />
+      <span>Назад</span>
     </button>
     {#if client}
       <div class="client-header-info">
@@ -84,7 +135,10 @@
             <span class="tg-guest">Гость (без TG)</span>
           {/if}
           {#if client.phone}
-            <div class="client-phone">📞 {client.phone}</div>
+            <div class="client-phone">
+              <Icon name="phone" size={13} color="var(--pastel-lavender)" />
+              <span>{client.phone}</span>
+            </div>
           {/if}
         </div>
       </div>
@@ -124,20 +178,49 @@
     {#if upcoming.length > 0}
       <div class="section-title">Предстоящие</div>
       {#each upcoming as appt}
-        <div class="appt-row status-{appt.status}">
-          <div class="appt-row-left">
-            <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
-            <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
-            {#if appt.photoResultUrl}
-              <!-- svelte-ignore a11y-click-events-have-key-events -->
-              <!-- svelte-ignore a11y-no-static-element-interactions -->
-              <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
-                <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
-                <span class="photo-thumb-label">📷 Фото результата</span>
+        <div class="appt-card-wrapper status-{appt.status}">
+          <div class="appt-row">
+            <div class="appt-row-left">
+              <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
+              <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
+              {#if appt.photoResultUrl}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
+                  <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
+                  <span class="photo-thumb-label">
+                    <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                    <span>Фото результата</span>
+                  </span>
+                </div>
+              {/if}
+            </div>
+            <span class="badge badge-{appt.status}">{statusLabel(appt.status)}</span>
+          </div>
+
+          <!-- Comment Section -->
+          <div class="appt-comment-section">
+            {#if editingCommentId === appt.id}
+              <textarea class="comment-input" bind:value={commentText} placeholder="Комментарий / Заметка..."></textarea>
+              <div class="comment-actions">
+                <button class="btn-save" on:click={() => saveComment(appt.id)}>Сохранить</button>
+                <button class="btn-cancel" on:click={cancelCommentEdit}>Отмена</button>
               </div>
+            {:else if appt.resultNote}
+              <div class="comment-display">
+                <div class="comment-text">
+                  <Icon name="comment" size={13} color="var(--pastel-rose)" />
+                  <span>{appt.resultNote}</span>
+                </div>
+                <div class="comment-actions-sm">
+                  <button on:click={() => openCommentEdit(appt)}>Ред.</button>
+                  <button class="text-danger" on:click={() => deleteComment(appt.id)}>Удал.</button>
+                </div>
+              </div>
+            {:else}
+              <button class="btn-add-comment" on:click={() => openCommentEdit(appt)}>+ Добавить комментарий</button>
             {/if}
           </div>
-          <span class="badge badge-{appt.status}">{statusLabel(appt.status)}</span>
         </div>
       {/each}
     {/if}
@@ -145,27 +228,58 @@
     {#if past.length > 0}
       <div class="section-title">История</div>
       {#each past as appt}
-        <div class="appt-row status-{appt.status}">
-          <div class="appt-row-left">
-            <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
-            <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
-            {#if appt.photoResultUrl}
-              <!-- svelte-ignore a11y-click-events-have-key-events -->
-              <!-- svelte-ignore a11y-no-static-element-interactions -->
-              <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
-                <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
-                <span class="photo-thumb-label">📷 Фото результата</span>
+        <div class="appt-card-wrapper status-{appt.status}">
+          <div class="appt-row">
+            <div class="appt-row-left">
+              <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
+              <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
+              {#if appt.photoResultUrl}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
+                  <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
+                  <span class="photo-thumb-label">
+                    <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                    <span>Фото результата</span>
+                  </span>
+                </div>
+              {/if}
+            </div>
+            <span class="badge badge-{appt.status}">{statusLabel(appt.status)}</span>
+          </div>
+
+          <!-- Comment Section -->
+          <div class="appt-comment-section">
+            {#if editingCommentId === appt.id}
+              <textarea class="comment-input" bind:value={commentText} placeholder="Комментарий / Заметка..."></textarea>
+              <div class="comment-actions">
+                <button class="btn-save" on:click={() => saveComment(appt.id)}>Сохранить</button>
+                <button class="btn-cancel" on:click={cancelCommentEdit}>Отмена</button>
               </div>
+            {:else if appt.resultNote}
+              <div class="comment-display">
+                <div class="comment-text">
+                  <Icon name="comment" size={13} color="var(--pastel-rose)" />
+                  <span>{appt.resultNote}</span>
+                </div>
+                <div class="comment-actions-sm">
+                  <button on:click={() => openCommentEdit(appt)}>Ред.</button>
+                  <button class="text-danger" on:click={() => deleteComment(appt.id)}>Удал.</button>
+                </div>
+              </div>
+            {:else}
+              <button class="btn-add-comment" on:click={() => openCommentEdit(appt)}>+ Добавить комментарий</button>
             {/if}
           </div>
-          <span class="badge badge-{appt.status}">{statusLabel(appt.status)}</span>
         </div>
       {/each}
     {/if}
 
     {#if appointments.length === 0}
       <div class="empty-hist">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon">
+          <Icon name="clipboard" size={44} color="var(--pastel-rose)" />
+        </div>
         <p>У этого клиента пока нет записей</p>
       </div>
     {/if}
@@ -175,29 +289,46 @@
 <style>
   .history-page {
     padding: 0 0 80px;
-    background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+    background: var(--bg-canvas);
     min-height: 100vh;
+    animation: fadeIn 0.3s var(--ease-spring);
   }
 
   /* Header */
   .history-header {
-    background: var(--tg-theme-bg-color, #fff);
-    padding: 12px 16px 16px;
-    border-bottom: 1px solid var(--tg-theme-hint-color, #eee);
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 16px 18px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 50;
   }
 
   .back-btn {
-    background: none;
-    border: none;
-    color: var(--tg-theme-button-color, #3390ec);
-    font-size: 16px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--pastel-rose);
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    padding: 0;
-    margin-bottom: 12px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 14px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    transition: all 0.2s var(--ease-spring);
+  }
+
+  .back-btn:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--border-glass);
+  }
+
+  .back-btn:active {
+    transform: scale(0.95);
   }
 
   .client-header-info {
@@ -210,14 +341,15 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3390ec, #a855f7);
-    color: #fff;
+    background: linear-gradient(135deg, var(--pastel-rose), var(--pastel-lavender));
+    color: var(--text-inverse);
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 16px var(--pastel-rose-glow);
   }
 
   .client-meta {
@@ -229,115 +361,237 @@
   .client-name-title {
     font-size: 18px;
     font-weight: 700;
-    color: var(--tg-theme-text-color, #000);
+    color: var(--text-primary);
   }
 
   .tg-link {
     font-size: 14px;
-    color: #3390ec;
+    color: var(--pastel-lavender);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
+    transition: color 0.2s;
   }
-  .tg-link:hover { text-decoration: underline; }
+  .tg-link:hover { color: var(--pastel-rose); text-decoration: underline; }
 
   .tg-guest {
     font-size: 13px;
-    color: var(--tg-theme-hint-color, #999);
+    color: var(--text-muted);
   }
 
   .client-phone {
     font-size: 13px;
-    color: var(--tg-theme-hint-color, #999);
+    color: var(--text-secondary);
   }
 
   /* Stats strip */
   .stats-strip {
     display: flex;
-    background: var(--tg-theme-bg-color, #fff);
-    margin: 12px 16px;
-    border-radius: 14px;
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    margin: 14px 16px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-glass);
+    border: 1px solid var(--border-subtle);
   }
 
   .stat {
     flex: 1;
-    padding: 14px 8px;
+    padding: 16px 8px;
     text-align: center;
-    border-right: 1px solid var(--tg-theme-hint-color, #eee);
+    border-right: 1px solid var(--border-subtle);
   }
   .stat:last-child { border-right: none; }
 
   .stat-value {
     font-size: 22px;
     font-weight: 700;
-    color: var(--tg-theme-text-color, #000);
+    color: var(--pastel-rose);
+    font-variant-numeric: tabular-nums;
   }
 
   .stat-label {
     font-size: 11px;
-    color: var(--tg-theme-hint-color, #999);
-    margin-top: 2px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 4px;
   }
 
   /* Notes */
   .notes-card {
-    margin: 0 16px 12px;
-    background: rgba(51,144,236,0.07);
-    border-left: 3px solid #3390ec;
-    border-radius: 8px;
-    padding: 10px 12px;
+    margin: 0 16px 14px;
+    background: var(--pastel-rose-dim);
+    border-left: 3px solid var(--pastel-rose);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
     font-size: 14px;
-    color: var(--tg-theme-text-color, #000);
+    color: var(--text-primary);
+    line-height: 1.4;
   }
-  .notes-label { font-weight: 600; }
+  .notes-label { font-weight: 700; color: var(--pastel-rose); }
 
   /* Section title */
   .section-title {
     font-size: 13px;
-    font-weight: 600;
-    color: var(--tg-theme-hint-color, #999);
+    font-weight: 700;
+    color: var(--pastel-rose);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0 16px;
-    margin: 16px 0 8px;
+    letter-spacing: 0.06em;
+    padding: 0 20px;
+    margin: 20px 0 10px;
   }
 
   /* Appointment rows */
+  .appt-card-wrapper {
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    margin: 0 16px 12px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--pastel-amber);
+    box-shadow: var(--shadow-glass);
+    overflow: hidden;
+    transition: all 0.2s var(--ease-spring);
+  }
+  .appt-card-wrapper:hover {
+    border-color: var(--border-glass);
+  }
+  .appt-card-wrapper.status-1 { border-left-color: var(--pastel-sage); }
+  .appt-card-wrapper.status-2 { border-left-color: var(--pastel-coral); opacity: 0.65; }
+
   .appt-row {
-    background: var(--tg-theme-bg-color, #fff);
-    margin: 0 16px 10px;
-    border-radius: 12px;
-    padding: 14px;
+    padding: 16px;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    border-left: 4px solid var(--tg-theme-button-color, #3390ec);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-  .appt-row.status-1 { border-left-color: #4CAF50; }
-  .appt-row.status-2 { border-left-color: #F44336; opacity: 0.6; }
+
+  /* Comment UI */
+  .appt-comment-section {
+    padding: 0 16px 16px;
+  }
+  .comment-input {
+    width: 100%;
+    min-height: 64px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    font-size: 14px;
+    resize: vertical;
+    margin-bottom: 8px;
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+  }
+  .comment-input:focus {
+    outline: none;
+    border-color: var(--border-active);
+  }
+  .comment-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-save {
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--pastel-rose-glow);
+    transition: all 0.2s var(--ease-spring);
+  }
+  .btn-save:active { transform: scale(0.95); }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { color: var(--text-primary); border-color: var(--border-glass); }
+
+  .comment-display {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .comment-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    flex: 1;
+  }
+  .comment-actions-sm {
+    display: flex;
+    gap: 8px;
+  }
+  .comment-actions-sm button {
+    background: none;
+    border: none;
+    color: var(--pastel-rose);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+  }
+  .comment-actions-sm button.text-danger {
+    color: var(--pastel-coral);
+  }
+  .btn-add-comment {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+  .btn-add-comment:hover { color: var(--pastel-rose); }
 
   .appt-row-left { flex: 1; }
 
   .appt-row-date {
     font-size: 13px;
-    color: var(--tg-theme-hint-color, #999);
+    color: var(--text-muted);
     margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
   }
 
   .appt-row-service {
     font-size: 15px;
     font-weight: 600;
-    color: var(--tg-theme-text-color, #000);
+    color: var(--text-primary);
   }
 
   /* Photo thumb */
   .photo-thumb-wrap {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     margin-top: 10px;
     cursor: pointer;
   }
@@ -346,64 +600,73 @@
     width: 56px;
     height: 56px;
     object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid var(--tg-theme-hint-color, #ddd);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
     flex-shrink: 0;
   }
 
   .photo-thumb-label {
     font-size: 13px;
-    color: var(--tg-theme-button-color, #3390ec);
-    font-weight: 500;
+    color: var(--pastel-rose);
+    font-weight: 600;
   }
 
   /* Badge */
   .badge {
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
     white-space: nowrap;
     flex-shrink: 0;
+    letter-spacing: 0.02em;
   }
-  .badge-0 { background: rgba(51,144,236,0.12); color: #3390ec; }
-  .badge-1 { background: rgba(76,175,80,0.15);  color: #4CAF50; }
-  .badge-2 { background: rgba(244,67,54,0.12);  color: #F44336; }
+  .badge-0 { background: var(--pastel-amber-dim); color: var(--pastel-amber); border: 1px solid rgba(229, 190, 138, 0.25); }
+  .badge-1 { background: var(--pastel-sage-dim);  color: var(--pastel-sage);  border: 1px solid rgba(152, 193, 169, 0.25); }
+  .badge-2 { background: var(--pastel-coral-dim); color: var(--pastel-coral); border: 1px solid rgba(232, 130, 130, 0.25); }
 
   /* Lightbox */
   .lightbox {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.88);
+    background: rgba(12, 14, 18, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 999;
     padding: 20px;
+    animation: fadeIn 0.2s ease;
   }
 
   .lightbox-img {
     max-width: 100%;
     max-height: 85vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     object-fit: contain;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.7);
   }
 
   .lightbox-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background: rgba(255,255,255,0.15);
-    border: none;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
     color: #fff;
     font-size: 20px;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.2s;
+  }
+  .lightbox-close:hover {
+    background: rgba(255,255,255,0.2);
   }
 
   /* Loading / empty */
@@ -411,35 +674,36 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 60px 20px;
-    color: var(--tg-theme-hint-color, #999);
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-secondary);
   }
 
   .spinner-lg {
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--tg-theme-hint-color, #ccc);
-    border-top-color: var(--tg-theme-button-color, #3390ec);
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 12px;
+    animation: spinSmooth 0.85s linear infinite;
+    margin-bottom: 14px;
+    box-shadow: 0 0 16px var(--pastel-rose-glow);
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
   .error-msg {
     text-align: center;
-    padding: 40px 20px;
-    color: #F44336;
+    padding: 50px 20px;
+    color: var(--pastel-coral);
   }
 
   .empty-hist {
     text-align: center;
     padding: 60px 20px;
-    color: var(--tg-theme-hint-color, #999);
+    color: var(--text-secondary);
   }
 
   .empty-icon {
-    font-size: 48px;
+    font-size: 44px;
     margin-bottom: 12px;
   }
 </style>

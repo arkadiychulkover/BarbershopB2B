@@ -24,8 +24,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetServiceNames()
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound("Owner not found.");
 
             var serviceNames = await _context.ServiceNames
+                .AsNoTracking()
                 .Where(sn => sn.OwnerId == ownerId)
                 .Select(sn => new ServiceNameDto
                 {
@@ -41,6 +44,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> CreateServiceName([FromBody] CreateServiceNameRequest request)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound("Owner not found.");
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Оплатите тариф для добавления услуг." });
 
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new { message = "Service name is required." });
@@ -48,7 +56,7 @@ namespace Backend.Controllers
             var serviceName = new ServiceName
             {
                 Id = Guid.NewGuid(),
-                Name = request.Name,
+                Name = request.Name.Trim(),
                 OwnerId = ownerId
             };
 
@@ -66,6 +74,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> UpdateServiceName(Guid id, [FromBody] UpdateServiceNameRequest request)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound("Owner not found.");
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Оплатите тариф для изменения услуг." });
 
             var serviceName = await _context.ServiceNames.FirstOrDefaultAsync(sn => sn.Id == id && sn.OwnerId == ownerId);
             if (serviceName == null) return NotFound(new { message = "Service name not found." });
@@ -73,7 +86,7 @@ namespace Backend.Controllers
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new { message = "Service name is required." });
 
-            serviceName.Name = request.Name;
+            serviceName.Name = request.Name.Trim();
             await _context.SaveChangesAsync();
 
             return Ok(new ServiceNameDto
@@ -87,6 +100,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> DeleteServiceName(Guid id)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound("Owner not found.");
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Оплатите тариф для удаления услуг." });
 
             var serviceName = await _context.ServiceNames.FirstOrDefaultAsync(sn => sn.Id == id && sn.OwnerId == ownerId);
             if (serviceName == null) return NotFound(new { message = "Service name not found." });

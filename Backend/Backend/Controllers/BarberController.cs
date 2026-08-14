@@ -16,6 +16,11 @@ namespace Backend.Controllers
     {
         private readonly AppDbContext _context;
 
+        private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".webp"
+        };
+
         public BarberController(AppDbContext context)
         {
             _context = context;
@@ -51,6 +56,9 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Оплатите тариф для добавления мастеров." });
+
             var barber = new Master
             {
                 Name = request.Name,
@@ -74,6 +82,9 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var barber = await _context.Masters.FindAsync(request.BarberId);
             if (barber == null || barber.OwnerId != owner.Id)
                 return NotFound(new { message = "Barber not found or does not belong to the owner" });
@@ -96,6 +107,9 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var barber = await _context.Masters.FindAsync(request.BarberId);
             if (barber == null || barber.OwnerId != owner.Id)
                 return NotFound(new { message = "Barber not found or does not belong to the owner" });
@@ -114,7 +128,7 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
-            var barbers = await _context.Masters.Where(b => b.OwnerId == owner.Id).ToListAsync();
+            var barbers = await _context.Masters.AsNoTracking().Where(b => b.OwnerId == owner.Id).ToListAsync();
             return Ok(barbers);
         }
 
@@ -127,8 +141,8 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
-            var barber = await _context.Masters.FindAsync(barberId);
-            if (barber == null || barber.OwnerId != owner.Id)
+            var barber = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == barberId && m.OwnerId == owner.Id);
+            if (barber == null)
                 return NotFound(new { message = "Barber not found or does not belong to the owner" });
 
             return Ok(barber);
@@ -144,6 +158,9 @@ namespace Backend.Controllers
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
             var barber = await _context.Masters.FindAsync(request.MasterId);
             if (barber == null || barber.OwnerId != owner.Id)
@@ -179,7 +196,7 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
-            var shift = await _context.Shifts.Include(s => s.Master).FirstOrDefaultAsync(s => s.Id == shiftId);
+            var shift = await _context.Shifts.AsNoTracking().Include(s => s.Master).FirstOrDefaultAsync(s => s.Id == shiftId);
             if (shift == null || shift.Master.OwnerId != owner.Id)
                 return NotFound(new { message = "Shift not found" });
 
@@ -194,6 +211,9 @@ namespace Backend.Controllers
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
             var shift = await _context.Shifts.Include(s => s.Master).FirstOrDefaultAsync(s => s.Id == shiftId);
             if (shift == null || shift.Master.OwnerId != owner.Id)
@@ -224,6 +244,9 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var shift = await _context.Shifts.Include(s => s.Master).FirstOrDefaultAsync(s => s.Id == shiftId);
             if (shift == null || shift.Master.OwnerId != owner.Id)
                 return NotFound(new { message = "Shift not found" });
@@ -240,6 +263,9 @@ namespace Backend.Controllers
         public async Task<IActionResult> AddMyShift([FromBody] MyShiftRequest request)
         {
             var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
             bool overlap = await _context.Shifts.AnyAsync(s =>
                 s.MasterId == masterId &&
@@ -267,7 +293,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetMyShifts()
         {
             var masterId = User.GetUserId();
-            var shifts = await _context.Shifts.Where(s => s.MasterId == masterId).ToListAsync();
+            var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            var shifts = await _context.Shifts.AsNoTracking().Where(s => s.MasterId == masterId).ToListAsync();
             return Ok(shifts);
         }
 
@@ -276,6 +306,9 @@ namespace Backend.Controllers
         public async Task<IActionResult> UpdateMyShift([FromRoute] Guid shiftId, [FromBody] MyShiftRequest request)
         {
             var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
             var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == shiftId && s.MasterId == masterId);
             if (shift == null)
@@ -302,6 +335,9 @@ namespace Backend.Controllers
         public async Task<IActionResult> DeleteMyShift([FromRoute] Guid shiftId)
         {
             var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
             var shift = await _context.Shifts.FirstOrDefaultAsync(s => s.Id == shiftId && s.MasterId == masterId);
             if (shift == null)
@@ -323,7 +359,7 @@ namespace Backend.Controllers
             if (owner == null)
                 return NotFound(new { message = "Owner not found" });
 
-            var review = await _context.Reviews.Include(r => r.Master).FirstOrDefaultAsync(r => r.Id == reviewId);
+            var review = await _context.Reviews.AsNoTracking().Include(r => r.Master).FirstOrDefaultAsync(r => r.Id == reviewId);
             if (review == null || review.Master.OwnerId != owner.Id)
                 return NotFound(new { message = "Review not found" });
 
@@ -339,6 +375,10 @@ namespace Backend.Controllers
             var client = await _context.Clients.FindAsync(clientId);
             if (client == null)
                 return NotFound(new { message = "Client not found" });
+
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == request.MasterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
             var appointment = await _context.Appointments.FindAsync(request.AppointmentId);
             if (appointment == null || appointment.ClientId != clientId || appointment.MasterId != request.MasterId)
@@ -369,8 +409,12 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetMyReviews()
         {
             var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
             var reviews = await _context.Reviews
+                .AsNoTracking()
                 .Include(r => r.Client)
                 .Where(r => r.MasterId == masterId)
                 .OrderByDescending(r => r.CreatedAt)
@@ -393,14 +437,19 @@ namespace Backend.Controllers
         {
             var masterId = User.GetUserId();
 
-            var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId);
+            var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
             if (master == null) return NotFound(new { message = "Master not found." });
 
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var serviceNames = await _context.ServiceNames
+                .AsNoTracking()
                 .Where(sn => sn.OwnerId == master.OwnerId)
                 .ToListAsync();
 
             var myServices = await _context.Services
+                .AsNoTracking()
                 .Where(s => s.MasterId == masterId)
                 .ToListAsync();
 
@@ -428,8 +477,11 @@ namespace Backend.Controllers
         {
             var masterId = User.GetUserId();
 
-            var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId);
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
             if (master == null) return NotFound(new { message = "Master not found." });
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
             var serviceName = await _context.ServiceNames.FirstOrDefaultAsync(sn => sn.Id == serviceNameId && sn.OwnerId == master.OwnerId);
             if (serviceName == null) return NotFound(new { message = "Service name not found or doesn't belong to this barbershop." });
@@ -470,7 +522,12 @@ namespace Backend.Controllers
         {
             var masterId = User.GetUserId();
 
+            var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             var appointments = await _context.Appointments
+                .AsNoTracking()
                 .Include(a => a.Client)
                 .Include(a => a.Service)
                     .ThenInclude(s => s.ServiceName)
@@ -500,8 +557,11 @@ namespace Backend.Controllers
 
         private async Task<IActionResult> CreateAppointmentInternal(Guid masterId, BarberAppointmentRequest request)
         {
-            var master = await _context.Masters.FindAsync(masterId);
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
             if (master == null) return NotFound(new { message = "Master not found" });
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Создание записей заблокировано." });
 
             var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.MasterId == masterId);
             if (service == null || !service.IsActive)
@@ -548,7 +608,8 @@ namespace Backend.Controllers
                 Status = request.Status,
                 MasterProfit = 0,
                 OwnerProfit = 0,
-                DepositPaid = false
+                DepositPaid = false,
+                ResultNote = request.Comment
             };
 
             _context.Appointments.Add(appointment);
@@ -558,8 +619,14 @@ namespace Backend.Controllers
 
         private async Task<IActionResult> UpdateAppointmentInternal(Guid appointmentId, Guid masterId, BarberAppointmentRequest request)
         {
-            var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == appointmentId && a.MasterId == masterId);
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId && a.MasterId == masterId);
             if (appointment == null) return NotFound(new { message = "Appointment not found" });
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Изменение записей заблокировано." });
 
             var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.MasterId == masterId);
             if (service == null || !service.IsActive)
@@ -601,6 +668,11 @@ namespace Backend.Controllers
             appointment.AppointmentDate = request.AppointmentDate;
             appointment.AppointmentEndDate = appointmentEndDateTime;
             appointment.Status = request.Status;
+            
+            if (request.Comment != null)
+            {
+                appointment.ResultNote = request.Comment;
+            }
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Appointment updated successfully" });
@@ -619,14 +691,18 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetClientHistory(Guid clientId)
         {
             var masterId = User.GetUserId();
-            var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId);
+            var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
             if (master == null) return NotFound(new { message = "Master not found" });
 
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
             // Ensure client belongs to same barbershop
-            var client = await _context.Clients.FirstOrDefaultAsync(c => c.Id == clientId && c.OwnerId == master.OwnerId);
+            var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId && c.OwnerId == master.OwnerId);
             if (client == null) return NotFound(new { message = "Client not found" });
 
             var appointments = await _context.Appointments
+                .AsNoTracking()
                 .Include(a => a.Service)
                     .ThenInclude(s => s.ServiceName)
                 .Include(a => a.Master)
@@ -670,8 +746,14 @@ namespace Backend.Controllers
         public async Task<IActionResult> DeleteMyAppointment(Guid id)
         {
             var masterId = User.GetUserId();
-            var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id && a.MasterId == masterId);
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == id && a.MasterId == masterId);
             if (appointment == null) return NotFound(new { message = "Appointment not found" });
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
             _context.Appointments.Remove(appointment);
             await _context.SaveChangesAsync();
@@ -687,6 +769,7 @@ namespace Backend.Controllers
             var ownerId = User.GetUserId();
 
             var appointments = await _context.Appointments
+                .AsNoTracking()
                 .Include(a => a.Client)
                 .Include(a => a.Master)
                 .Where(a => a.Master.OwnerId == ownerId)
@@ -700,7 +783,8 @@ namespace Backend.Controllers
                     Status = a.Status,
                     ReminderSent = a.ReminderSent,
                     ServiceId = a.ServiceId,
-                    PhotoResultUrl = a.PhotoResultUrl
+                    PhotoResultUrl = a.PhotoResultUrl,
+                    ResultNote = a.ResultNote
                 })
                 .ToListAsync();
 
@@ -712,6 +796,12 @@ namespace Backend.Controllers
         public async Task<IActionResult> AddAdminAppointment([FromBody] BarberAppointmentRequest request)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Создание записей заблокировано." });
+
             if (!request.MasterId.HasValue) return BadRequest(new { message = "MasterId is required" });
 
             var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == request.MasterId.Value && m.OwnerId == ownerId);
@@ -725,6 +815,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> UpdateAdminAppointment(Guid id, [FromBody] BarberAppointmentRequest request)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Изменение записей заблокировано." });
 
             var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null || appointment.Master.OwnerId != ownerId)
@@ -738,6 +833,11 @@ namespace Backend.Controllers
         public async Task<IActionResult> DeleteAdminAppointment(Guid id)
         {
             var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Удаление записей заблокировано." });
 
             var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null || appointment.Master.OwnerId != ownerId)
@@ -756,11 +856,11 @@ namespace Backend.Controllers
         {
             var ownerId = User.GetUserId();
 
-            var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == masterId && m.OwnerId == ownerId);
+            var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId && m.OwnerId == ownerId);
             if (master == null) return NotFound(new { message = "Master not found" });
 
-            var serviceNames = await _context.ServiceNames.Where(sn => sn.OwnerId == ownerId).ToListAsync();
-            var myServices = await _context.Services.Where(s => s.MasterId == masterId).ToListAsync();
+            var serviceNames = await _context.ServiceNames.AsNoTracking().Where(sn => sn.OwnerId == ownerId).ToListAsync();
+            var myServices = await _context.Services.AsNoTracking().Where(s => s.MasterId == masterId).ToListAsync();
 
             var response = serviceNames.Select(sn =>
             {
@@ -787,10 +887,20 @@ namespace Backend.Controllers
             if (photo == null || photo.Length == 0)
                 return BadRequest(new { message = "Photo is required" });
 
+            if (photo.Length > 10 * 1024 * 1024)
+                return BadRequest(new { message = "Максимальный размер фото: 10 МБ" });
+
+            var extension = Path.GetExtension(photo.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(extension) || !AllowedImageExtensions.Contains(extension))
+                return BadRequest(new { message = "Недопустимый формат файла. Разрешены только JPG, PNG, WEBP." });
+
             var userId = User.GetUserId();
             var isOwner = User.IsInRole("Owner");
 
-            var appointment = await _context.Appointments.Include(a => a.Master).FirstOrDefaultAsync(a => a.Id == appointmentId);
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
             if (appointment == null)
                 return NotFound(new { message = "Appointment not found" });
 
@@ -800,19 +910,14 @@ namespace Backend.Controllers
             if (!isOwner && appointment.MasterId != userId)
                 return Unauthorized();
 
-            // TODO: раскомментировать после тестирования
-            // if (appointment.AppointmentDate > DateTime.UtcNow)
-            //     return BadRequest(new { message = "Нельзя прикрепить фото к будущей записи" });
-
-            // if (appointment.Status == AppointmentStatus.Cancelled)
-            //     return BadRequest(new { message = "Нельзя прикрепить фото к отменённой записи" });
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
             string dir = Path.Combine("wwwroot", "results");
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
             string fileName = Guid.NewGuid().ToString();
-            string extension = Path.GetExtension(photo.FileName);
             string path = Path.Combine(dir, $"{fileName}{extension}");
 
             using var readstream = photo.OpenReadStream();
@@ -837,18 +942,24 @@ namespace Backend.Controllers
             if (isOwner)
             {
                 ownerId = userId;
+                var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+                if (owner == null || !owner.HasActiveSubscription())
+                    return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
             }
             else
             {
-                var master = await _context.Masters.FirstOrDefaultAsync(m => m.Id == userId);
+                var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == userId);
                 if (master == null) return NotFound(new { message = "Master not found" });
+                if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                    return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
                 ownerId = master.OwnerId;
             }
 
-            var client = await _context.Clients.FirstOrDefaultAsync(c => c.TelegramId == tgId && c.OwnerId == ownerId);
+            var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.TelegramId == tgId && c.OwnerId == ownerId);
             if (client == null) return NotFound(new { message = "Client not found" });
 
             var appointments = await _context.Appointments
+                .AsNoTracking()
                 .Include(a => a.Service)
                     .ThenInclude(s => s.ServiceName)
                 .Where(a => a.ClientId == client.Id)
@@ -876,6 +987,118 @@ namespace Backend.Controllers
                 client = new { client.Id, client.Name, client.TelegramId, client.Phone, client.Notes },
                 appointments
             });
+        }
+
+        // ─── Master/Owner: Appointment Comments ──────────────────────────────────
+
+        [HttpPost("appointment-comment/{appointmentId}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> AddAppointmentComment(Guid appointmentId, [FromBody] AppointmentCommentRequest request)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found" });
+
+            if (isOwner && appointment.Master.OwnerId != userId)
+                return Unauthorized();
+            if (!isOwner && appointment.MasterId != userId)
+                return Unauthorized();
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            appointment.ResultNote = request.Comment;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Comment added successfully", comment = appointment.ResultNote });
+        }
+
+        [HttpGet("appointment-comment/{appointmentId}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> GetAppointmentComment(Guid appointmentId)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var appointment = await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found" });
+
+            if (isOwner && appointment.Master.OwnerId != userId)
+                return Unauthorized();
+            if (!isOwner && appointment.MasterId != userId)
+                return Unauthorized();
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            return Ok(new { appointmentId = appointment.Id, comment = appointment.ResultNote });
+        }
+
+        [HttpPut("appointment-comment/{appointmentId}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> UpdateAppointmentComment(Guid appointmentId, [FromBody] AppointmentCommentRequest request)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found" });
+
+            if (isOwner && appointment.Master.OwnerId != userId)
+                return Unauthorized();
+            if (!isOwner && appointment.MasterId != userId)
+                return Unauthorized();
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            appointment.ResultNote = request.Comment;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Comment updated successfully", comment = appointment.ResultNote });
+        }
+
+        [HttpDelete("appointment-comment/{appointmentId}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> DeleteAppointmentComment(Guid appointmentId)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+            if (appointment == null)
+                return NotFound(new { message = "Appointment not found" });
+
+            if (isOwner && appointment.Master.OwnerId != userId)
+                return Unauthorized();
+            if (!isOwner && appointment.MasterId != userId)
+                return Unauthorized();
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            appointment.ResultNote = null;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Comment deleted successfully" });
         }
 
         public class AddShiftRequest
@@ -910,6 +1133,12 @@ namespace Backend.Controllers
             public Guid ServiceId { get; set; }
             public DateTime AppointmentDate { get; set; }
             public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
+            public string? Comment { get; set; }
+        }
+
+        public class AppointmentCommentRequest
+        {
+            public string? Comment { get; set; }
         }
     }
 }

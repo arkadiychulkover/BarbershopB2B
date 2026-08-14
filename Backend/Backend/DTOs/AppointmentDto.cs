@@ -17,5 +17,6 @@ namespace Backend.DTOs
         public string? ServiceName { get; set; }
         public string? PhotoResultUrl { get; set; }
         public string? ResultNote { get; set; }
+        public string? Comment => ResultNote;
     }
 }

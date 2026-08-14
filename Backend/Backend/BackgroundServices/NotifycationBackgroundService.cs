@@ -54,8 +54,8 @@ namespace Backend.BackgroundServices
 
             foreach (var appointment in appointmentsToProcess)
             {
-                var owner = appointment.Client.Owner;
-                if (string.IsNullOrEmpty(owner.BotToken)) continue;
+                var owner = appointment.Client?.Owner;
+                if (owner == null || !owner.HasActiveSubscription() || string.IsNullOrEmpty(owner.BotToken)) continue;
 
                 var ownerTimeZone = TimeZoneInfo.FindSystemTimeZoneById(owner.TimeZone);
                 var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ownerTimeZone);

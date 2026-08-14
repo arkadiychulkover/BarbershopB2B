@@ -1,5 +1,7 @@
 using Backend.Data;
 using Backend.Extensions;
+using Backend.Models;
+using Backend.Models.Enums;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,9 +43,11 @@ namespace Backend.Controllers
             if (string.IsNullOrWhiteSpace(txhHash))
                 return BadRequest("Transaction hash is required.");
 
-            bool isValid = await _ton.CheckTranzaction(txhHash, _subscriptionAmount);
+            var cleanHash = txhHash.Trim();
+
+            bool isValid = await _ton.CheckTranzaction(cleanHash, _subscriptionAmount);
             if (!isValid)
-                return BadRequest("Invalid transaction.");
+                return BadRequest("Invalid or expired transaction.");
 
             var ownerId = User.GetUserId();
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
@@ -53,7 +57,18 @@ namespace Backend.Controllers
             owner.LastPayment = DateTime.UtcNow;
             owner.PayedAt = DateTime.UtcNow;
             owner.NextPayment = DateTime.UtcNow.AddMonths(1);
-            owner.Status = Backend.Models.Enums.OwnerStatus.Active;
+            owner.Status = OwnerStatus.Active;
+
+            // Persist the transaction record to prevent replay/double-spend attacks
+            var transaction = new Tranzaction
+            {
+                Id = Guid.NewGuid(),
+                OwnerId = owner.Id,
+                TxhHash = cleanHash,
+                Amount = _subscriptionAmount,
+                Time = DateTime.UtcNow
+            };
+            _context.Tranxactions.Add(transaction);
 
             await _context.SaveChangesAsync();
             return Ok("Payment verified and subscription activated.");

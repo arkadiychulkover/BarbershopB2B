@@ -93,9 +93,9 @@
   main {
     width: 100%;
     min-height: 100vh;
-    background-color: var(--tg-theme-bg-color, #ffffff);
-    color: var(--tg-theme-text-color, #000000);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-family);
   }
 
   .loader-container, .error-container {
@@ -103,35 +103,64 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    padding: 20px;
+    min-height: 100vh;
+    padding: 32px 24px;
     text-align: center;
+    animation: fadeIn 0.4s var(--ease-spring);
+  }
+
+  .loader-container p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 500;
+    margin-top: 16px;
+    letter-spacing: 0.02em;
   }
 
   .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--tg-theme-hint-color, #ccc);
-    border-top: 4px solid var(--tg-theme-button-color, #3390ec);
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(223, 158, 142, 0.15);
+    border-top: 3px solid var(--pastel-rose);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
+    animation: spinSmooth 0.85s linear infinite;
+    box-shadow: 0 0 20px var(--pastel-rose-glow);
   }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  .error-container {
+    background: radial-gradient(circle at 50% 30%, rgba(232, 130, 130, 0.08), transparent 65%);
+  }
+
+  .error-container h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+  }
+
+  .error-container p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    max-width: 320px;
+    line-height: 1.5;
+    margin: 0 0 20px;
   }
 
   button {
-    background-color: var(--tg-theme-button-color, #3390ec);
-    color: var(--tg-theme-button-text-color, #ffffff);
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
+    padding: 12px 28px;
+    border-radius: var(--radius-pill);
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-    margin-top: 16px;
+    box-shadow: 0 4px 16px var(--pastel-rose-glow);
+    transition: all 0.2s var(--ease-spring);
+  }
+
+  button:active {
+    transform: scale(0.96);
+    box-shadow: 0 2px 8px var(--pastel-rose-glow);
   }
 </style>

@@ -42,7 +42,18 @@ namespace Backend.Controllers
 
 
             var context = await _dbContextFactory.CreateDbContextAsync();
-            string botToken = context.BarbershopOwners.FirstOrDefault(t => t.Id.ToString() == tenant)?.BotToken ?? string.Empty;
+            var owner = await context.BarbershopOwners.FirstOrDefaultAsync(t => t.Id.ToString() == tenant);
+            if (owner == null)
+            {
+                return NotFound(new { message = "Барбершоп не найден." });
+            }
+
+            if (!owner.HasActiveSubscription())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Барбершоп временно недоступен: подписка заведения не активна." });
+            }
+
+            string botToken = owner.BotToken ?? string.Empty;
             if (!_tgValidationService.ValidateInitData(initData, botToken))
             {
                 return BadRequest("Invalid initialization data.");
