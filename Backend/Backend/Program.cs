@@ -1,9 +1,11 @@
 using Backend.Data;
 using Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 
 namespace Backend
 {
@@ -18,7 +20,6 @@ namespace Backend
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 });
 
-            // CORS configuration for TMA and Web frontends
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -26,6 +27,40 @@ namespace Backend
                     policy.AllowAnyOrigin()
                           .AllowAnyHeader()
                           .AllowAnyMethod();
+                });
+            });
+
+            builder.Services.AddRateLimiter(rateLimiterOptions =>
+            {
+                rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                rateLimiterOptions.OnRejected = async (context, token) =>
+                {
+                    context.HttpContext.Response.ContentType = "application/json";
+                    await context.HttpContext.Response.WriteAsync("{\"message\":\"Слишком много запросов. Пожалуйста, подождите немного.\"}", token);
+                };
+
+                rateLimiterOptions.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                {
+                    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+                    return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 120,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 10
+                    });
+                });
+
+                rateLimiterOptions.AddPolicy("StrictAuthPolicy", httpContext =>
+                {
+                    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+                    return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 20,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 2
+                    });
                 });
             });
 
@@ -38,6 +73,7 @@ namespace Backend
             builder.Services.AddHttpClient();
 
             builder.Services.AddScoped<StatisticService>();
+            builder.Services.AddScoped<ExcelExportService>();
             builder.Services.AddScoped<TonService>();
             builder.Services.AddScoped<TgValidationService>();
             builder.Services.AddSingleton<BotService>();
@@ -89,11 +125,37 @@ namespace Backend
             app.UseStaticFiles();
             
             app.UseCors();
+            app.UseRateLimiter();
 
             app.UseAuthentication();
             app.UseAuthorization();
             
             app.MapControllers();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                try
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    if (!db.SaasAdmins.Any())
+                    {
+                        var (salt, hash) = PasswordSecurity.CreateHashAndSalt("Admin12345!");
+                        db.SaasAdmins.Add(new Backend.Models.SaasAdmin
+                        {
+                            Id = Guid.NewGuid(),
+                            Email = "admin@barbershop.b2b",
+                            PasswordSalt = salt,
+                            PasswordHash = hash,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                        db.SaveChanges();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[SaasAdmin Seed Warning] {ex.Message}");
+                }
+            }
 
             app.Run();
         }

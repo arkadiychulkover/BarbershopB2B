@@ -8,8 +8,8 @@
   import BarberAppointments from '../lib/components/BarberAppointments.svelte';
   import BarberReviews from '../lib/components/BarberReviews.svelte';
   import BarberProfile from '../lib/components/BarberProfile.svelte';
-  import ClientHistory from '../lib/components/ClientHistory.svelte';
   import Icon from '../lib/components/Icon.svelte';
+  import { theme, toggleTmaTheme } from '../lib/stores/theme';
 
   let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' | 'profile' = 'appointments';
   let clientHistoryId: string | null = null;
@@ -17,11 +17,44 @@
   let shifts = [];
   let loading = true;
   let view: 'list' | 'form' = 'list';
-  let editingShift = null;
+  let tabsContainer: HTMLElement;
+  let scrollPercent = 0;
+  let thumbWidthPercent = 35;
+  let showScrollIndicator = false;
 
   onMount(async () => {
     await loadShifts();
+    updateScrollIndicator();
+    window.addEventListener('resize', updateScrollIndicator);
+    return () => {
+      window.removeEventListener('resize', updateScrollIndicator);
+    };
   });
+
+  function updateScrollIndicator() {
+    if (!tabsContainer) return;
+    const { clientWidth, scrollWidth, scrollLeft } = tabsContainer;
+    const maxScroll = scrollWidth - clientWidth;
+    showScrollIndicator = maxScroll > 6;
+    if (maxScroll > 0) {
+      scrollPercent = Math.min(1, Math.max(0, scrollLeft / maxScroll));
+      const ratio = clientWidth / scrollWidth;
+      thumbWidthPercent = Math.max(25, Math.min(65, Math.round(ratio * 100)));
+    }
+  }
+
+  function selectTab(tab: 'appointments' | 'shifts' | 'services' | 'reviews' | 'profile') {
+    activeTab = tab;
+    setTimeout(() => {
+      updateScrollIndicator();
+      if (tabsContainer) {
+        const activeEl = tabsContainer.querySelector('.tab.active') as HTMLElement;
+        if (activeEl) {
+          activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    }, 50);
+  }
 
   async function loadShifts() {
     loading = true;
@@ -111,56 +144,75 @@
       }
     });
   }
-  const daysOfWeek = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  const daysOfWeek = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Сб'];
   function formatDayOfWeek(day: number) {
     return daysOfWeek[day] || '';
   }
 </script>
 
 <div class="dashboard">
-  <div class="tabs-wrapper">
-    <div class="tabs">
-      <button 
-        class="tab" 
-        class:active={activeTab === 'appointments'} 
-        on:click={() => activeTab = 'appointments'}
-      >
-        <span class="tab-icon"><Icon name="scissors" size={15} /></span>
-        <span class="tab-label">Записи</span>
-      </button>
-      <button 
-        class="tab" 
-        class:active={activeTab === 'shifts'} 
-        on:click={() => activeTab = 'shifts'}
-      >
-        <span class="tab-icon"><Icon name="calendar" size={15} /></span>
-        <span class="tab-label">Смены</span>
-      </button>
-      <button 
-        class="tab" 
-        class:active={activeTab === 'services'} 
-        on:click={() => activeTab = 'services'}
-      >
-        <span class="tab-icon"><Icon name="services" size={15} /></span>
-        <span class="tab-label">Услуги</span>
-      </button>
-      <button 
-        class="tab" 
-        class:active={activeTab === 'reviews'} 
-        on:click={() => activeTab = 'reviews'}
-      >
-        <span class="tab-icon"><Icon name="star" size={15} /></span>
-        <span class="tab-label">Отзывы</span>
-      </button>
-      <button 
-        class="tab" 
-        class:active={activeTab === 'profile'} 
-        on:click={() => activeTab = 'profile'}
-      >
-        <span class="tab-icon"><Icon name="user" size={15} /></span>
-        <span class="tab-label">Профиль</span>
-      </button>
+  <div class="top-header-bar">
+    <div class="tabs-wrapper">
+      <div class="tabs" bind:this={tabsContainer} on:scroll={updateScrollIndicator}>
+        <button 
+          class="tab" 
+          class:active={activeTab === 'appointments'} 
+          on:click={() => selectTab('appointments')}
+        >
+          <span class="tab-icon"><Icon name="scissors" size={14} /></span>
+          <span class="tab-label">Записи</span>
+        </button>
+        <button 
+          class="tab" 
+          class:active={activeTab === 'shifts'} 
+          on:click={() => selectTab('shifts')}
+        >
+          <span class="tab-icon"><Icon name="calendar" size={14} /></span>
+          <span class="tab-label">Смены</span>
+        </button>
+        <button 
+          class="tab" 
+          class:active={activeTab === 'services'} 
+          on:click={() => selectTab('services')}
+        >
+          <span class="tab-icon"><Icon name="services" size={14} /></span>
+          <span class="tab-label">Услуги</span>
+        </button>
+        <button 
+          class="tab" 
+          class:active={activeTab === 'reviews'} 
+          on:click={() => selectTab('reviews')}
+        >
+          <span class="tab-icon"><Icon name="star" size={14} /></span>
+          <span class="tab-label">Отзывы</span>
+        </button>
+        <button 
+          class="tab" 
+          class:active={activeTab === 'profile'} 
+          on:click={() => selectTab('profile')}
+        >
+          <span class="tab-icon"><Icon name="user" size={14} /></span>
+          <span class="tab-label">Профиль</span>
+        </button>
+      </div>
+
+      {#if showScrollIndicator}
+        <div class="scroll-track" aria-hidden="true">
+          <div 
+            class="scroll-thumb" 
+            style="width: {thumbWidthPercent}%; left: {scrollPercent * (100 - thumbWidthPercent)}%;"
+          ></div>
+        </div>
+      {/if}
     </div>
+
+    <button class="theme-barber-toggle" on:click={toggleTmaTheme} title="Сменить тему">
+      {#if $theme === 'dark'}
+        <Icon name="sun" size={16} color="var(--pastel-amber)" />
+      {:else}
+        <Icon name="moon" size={16} color="var(--pastel-lavender)" />
+      {/if}
+    </button>
   </div>
 
   <div class="dashboard-content">
@@ -189,8 +241,8 @@
                   {#each dayShifts as shift (shift.id)}
                     <ShiftCard 
                       {shift} 
-                      on:edit={openEditForm}
-                      on:delete={handleDeleteShift}
+                      on:edit={openEditForm} 
+                      on:delete={handleDeleteShift} 
                     />
                   {/each}
                 </div>
@@ -211,10 +263,10 @@
           <span>+</span>
         </button>
       {/if}
-    {:else if activeTab === 'services'}
-      <BarberServices />
     {:else if activeTab === 'appointments'}
       <BarberAppointments on:openClientHistory={(e) => { clientHistoryId = e.detail; }} />
+    {:else if activeTab === 'services'}
+      <BarberServices />
     {:else if activeTab === 'reviews'}
       <BarberReviews />
     {:else if activeTab === 'profile'}
@@ -239,26 +291,64 @@
     background-color: var(--bg-canvas);
   }
 
-  .tabs-wrapper {
+  .top-header-bar {
     position: sticky;
     top: 0;
     z-index: 100;
-    padding: 10px 10px 6px;
-    background: rgba(12, 14, 18, 0.85);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-subtle);
   }
 
-  .tabs {
+  .tabs-wrapper {
+    flex: 1;
+    min-width: 0;
     display: flex;
-    gap: 4px;
-    background: rgba(23, 26, 35, 0.7);
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  .theme-barber-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    flex-shrink: 0;
+    padding: 0;
+  }
+
+  .theme-barber-toggle:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--border-glass);
+  }
+
+  .theme-barber-toggle:active {
+    transform: scale(0.92);
+  }
+
+  .tabs {
+    width: 100%;
+    display: flex;
+    gap: 2px;
+    background: var(--bg-surface-elevated);
     padding: 3px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-subtle);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
 
@@ -266,14 +356,34 @@
     display: none;
   }
 
+  .scroll-track {
+    width: 90%;
+    height: 3px;
+    background: var(--border-glass);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-top: 2px;
+    position: relative;
+  }
+
+  .scroll-thumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, var(--pastel-rose), #e8ada0);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 0 8px var(--pastel-rose-glow);
+    transition: left 0.05s ease-out;
+  }
+
   .tab {
-    flex: 1;
-    min-width: 0;
+    flex: 1 0 auto;
+    min-width: max-content;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 8px 6px;
+    padding: 7px 10px;
     background: transparent;
     border: none;
     border-radius: var(--radius-pill);
@@ -281,8 +391,19 @@
     font-weight: 600;
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.25s var(--ease-spring);
+    transition: all 0.2s var(--ease-spring);
     white-space: nowrap;
+  }
+
+  .tab:hover {
+    color: var(--text-primary);
+  }
+
+  .tab.active {
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
   }
 
   .tab-icon {

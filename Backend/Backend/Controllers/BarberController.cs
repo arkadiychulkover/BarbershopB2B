@@ -45,8 +45,6 @@ namespace Backend.Controllers
             return dummyClient.Id;
         }
 
-        // ─── Owner: Barber Management ──────────────────────────────────────────────
-
         [HttpPost("add")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> AddBarber([FromBody] AddBarberRequest request)
@@ -152,8 +150,6 @@ namespace Backend.Controllers
 
             return Ok(barber);
         }
-
-        // ─── Owner: Shift Management ───────────────────────────────────────────────
 
         [HttpPost("Add-Shift")]
         [Authorize(Roles = "Owner")]
@@ -261,8 +257,6 @@ namespace Backend.Controllers
             return Ok(new { message = "Shift deleted successfully" });
         }
 
-        // ─── Master: Shift Management ──────────────────────────────────────────────
-
         [HttpPost("my-shift/add")]
         [Authorize(Roles = "Master")]
         public async Task<IActionResult> AddMyShift([FromBody] MyShiftRequest request)
@@ -353,8 +347,6 @@ namespace Backend.Controllers
             return Ok(new { message = "Shift deleted successfully" });
         }
 
-        // ─── Owner: Reviews ────────────────────────────────────────────────────────
-
         [HttpGet("Get-Review/{reviewId}")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetReview([FromRoute] Guid reviewId)
@@ -406,8 +398,6 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Review added successfully", reviewId = review.Id });
         }
-
-        // ─── Master: Profile & Username Management ─────────────────────────────────
 
         [HttpGet("my-profile")]
         [Authorize(Roles = "Master")]
@@ -523,8 +513,6 @@ namespace Backend.Controllers
             });
         }
 
-        // ─── Master: Reviews & Services ────────────────────────────────────────────
-
         [HttpGet("my-reviews")]
         [Authorize(Roles = "Master")]
         public async Task<IActionResult> GetMyReviews()
@@ -634,8 +622,6 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Service updated successfully." });
         }
-
-        // ─── Master: Appointments ──────────────────────────────────────────────────
 
         [HttpGet("get-master-appointments")]
         [Authorize(Roles = "Master")]
@@ -818,7 +804,6 @@ namespace Backend.Controllers
             if (master.Owner == null || !master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
-            // Ensure client belongs to same barbershop
             var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId && c.OwnerId == master.OwnerId);
             if (client == null) return NotFound(new { message = "Client not found" });
 
@@ -880,8 +865,6 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Appointment deleted successfully" });
         }
-
-        // ─── Owner: Appointments ───────────────────────────────────────────────────
 
         [HttpGet("admin-appointments/all")]
         [Authorize(Roles = "Owner")]
@@ -968,8 +951,6 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Appointment deleted successfully" });
         }
-
-        // ─── Owner: Admin Services ─────────────────────────────────────────────────
 
         [HttpGet("admin-services/{masterId}")]
         [Authorize(Roles = "Owner")]
@@ -1109,8 +1090,6 @@ namespace Backend.Controllers
                 appointments
             });
         }
-
-        // ─── Master/Owner: Appointment Comments ──────────────────────────────────
 
         [HttpPost("appointment-comment/{appointmentId}")]
         [Authorize(Roles = "Master,Owner")]

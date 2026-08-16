@@ -27,22 +27,15 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> RegisterTMA(string tenant, string initData)
+        public async Task<IActionResult> RegisterTMA([FromRoute] string tenant, [FromQuery] string initData)
         {
-            if(tenant == null)
+            if (string.IsNullOrWhiteSpace(tenant) || !Guid.TryParse(tenant, out var tenantGuid))
             {
-                return BadRequest("Tenant is required.");
+                return BadRequest("Tenant is required and must be a valid GUID.");
             }
-
-            var id = User.Claims.FirstOrDefault();
-            if (id != null) 
-            {
-                return BadRequest("User is already registered.");
-            }
-
 
             var context = await _dbContextFactory.CreateDbContextAsync();
-            var owner = await context.BarbershopOwners.FirstOrDefaultAsync(t => t.Id.ToString() == tenant);
+            var owner = await context.BarbershopOwners.FirstOrDefaultAsync(t => t.Id == tenantGuid);
             if (owner == null)
             {
                 return NotFound(new { message = "Барбершоп не найден." });
@@ -67,32 +60,40 @@ namespace Backend.Controllers
                 ? $"{tgUser.FirstName} {tgUser.LastName}".Trim() 
                 : tgUser.Username ?? "Unknown Client";
 
-            var master = await context.Masters.FirstOrDefaultAsync(m => m.TelegramId == userId);
+            var master = await context.Masters.FirstOrDefaultAsync(m => m.TelegramId == userId && m.OwnerId == tenantGuid);
 
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings.GetValue<string>("Secret");
+            var secretKey = jwtSettings.GetValue<string>("Secret") ?? "DefaultSecretKeyForDevelopmentOnlyAtLeast32BytesLong!";
 
             if (master == null) 
             {
-                var client = context.Clients.FirstOrDefault(c => c.TelegramId == userId);
-                string clientId = client?.Id.ToString() ?? string.Empty;
+                var client = await context.Clients.FirstOrDefaultAsync(c => c.TelegramId == userId && c.OwnerId == tenantGuid);
+                string clientId;
 
                 if (client == null) 
                 {
-                    clientId = Guid.NewGuid().ToString();
-                    Client newClient = new Client
+                    var newClient = new Client
                     {
-                        Id = Guid.Parse(clientId),
+                        Id = Guid.NewGuid(),
                         TelegramId = userId,
-                        OwnerId = Guid.Parse(tenant),
+                        OwnerId = tenantGuid,
                         Name = clientName
                     };
                     context.Clients.Add(newClient);
                     await context.SaveChangesAsync();
                     clientId = newClient.Id.ToString();
+                }
+                else
+                {
+                    clientId = client.Id.ToString();
+                    if (!string.IsNullOrWhiteSpace(clientName) && client.Name != clientName)
+                    {
+                        client.Name = clientName;
+                        await context.SaveChangesAsync();
+                    }
                 }                
 
-                var UserClaims = new[]
+                var userClaims = new[]
                 {
                     new Claim("UserId", clientId),
                     new Claim(ClaimTypes.Role, "Client"),
@@ -105,7 +106,7 @@ namespace Backend.Controllers
                 var ClientToken = new JwtSecurityToken(
                     issuer: jwtSettings.GetValue<string>("Issuer"),
                     audience: jwtSettings.GetValue<string>("Audience"),
-                    claims: UserClaims,
+                    claims: userClaims,
                     expires: DateTime.UtcNow.AddDays(7),
                     signingCredentials: ClientCreds
                 );

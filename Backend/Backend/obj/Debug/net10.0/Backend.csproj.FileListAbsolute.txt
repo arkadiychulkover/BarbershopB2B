@@ -129,4 +129,12 @@ d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Microsoft.IdentityModel.Token
 d:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Telegram.Bot.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\Backend.staticwebassets.runtime.json
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\ClosedXML.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\ClosedXML.Parser.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\DocumentFormat.OpenXml.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\DocumentFormat.OpenXml.Framework.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\ExcelNumberFormat.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\RBush.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\SixLabors.Fonts.dll
+D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\System.IO.Packaging.dll
 D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

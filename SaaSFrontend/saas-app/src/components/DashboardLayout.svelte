@@ -3,6 +3,7 @@
   import { push } from 'svelte-spa-router';
   import { authStore, profileStore, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
+  import { theme, toggleTheme } from '../lib/theme';
   import { 
     LayoutDashboard, 
     Settings, 
@@ -14,7 +15,13 @@
     CalendarDays, 
     Menu, 
     X, 
-    ShieldCheck 
+    ShieldCheck,
+    UserCheck,
+    Sun,
+    Moon,
+    HelpCircle,
+    Send,
+    ExternalLink
   } from 'lucide-svelte';
   
   let isLoading = true;
@@ -110,6 +117,10 @@
           <Users size={19} />
           <span>Мастера</span>
         </a>
+        <a href="#/dashboard/clients" class="nav-item" class:active={$currentLocation.includes('/clients')} on:click={closeMobile}>
+          <UserCheck size={19} />
+          <span>Клиенты</span>
+        </a>
         <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.includes('/services')} on:click={closeMobile}>
           <Scissors size={19} />
           <span>Услуги</span>
@@ -129,6 +140,24 @@
       </nav>
 
       <div class="sidebar-footer">
+        <!-- Theme & Support quick actions -->
+        <div class="sidebar-actions-row">
+          <button class="theme-toggle-btn" on:click={toggleTheme} title="Переключить тему (Светлая / Темная)">
+            {#if $theme === 'dark'}
+              <Sun size={16} class="text-amber" />
+              <span>Светлая тема</span>
+            {:else}
+              <Moon size={16} class="text-lavender" />
+              <span>Темная тема</span>
+            {/if}
+          </button>
+
+          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title="Связаться с поддержкой @Eyed_Graff">
+            <Send size={14} />
+            <span>Поддержка</span>
+          </a>
+        </div>
+
         <div class="user-pill">
           <div class="user-avatar">
             {($profileStore.ownerId || $profileStore.email || 'B')[0].toUpperCase()}
@@ -237,7 +266,7 @@
   /* Sidebar */
   .sidebar {
     width: 270px;
-    background: rgba(20, 24, 33, 0.85);
+    background: var(--bg-surface);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border-right: 1px solid var(--border-subtle);
@@ -277,9 +306,7 @@
     font-size: 1.15rem;
     font-weight: 700;
     margin: 0;
-    background: linear-gradient(135deg, #ffffff 40%, var(--pastel-rose) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
   }
   
   .badge {
@@ -326,13 +353,14 @@
   
   .nav-item:hover {
     color: var(--text-primary);
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: var(--bg-surface-hover);
     transform: translateX(3px);
   }
   
   .nav-item.active {
     background: linear-gradient(135deg, var(--pastel-rose), #c88777);
-    color: var(--text-inverse);
+    color: #ffffff !important;
+    font-weight: 700;
     box-shadow: 0 4px 16px var(--pastel-rose-glow);
   }
 
@@ -349,12 +377,48 @@
     gap: 0.75rem;
   }
 
+  .sidebar-actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .theme-toggle-btn, .support-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.6rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .theme-toggle-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--pastel-rose);
+    border-color: var(--border-glass);
+  }
+
+  .support-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--pastel-sky, #8ec3df);
+    border-color: var(--border-glass);
+  }
+
   .user-pill {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem 0.6rem;
-    background: rgba(255, 255, 255, 0.03);
+    padding: 0.55rem 0.65rem;
+    background: var(--bg-surface-elevated);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
   }

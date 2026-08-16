@@ -100,9 +100,9 @@
           
           <div class="support-box">
             <HelpCircle size={18} class="support-icon" />
-            <span>Возникли сложности? Наша команда поддержки всегда готова помочь:</span>
-            <a href="https://t.me/support" target="_blank" rel="noreferrer" class="support-link">
-              <span>Связаться в Telegram</span>
+            <span>Возникли сложности? Наша служба поддержки всегда на связи:</span>
+            <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link">
+              <span>Написать @Eyed_Graff</span>
               <ExternalLink size={14} />
             </a>
           </div>

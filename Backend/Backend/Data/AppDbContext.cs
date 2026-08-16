@@ -18,6 +18,7 @@ namespace Backend.Data
         public DbSet<ServiceName> ServiceNames { get; set; }
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<Tranzaction> Tranxactions { get; set; }
+        public DbSet<SaasAdmin> SaasAdmins { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

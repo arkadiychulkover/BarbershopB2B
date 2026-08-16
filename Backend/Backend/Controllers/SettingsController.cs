@@ -26,7 +26,6 @@ namespace Backend.Controllers
             var owner = await _context.BarbershopOwners.FindAsync(ownerId);
             if (owner == null) return NotFound("Owner not found.");
 
-            // Real-time synchronization of expired status
             if (owner.Status == OwnerStatus.Active && owner.NextPayment <= DateTime.UtcNow)
             {
                 owner.Status = OwnerStatus.Frozen;
@@ -48,7 +47,9 @@ namespace Backend.Controllers
                 MasterFee = owner.MasterFee,
                 WalletAddress = owner.WalletAddress,
                 IsSubscribed = owner.HasActiveSubscription(),
-                Status = owner.Status.ToString()
+                Status = owner.Status.ToString(),
+                NextPayment = owner.NextPayment,
+                LastPayment = owner.LastPayment
             };
 
             return Ok(response);

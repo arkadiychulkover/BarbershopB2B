@@ -259,8 +259,8 @@
     align-items: center;
     text-align: center;
     gap: 12px;
-    background: linear-gradient(180deg, rgba(23, 26, 35, 0.95) 0%, rgba(18, 20, 29, 0.85) 100%);
-    border: 1px solid rgba(223, 158, 142, 0.15);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
   }
 
   .avatar-wrap {
@@ -326,7 +326,7 @@
     justify-content: center;
     gap: 6px;
     padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
   }
@@ -388,7 +388,7 @@
   }
 
   .highlight-group {
-    background: rgba(223, 158, 142, 0.04);
+    background: var(--pastel-rose-dim);
     padding: 14px;
     border-radius: var(--radius-md);
     border: 1px solid rgba(223, 158, 142, 0.2);
@@ -397,7 +397,7 @@
   .input-with-prefix {
     display: flex;
     align-items: center;
-    background: rgba(10, 12, 16, 0.6);
+    background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -429,7 +429,7 @@
   input[type="text"] {
     width: 100%;
     padding: 12px 14px;
-    background: rgba(10, 12, 16, 0.6);
+    background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     color: var(--text-primary);
@@ -445,8 +445,9 @@
   }
 
   .readonly-input {
-    opacity: 0.65;
-    background: rgba(0, 0, 0, 0.25) !important;
+    opacity: 0.85;
+    background: var(--bg-canvas-subtle) !important;
+    color: var(--text-secondary) !important;
     cursor: not-allowed;
   }
 

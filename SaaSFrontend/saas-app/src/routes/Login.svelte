@@ -20,18 +20,29 @@
       });
       
       if (response && response.token) {
-        setAuthToken(response.token);
-        const settings = await apiRequest('/api/Settings');
-        profileStore.set({
-          ownerId: settings.ownerName,
-          status: settings.status,
-          email: email
-        });
-        
-        if (settings.status === 'Active') {
+        setAuthToken(response.token, response.role);
+
+        if (response.role === 'Admin') {
+          push('/admin');
+          return;
+        }
+
+        // Owner flow
+        try {
+          const settings = await apiRequest('/api/Settings');
+          profileStore.set({
+            ownerId: settings.ownerName,
+            status: settings.status,
+            email: email
+          });
+          
+          if (settings.status === 'Active') {
+            push('/dashboard');
+          } else {
+            push('/payment');
+          }
+        } catch (settingsErr) {
           push('/dashboard');
-        } else {
-          push('/payment');
         }
       }
     } catch (err) {

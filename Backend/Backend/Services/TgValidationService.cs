@@ -20,12 +20,10 @@ namespace Backend.Services
             if (string.IsNullOrEmpty(hash))
                 return false;
 
-            // Replay attack prevention: validate auth_date within acceptable TTL
             if (!long.TryParse(parsed["auth_date"], out var authDate))
                 return false;
 
             var currentUnixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            // Reject if token is older than maxAgeSeconds or more than 60s in the future (clock skew)
             if (currentUnixTime - authDate > maxAgeSeconds || authDate > currentUnixTime + 60)
                 return false;
 

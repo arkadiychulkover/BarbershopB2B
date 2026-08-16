@@ -22,12 +22,50 @@ namespace Backend.Services
             return $"{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
         }
 
+        public static (string Salt, string Hash) CreateHashAndSalt(string password)
+        {
+            byte[] saltBytes = RandomNumberGenerator.GetBytes(SaltSize);
+            byte[] hashBytes = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                saltBytes,
+                Iterations,
+                HashAlgorithmName.SHA256,
+                HashSize
+            );
+            return (Convert.ToBase64String(saltBytes), Convert.ToBase64String(hashBytes));
+        }
+
+        public static bool VerifyPasswordWithSalt(string password, string salt, string hash)
+        {
+            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(salt) || string.IsNullOrWhiteSpace(hash))
+                return false;
+
+            try
+            {
+                byte[] saltBytes = Convert.FromBase64String(salt);
+                byte[] expectedHashBytes = Convert.FromBase64String(hash);
+
+                byte[] actualHashBytes = Rfc2898DeriveBytes.Pbkdf2(
+                    password,
+                    saltBytes,
+                    Iterations,
+                    HashAlgorithmName.SHA256,
+                    HashSize
+                );
+
+                return CryptographicOperations.FixedTimeEquals(actualHashBytes, expectedHashBytes);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static bool VerifyPassword(string password, string storedHash)
         {
             if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(storedHash))
                 return false;
 
-            // Check if storedHash is in PBKDF2 format {salt}.{hash}
             var parts = storedHash.Split('.');
             if (parts.Length == 2)
             {
@@ -52,7 +90,6 @@ namespace Backend.Services
                 }
             }
 
-            // Fallback for legacy unsalted SHA-256 hashes
             try
             {
                 using var sha256 = SHA256.Create();

@@ -9,9 +9,13 @@
     Sparkles, 
     ShieldCheck, 
     ArrowRight,
-    LogIn
+    LogIn,
+    Sun,
+    Moon,
+    Send
   } from 'lucide-svelte';
   import { apiRequest } from '../lib/api';
+  import { theme, toggleTheme } from '../lib/theme';
 
   let price = null;
 
@@ -84,6 +88,17 @@
         <span class="brand-title">BarbershopB2B</span>
       </div>
       <div class="nav-actions">
+        <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title="Переключить тему">
+          {#if $theme === 'dark'}
+            <Sun size={16} class="text-amber" />
+          {:else}
+            <Moon size={16} class="text-lavender" />
+          {/if}
+        </button>
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Служба поддержки">
+          <Send size={14} />
+          <span>Поддержка</span>
+        </a>
         <a href="#/login" class="btn btn-secondary btn-sm">
           <LogIn size={16} />
           <span>Войти</span>
@@ -108,60 +123,77 @@
       </h1>
 
       <p class="subtitle">
-        Онлайн-запись клиентов через фирменный Telegram-бот, гибкое управление мастерами, автоматические уведомления и глубокая финансовая аналитика.
+        Автоматизируйте запись клиентов прямо в Telegram. Управляйте расписанием мастеров, собирайте отзывы, контролируйте финансы и развивайте бизнес.
       </p>
 
       <div class="hero-actions">
-        <a href="#/register" class="btn btn-primary btn-lg">
-          <span>{price !== null ? `Начать за ${price} TON/мес` : 'Начать бесплатно'}</span>
+        <a href="#/register" class="btn btn-primary btn-lg glow">
+          <span>Попробовать сейчас</span>
           <ArrowRight size={18} />
         </a>
-        <a href="#/login" class="btn btn-secondary btn-lg">
-          <span>Вход в панель</span>
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
+          <Send size={17} />
+          <span>Поддержка @Eyed_Graff</span>
         </a>
       </div>
     </div>
   </header>
 
-  <!-- Features Grid -->
+  <!-- Feature Grid -->
   <section class="features">
     <div class="container">
       <div class="section-head" use:scrollReveal>
-        <h2>Всё необходимое для роста вашего бизнеса</h2>
-        <p class="section-sub">Автоматизируйте рутину и сосредоточьтесь на качественном сервисе для клиентов.</p>
+        <h2>Все инструменты в одной платформе</h2>
+        <p class="section-sub">Полный цикл работы с клиентами и мастерами без сложных интеграций</p>
       </div>
 
       <div class="grid">
-        <div class="feature-card feature-rose" use:scrollReveal>
+        <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap rose">
-            <Bot size={28} />
+            <Bot size={24} />
           </div>
           <h3>Telegram Mini App</h3>
-          <p>Клиенты записываются за 3 клика прямо внутри Telegram. Без паролей, скачивания лишних приложений и смс.</p>
+          <p>Клиенты записываются за 30 секунд прямо внутри Telegram без установки лишних приложений и регистрации.</p>
         </div>
 
-        <div class="feature-card feature-sage" use:scrollReveal>
+        <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap sage">
-            <BellRing size={28} />
+            <Calendar size={24} />
           </div>
-          <h3>Авто-напоминания</h3>
-          <p>Система автоматически напоминает клиентам о времени визита, снижая неявки до минимума.</p>
+          <h3>Умное расписание</h3>
+          <p>Гибкие смены мастеров, бронирование слотов, автоматический учет длительности процедур и защита от накладок.</p>
         </div>
 
-        <div class="feature-card feature-lavender" use:scrollReveal>
+        <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap lavender">
-            <Users size={28} />
+            <Users size={24} />
           </div>
-          <h3>Команда мастеров</h3>
-          <p>Индивидуальные рабочие графики, управление услугами, история визитов и контроль расписания.</p>
+          <h3>База клиентов & CRM</h3>
+          <p>История всех визитов, предпочтения, контактные данные и выгрузка отчетов в Excel в один клик.</p>
         </div>
 
-        <div class="feature-card feature-amber" use:scrollReveal>
+        <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap amber">
-            <BarChart3 size={28} />
+            <BarChart3 size={24} />
           </div>
-          <h3>Глубокая аналитика</h3>
-          <p>Наглядные графики выручки, средний чек, количество записей по дням, неделям и месяцам.</p>
+          <h3>Финансовая аналитика</h3>
+          <p>Интерактивные графики выручки и посещений, статистика по дням, часам и каждому мастеру в отдельности.</p>
+        </div>
+
+        <div class="feature-card" use:scrollReveal>
+          <div class="icon-wrap rose">
+            <BellRing size={24} />
+          </div>
+          <h3>Уведомления</h3>
+          <p>Мгновенные оповещения мастеров и клиентов о новых бронированиях, отменах и напоминания перед визитом.</p>
+        </div>
+
+        <div class="feature-card" use:scrollReveal>
+          <div class="icon-wrap sage">
+            <ShieldCheck size={24} />
+          </div>
+          <h3>Подписка в сети TON</h3>
+          <p>Простая и безопасная оплата подписки криптовалютой TON через официальные смарт-контракты и кошельки.</p>
         </div>
       </div>
     </div>
@@ -195,6 +227,24 @@
       </div>
     </div>
   </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-title">BarbershopB2B</span>
+        <span class="footer-copy">© 2026 Все права защищены</span>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="footer-support-link">
+          <Send size={15} />
+          <span>Служба поддержки: @Eyed_Graff</span>
+        </a>
+      </div>
+    </div>
+  </footer>
 </div>
 
 <style>
@@ -210,7 +260,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(12, 14, 18, 0.82);
+    background: var(--bg-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-subtle);
@@ -241,9 +291,7 @@
     font-size: 1.2rem;
     font-weight: 800;
     letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #ffffff 40%, var(--pastel-rose) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
   }
 
   .nav-actions {
@@ -353,21 +401,26 @@
   }
 
   .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
   }
 
   /* Feature Card with Dynamic Scroll Reveal & Exit */
   .feature-card {
+    flex: 0 1 calc(25% - 1.25rem);
+    min-width: 250px;
+    max-width: 275px;
     background: var(--bg-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    padding: 2.25rem 2rem;
+    padding: 2.25rem 1.75rem;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-glass);
     position: relative;
+    box-sizing: border-box;
 
     /* Dynamic scroll-driven opacity and scale */
     --p: var(--scroll-progress, 0.85);
@@ -439,7 +492,7 @@
   }
 
   .cta-card {
-    background: linear-gradient(135deg, rgba(26, 31, 43, 0.82), rgba(16, 19, 27, 0.85));
+    background: var(--bg-surface);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
     border: 1px solid var(--border-glass);
@@ -581,6 +634,7 @@
   .cta-card h2 {
     font-size: 2.2rem;
     margin-bottom: 1rem;
+    color: var(--text-primary);
   }
 
   .cta-card p {
@@ -599,5 +653,84 @@
     .cta-card {
       padding: 3rem 1.5rem;
     }
+  }
+
+  .theme-btn {
+    padding: 0.5rem 0.65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Landing Footer */
+  .landing-footer {
+    border-top: 1px solid var(--border-subtle);
+    padding: 2rem 0;
+    margin-top: 4rem;
+    background: var(--bg-surface);
+  }
+
+  .footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .footer-copy {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+  }
+
+  .footer-support-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--pastel-rose);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .footer-support-link:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+  }
+
+  /* Specific overrides for Light Theme on Landing */
+  :global([data-theme="light"]) .cta-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+  }
+
+  :global([data-theme="light"]) .cta-card h2 {
+    color: #0f172a;
+  }
+
+  :global([data-theme="light"]) .cta-card p {
+    color: #475569;
+  }
+
+  :global([data-theme="light"]) .ambient-glow-mesh .glow-orb {
+    opacity: 0.12;
+    mix-blend-mode: normal;
+  }
+
+  :global([data-theme="light"]) .top-nav {
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  :global([data-theme="light"]) .landing-footer {
+    background: rgba(255, 255, 255, 0.92);
   }
 </style>

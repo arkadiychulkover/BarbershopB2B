@@ -76,6 +76,79 @@
   --tg-theme-button-text-color: var(--text-inverse);
 }
 
+[data-theme="light"],
+.light-theme {
+  color-scheme: light;
+  
+  /* Light Theme Surfaces */
+  --bg-canvas: #f8fafc;
+  --bg-canvas-subtle: #f1f5f9;
+  --bg-surface: rgba(255, 255, 255, 0.92);
+  --bg-surface-solid: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+
+  /* Pastels High Contrast for Light */
+  --pastel-rose: #c86e5f;
+  --pastel-rose-hover: #b85f50;
+  --pastel-rose-dim: rgba(200, 110, 95, 0.12);
+  --pastel-rose-glow: rgba(200, 110, 95, 0.22);
+
+  --pastel-sage: #457b5f;
+  --pastel-sage-dim: rgba(69, 123, 95, 0.12);
+  --pastel-sage-glow: rgba(69, 123, 95, 0.22);
+
+  --pastel-lavender: #5f659f;
+  --pastel-lavender-dim: rgba(95, 101, 159, 0.12);
+  --pastel-lavender-glow: rgba(95, 101, 159, 0.22);
+
+  --pastel-amber: #b27b32;
+  --pastel-amber-dim: rgba(178, 123, 50, 0.12);
+  --pastel-amber-glow: rgba(178, 123, 50, 0.22);
+
+  --pastel-coral: #c84545;
+  --pastel-coral-dim: rgba(200, 69, 69, 0.12);
+  --pastel-coral-glow: rgba(200, 69, 69, 0.22);
+
+  --pastel-sky: #3b7b9e;
+  --pastel-sky-dim: rgba(59, 123, 158, 0.12);
+
+  /* Typography */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-glass: rgba(0, 0, 0, 0.12);
+  --border-active: rgba(200, 110, 95, 0.55);
+
+  /* Shadows & Glows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Global Select & Option styling */
+select {
+  font-family: var(--font-family);
+  background-color: var(--bg-surface-solid);
+  color: var(--text-primary);
+}
+
+select option {
+  background-color: #161a23;
+  color: #f5f2f8;
+}
+
+[data-theme="light"] select option,
+.light-theme select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;

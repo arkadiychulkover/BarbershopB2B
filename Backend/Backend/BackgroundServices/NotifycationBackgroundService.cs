@@ -49,7 +49,7 @@ namespace Backend.BackgroundServices
                 .Include(a => a.Client)
                 .ThenInclude(c => c.Owner)
                 .Include(a => a.Master)
-                .Where(a => a.Status == AppointmentStatus.Scheduled)
+                .Where(a => a.Status == AppointmentStatus.Scheduled && (!a.ReminderSent || a.AppointmentEndDate <= nowUtc.AddHours(24)))
                 .ToListAsync(stoppingToken);
 
             foreach (var appointment in appointmentsToProcess)

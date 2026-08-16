@@ -105,7 +105,6 @@ namespace Backend.Controllers
 
             var appointmentEndDateTime = request.AppointmentDate.AddMinutes(service.Duration);
 
-            // ACID transaction check to prevent race conditions / double bookings
             await using var transaction = await context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             try
             {

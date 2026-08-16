@@ -251,6 +251,14 @@
             {/if}
           </button>
         </form>
+
+        <div class="payment-support-hint">
+          <span>Возникли вопросы по оплате или активации? Поддержка: </span>
+          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link">
+            <span>@Eyed_Graff</span>
+            <ExternalLink size={13} />
+          </a>
+        </div>
       {/if}
     {/if}
   </div>
@@ -531,5 +539,31 @@
     width: 32px;
     height: 32px;
     animation: spinSmooth 0.85s linear infinite;
+  }
+
+  .payment-support-hint {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    flex-wrap: wrap;
+  }
+
+  .payment-support-hint .support-link {
+    color: var(--pastel-rose);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .payment-support-hint .support-link:hover {
+    text-decoration: underline;
   }
 </style>

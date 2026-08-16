@@ -8,19 +8,23 @@
   import Overview from './routes/Overview.svelte';
   import Settings from './routes/Settings.svelte';
   import Masters from './routes/Masters.svelte';
+  import Clients from './routes/Clients.svelte';
   import Services from './routes/Services.svelte';
   import Statistics from './routes/Statistics.svelte';
   import BotSetup from './routes/BotSetup.svelte';
   import Schedule from './routes/Schedule.svelte';
+  import Admin from './routes/Admin.svelte';
 
   const routes = {
     '/': Landing,
     '/register': Register,
     '/login': Login,
     '/payment': Payment,
+    '/admin': Admin,
     '/dashboard': Overview,
     '/dashboard/settings': Settings,
     '/dashboard/masters': Masters,
+    '/dashboard/clients': Clients,
     '/dashboard/services': Services,
     '/dashboard/statistics': Statistics,
     '/dashboard/bot-setup': BotSetup,

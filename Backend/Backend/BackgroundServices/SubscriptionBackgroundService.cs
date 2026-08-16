@@ -32,7 +32,6 @@ namespace Backend.BackgroundServices
                     _logger.LogError(ex, "Error occurred while checking owner subscriptions.");
                 }
 
-                // Run check every 24 hours
                 await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
             }
         }

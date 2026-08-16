@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
+  import { authStore } from '../lib/store';
   import { 
     Wallet, 
     Coins, 
@@ -18,26 +19,16 @@
     ChevronRight,
     CalendarRange,
     Sun,
-    CalendarDays
+    CalendarDays,
+    FileSpreadsheet,
+    Activity,
+    BarChart2,
+    Download
   } from 'lucide-svelte';
   
   let isLoading = true;
-  let selectedPeriod = 'week'; // 'day' | 'week' | 'month' | 'custom'
-  
-  // Date state
-  let singleDate = formatDateInput(new Date());
-  let customStartDate = formatDateInput(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-  let customEndDate = formatDateInput(new Date());
-  
-  // Offsets for week / month navigation
-  let weekOffset = 0; // 0 = current week
-  let monthOffset = 0; // 0 = current month
-  
-  let statsData = [];
-  let hourlyData = [];
-  let transactions = [];
-  let summary = { totalRevenue: 0, totalClients: 0, avgCheck: 0, activeDays: 0 };
-  let copiedHash = null;
+  let isExporting = false;
+  let selectedPeriod = '30d'; // '7d' | '30d' | '90d' | 'year' | 'custom'
 
   function formatDateInput(d) {
     const year = d.getFullYear();
@@ -46,24 +37,30 @@
     return `${year}-${month}-${day}`;
   }
 
-  function getMonday(d) {
-    const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
-  }
+  let customStartDate = formatDateInput(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+  let customEndDate = formatDateInput(new Date());
+  
+  let chartData = {
+    points: [],
+    totalVisits: 0,
+    totalRevenue: 0,
+    averageDailyVisits: 0,
+    averageDailyRevenue: 0,
+    peakDate: '—',
+    peakRevenue: 0
+  };
 
-  function copyTx(hash) {
-    if (!hash) return;
-    navigator.clipboard.writeText(hash);
-    copiedHash = hash;
-    setTimeout(() => {
-      if (copiedHash === hash) copiedHash = null;
-    }, 2000);
-  }
+  let transactions = [];
+  let copiedHash = null;
+  let hoveredPoint = null;
+  let tooltipX = 0;
+  let tooltipY = 0;
+
+  let exportSuccessMsg = '';
+  let exportErrorMsg = '';
 
   onMount(async () => {
-    await fetchStatistics();
+    await fetchChartAnalytics();
     await fetchTransactions();
   });
 
@@ -78,453 +75,542 @@
 
   async function setPeriod(period) {
     selectedPeriod = period;
-    if (period === 'day') {
-      singleDate = formatDateInput(new Date());
-    } else if (period === 'week') {
-      weekOffset = 0;
-    } else if (period === 'month') {
-      monthOffset = 0;
-    }
-    await fetchStatistics();
+    await fetchChartAnalytics();
   }
 
-  // Navigation handlers
-  function changeDay(delta) {
-    const d = new Date(singleDate);
-    d.setDate(d.getDate() + delta);
-    singleDate = formatDateInput(d);
-    fetchStatistics();
-  }
-
-  function changeWeek(delta) {
-    weekOffset += delta;
-    fetchStatistics();
-  }
-
-  function changeMonth(delta) {
-    monthOffset += delta;
-    fetchStatistics();
-  }
-
-  async function fetchStatistics() {
+  async function fetchChartAnalytics() {
     isLoading = true;
-    statsData = [];
-    hourlyData = [];
-    summary = { totalRevenue: 0, totalClients: 0, avgCheck: 0, activeDays: 0 };
-
     try {
-      if (selectedPeriod === 'day') {
-        const dateStr = singleDate;
-        const [dailyRes, hourlyRes] = await Promise.all([
-          apiRequest(`/api/Statistic/owner-statistic-daily?startDate=${dateStr}&endDate=${dateStr}`).catch(() => ({})),
-          apiRequest(`/api/Statistic/owner-statistic-hourly?date=${dateStr}`).catch(() => ({}))
-        ]);
-
-        if (dailyRes && dailyRes[dateStr]) {
-          summary.totalRevenue = dailyRes[dateStr].ownerProfit;
-          summary.totalClients = dailyRes[dateStr].clientsCount;
-          summary.activeDays = summary.totalClients > 0 ? 1 : 0;
-        }
-
-        if (hourlyRes) {
-          hourlyData = Object.keys(hourlyRes).map(h => {
-            const hourNum = parseInt(h);
-            const item = hourlyRes[h];
-            return {
-              hour: `${String(hourNum).padStart(2, '0')}:00`,
-              revenue: item.ownerProfit,
-              clients: item.clientsCount
-            };
-          }).filter(h => {
-            // Keep hours between 08:00 and 22:00 or hours with data
-            const hourInt = parseInt(h.hour);
-            return (hourInt >= 8 && hourInt <= 22) || h.clients > 0;
-          });
-        }
-      } else {
-        let startStr = '';
-        let endStr = '';
-
-        if (selectedPeriod === 'week') {
-          const today = new Date();
-          today.setDate(today.getDate() + (weekOffset * 7));
-          const monday = getMonday(today);
-          const sunday = new Date(monday);
-          sunday.setDate(sunday.getDate() + 6);
-          startStr = formatDateInput(monday);
-          endStr = formatDateInput(sunday);
-        } else if (selectedPeriod === 'month') {
-          const now = new Date();
-          const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-          const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
-          startStr = formatDateInput(targetMonth);
-          endStr = formatDateInput(lastDay);
-        } else if (selectedPeriod === 'custom') {
-          startStr = customStartDate;
-          endStr = customEndDate;
-        }
-
-        if (startStr && endStr) {
-          const data = await apiRequest(`/api/Statistic/owner-statistic-daily?startDate=${startStr}&endDate=${endStr}`);
-          if (data) {
-            let activeDaysCount = 0;
-            statsData = Object.keys(data).map(key => {
-              const item = data[key];
-              summary.totalRevenue += item.ownerProfit;
-              summary.totalClients += item.clientsCount;
-              if (item.clientsCount > 0) activeDaysCount++;
-              return {
-                rawDate: key,
-                date: new Date(key).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', weekday: 'short' }),
-                revenue: item.ownerProfit,
-                clients: item.clientsCount
-              };
-            });
-            summary.activeDays = activeDaysCount;
-          }
-        }
+      let url = `/api/Statistic/owner-chart-analytics?period=${selectedPeriod}`;
+      if (selectedPeriod === 'custom') {
+        url += `&startDate=${customStartDate}&endDate=${customEndDate}`;
       }
-
-      if (summary.totalClients > 0) {
-        summary.avgCheck = summary.totalRevenue / summary.totalClients;
+      const res = await apiRequest(url);
+      if (res) {
+        chartData = res;
       }
     } catch (e) {
-      console.error(e);
+      console.error('Failed to load chart analytics:', e);
     } finally {
       isLoading = false;
     }
   }
 
-  // Label helpers
-  $: currentRangeLabel = (() => {
-    if (selectedPeriod === 'day') {
-      const d = new Date(singleDate);
-      return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  async function exportToExcel() {
+    isExporting = true;
+    exportSuccessMsg = '';
+    exportErrorMsg = '';
+    try {
+      const token = $authStore.token;
+      const res = await fetch('/api/Statistic/export-clients', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) throw new Error('Ошибка формирования Excel');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clients_report_${new Date().toISOString().slice(0,10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      exportSuccessMsg = 'Excel файл успешно сформирован и скачан!';
+      setTimeout(() => { exportSuccessMsg = ''; }, 4000);
+    } catch (e) {
+      exportErrorMsg = e.message || 'Не удалось выгрузить Excel';
+      setTimeout(() => { exportErrorMsg = ''; }, 4000);
+    } finally {
+      isExporting = false;
     }
-    if (selectedPeriod === 'week') {
-      const today = new Date();
-      today.setDate(today.getDate() + (weekOffset * 7));
-      const monday = getMonday(today);
-      const sunday = new Date(monday);
-      sunday.setDate(sunday.getDate() + 6);
-      return `${monday.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} — ${sunday.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-    }
-    if (selectedPeriod === 'month') {
-      const now = new Date();
-      const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-      return targetMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-    }
-    return `${customStartDate} — ${customEndDate}`;
-  })();
+  }
+
+  function copyTx(hash) {
+    if (!hash) return;
+    navigator.clipboard.writeText(hash);
+    copiedHash = hash;
+    setTimeout(() => {
+      if (copiedHash === hash) copiedHash = null;
+    }, 2000);
+  }
+
+  function formatCurrency(num) {
+    return new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(num || 0);
+  }
+
+  // SVG Chart Geometry Calculations
+  const svgWidth = 860;
+  const svgHeight = 260;
+  const padding = { top: 25, right: 30, bottom: 40, left: 60 };
+
+  $: chartWidth = svgWidth - padding.left - padding.right;
+  $: chartHeight = svgHeight - padding.top - padding.bottom;
+
+  $: maxRevenue = Math.max(...(chartData.points || []).map(p => p.revenue), 100);
+  $: maxVisits = Math.max(...(chartData.points || []).map(p => p.visits), 5);
+
+  $: revenuePoints = (chartData.points || []).map((p, i) => {
+    const x = padding.left + (i / Math.max(chartData.points.length - 1, 1)) * chartWidth;
+    const y = padding.top + chartHeight - (p.revenue / maxRevenue) * chartHeight;
+    return { ...p, x, y };
+  });
+
+  $: visitsPoints = (chartData.points || []).map((p, i) => {
+    const x = padding.left + (i / Math.max(chartData.points.length - 1, 1)) * chartWidth;
+    const y = padding.top + chartHeight - (p.visits / maxVisits) * chartHeight;
+    return { ...p, x, y };
+  });
+
+  function makeLinePath(points) {
+    if (!points || points.length === 0) return '';
+    return points.reduce((acc, p, i) => {
+      if (i === 0) return `M ${p.x} ${p.y}`;
+      const prev = points[i - 1];
+      const cx1 = prev.x + (p.x - prev.x) / 2;
+      const cy1 = prev.y;
+      const cx2 = prev.x + (p.x - prev.x) / 2;
+      const cy2 = p.y;
+      return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p.x} ${p.y}`;
+    }, '');
+  }
+
+  function makeAreaPath(points) {
+    if (!points || points.length === 0) return '';
+    const line = makeLinePath(points);
+    const lastX = points[points.length - 1].x;
+    const firstX = points[0].x;
+    const bottomY = padding.top + chartHeight;
+    return `${line} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+  }
+
+  $: revenueLinePath = makeLinePath(revenuePoints);
+  $: revenueAreaPath = makeAreaPath(revenuePoints);
+
+  $: visitsLinePath = makeLinePath(visitsPoints);
+  $: visitsAreaPath = makeAreaPath(visitsPoints);
+
+  function handlePointHover(pt, type, e) {
+    hoveredPoint = { ...pt, type };
+    tooltipX = pt.x;
+    tooltipY = pt.y - 12;
+  }
+
+  function handlePointLeave() {
+    hoveredPoint = null;
+  }
 </script>
 
 <DashboardLayout>
   <div class="statistics-page">
+    {#if exportSuccessMsg}
+      <div class="toast toast-success">
+        <Check size={18} />
+        <span>{exportSuccessMsg}</span>
+      </div>
+    {/if}
+
+    {#if exportErrorMsg}
+      <div class="toast toast-danger">
+        <span>{exportErrorMsg}</span>
+      </div>
+    {/if}
+
     <!-- Header -->
     <header class="page-header">
       <div class="header-left">
-        <h1>Финансовая аналитика</h1>
-        <p class="header-subtitle">Общий денежный оборот заведения, загруженность мастеров и поток клиентов</p>
+        <h1>Финансовая аналитика & Графики</h1>
+        <p class="header-subtitle">Наглядная динамика выручки, посещений клиентов и выгрузка отчетов в Excel</p>
       </div>
 
-      <!-- Period Tabs -->
-      <div class="period-tabs">
-        <button 
-          class="period-tab" 
-          class:active={selectedPeriod === 'day'} 
-          on:click={() => setPeriod('day')}
-        >
-          <Sun size={15} />
-          <span>День</span>
+      <div class="header-actions">
+        <!-- Excel Export Button -->
+        <button class="btn btn-secondary" on:click={exportToExcel} disabled={isExporting} title="Скачать базу клиентов в Excel">
+          <FileSpreadsheet size={16} />
+          <span>{isExporting ? 'Формирование...' : 'Выгрузить в Excel'}</span>
         </button>
-        <button 
-          class="period-tab" 
-          class:active={selectedPeriod === 'week'} 
-          on:click={() => setPeriod('week')}
-        >
-          <CalendarDays size={15} />
-          <span>Неделя</span>
-        </button>
-        <button 
-          class="period-tab" 
-          class:active={selectedPeriod === 'month'} 
-          on:click={() => setPeriod('month')}
-        >
-          <Calendar size={15} />
-          <span>Месяц</span>
-        </button>
-        <button 
-          class="period-tab" 
-          class:active={selectedPeriod === 'custom'} 
-          on:click={() => setPeriod('custom')}
-        >
-          <CalendarRange size={15} />
-          <span>Свой период</span>
-        </button>
+
+        <!-- Period Tabs -->
+        <div class="period-tabs">
+          <button 
+            class="period-tab" 
+            class:active={selectedPeriod === '7d'} 
+            on:click={() => setPeriod('7d')}
+          >
+            <span>7 дней</span>
+          </button>
+          <button 
+            class="period-tab" 
+            class:active={selectedPeriod === '30d'} 
+            on:click={() => setPeriod('30d')}
+          >
+            <span>30 дней</span>
+          </button>
+          <button 
+            class="period-tab" 
+            class:active={selectedPeriod === '90d'} 
+            on:click={() => setPeriod('90d')}
+          >
+            <span>3 месяца</span>
+          </button>
+          <button 
+            class="period-tab" 
+            class:active={selectedPeriod === 'year'} 
+            on:click={() => setPeriod('year')}
+          >
+            <span>12 месяцев</span>
+          </button>
+          <button 
+            class="period-tab" 
+            class:active={selectedPeriod === 'custom'} 
+            on:click={() => setPeriod('custom')}
+          >
+            <CalendarRange size={14} />
+            <span>Свой период</span>
+          </button>
+        </div>
       </div>
     </header>
 
-    <!-- Controls Bar -->
-    <div class="controls-bar card">
-      <div class="nav-controls">
-        {#if selectedPeriod === 'day'}
-          <button class="nav-btn" on:click={() => changeDay(-1)} title="Предыдущий день">
-            <ChevronLeft size={18} />
-          </button>
-          <div class="date-input-wrap">
-            <Calendar size={16} class="input-icon" />
-            <input 
-              type="date" 
-              class="input has-icon date-picker" 
-              bind:value={singleDate} 
-              on:change={fetchStatistics} 
-            />
+    <!-- Custom Date Range Bar -->
+    {#if selectedPeriod === 'custom'}
+      <div class="custom-range-card card mb-4">
+        <div class="custom-range-inner">
+          <div class="custom-range-title">
+            <CalendarRange size={18} class="text-rose" />
+            <span>Укажите произвольный интервал дат:</span>
           </div>
-          <button class="nav-btn" on:click={() => changeDay(1)} title="Следующий день">
-            <ChevronRight size={18} />
-          </button>
-          <button class="btn btn-secondary btn-sm" on:click={() => { singleDate = formatDateInput(new Date()); fetchStatistics(); }}>
-            Сегодня
-          </button>
 
-        {:else if selectedPeriod === 'week'}
-          <button class="nav-btn" on:click={() => changeWeek(-1)} title="Предыдущая неделя">
-            <ChevronLeft size={18} />
-          </button>
-          <div class="range-display">
-            <CalendarDays size={16} class="range-icon" />
-            <span class="range-text">{currentRangeLabel}</span>
-          </div>
-          <button class="nav-btn" on:click={() => changeWeek(1)} title="Следующая неделя">
-            <ChevronRight size={18} />
-          </button>
-          {#if weekOffset !== 0}
-            <button class="btn btn-secondary btn-sm" on:click={() => { weekOffset = 0; fetchStatistics(); }}>
-              Текущая неделя
-            </button>
-          {/if}
-
-        {:else if selectedPeriod === 'month'}
-          <button class="nav-btn" on:click={() => changeMonth(-1)} title="Предыдущий месяц">
-            <ChevronLeft size={18} />
-          </button>
-          <div class="range-display">
-            <Calendar size={16} class="range-icon" />
-            <span class="range-text">{currentRangeLabel}</span>
-          </div>
-          <button class="nav-btn" on:click={() => changeMonth(1)} title="Следующий месяц">
-            <ChevronRight size={18} />
-          </button>
-          {#if monthOffset !== 0}
-            <button class="btn btn-secondary btn-sm" on:click={() => { monthOffset = 0; fetchStatistics(); }}>
-              Текущий месяц
-            </button>
-          {/if}
-
-        {:else if selectedPeriod === 'custom'}
-          <div class="custom-range-form">
-            <div class="custom-field">
-              <label for="customStart">От:</label>
+          <div class="custom-range-inputs">
+            <div class="date-input-group">
+              <label for="ownerCustomStart">От:</label>
               <input 
-                id="customStart" 
+                id="ownerCustomStart" 
                 type="date" 
-                class="input date-picker" 
+                class="input date-field" 
                 bind:value={customStartDate} 
               />
             </div>
-            <div class="custom-field">
-              <label for="customEnd">До:</label>
+
+            <div class="date-input-group">
+              <label for="ownerCustomEnd">До:</label>
               <input 
-                id="customEnd" 
+                id="ownerCustomEnd" 
                 type="date" 
-                class="input date-picker" 
+                class="input date-field" 
                 bind:value={customEndDate} 
               />
             </div>
-            <button class="btn btn-primary btn-sm" on:click={fetchStatistics}>
-              Показать
+
+            <button class="btn btn-primary btn-sm" on:click={fetchChartAnalytics} disabled={isLoading}>
+              <span>{isLoading ? 'Загрузка...' : 'Применить'}</span>
             </button>
           </div>
-        {/if}
+        </div>
       </div>
-
-      <div class="period-badge">
-        <Sparkles size={14} />
-        <span>{currentRangeLabel}</span>
-      </div>
-    </div>
+    {/if}
 
     {#if isLoading}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Формирование аналитики...</p>
+        <p>Формирование интерактивных графиков...</p>
       </div>
     {:else}
-      <!-- Stats Grid -->
+      <!-- Key Metric Cards -->
       <div class="stats-grid">
         <div class="stat-card stat-rose">
           <div class="stat-top">
-            <span class="stat-title">
-              {selectedPeriod === 'day' ? 'Оборот за день' : 'Общий денежный оборот'}
-            </span>
+            <span class="stat-title">Общий оборот за период</span>
             <div class="stat-icon-wrap rose">
               <TrendingUp size={20} />
             </div>
           </div>
           <div class="stat-value">
-            {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(summary.totalRevenue)}
+            {formatCurrency(chartData.totalRevenue)}
           </div>
           <div class="stat-footer">
-            <span>Общий объем оказанных услуг за выбранный период</span>
+            <span>Среднесуточный оборот: <strong>{formatCurrency(chartData.averageDailyRevenue)}</strong></span>
           </div>
         </div>
 
         <div class="stat-card stat-sage">
           <div class="stat-top">
-            <span class="stat-title">Обслужено клиентов</span>
+            <span class="stat-title">Посещений клиентов</span>
             <div class="stat-icon-wrap sage">
               <Users size={20} />
             </div>
           </div>
           <div class="stat-value">
-            {summary.totalClients}
+            {chartData.totalVisits}
           </div>
           <div class="stat-footer">
-            <span>
-              {selectedPeriod === 'day' ? 'Клиентов в этот день' : `За ${summary.activeDays} активных дней`}
-            </span>
+            <span>В среднем: <strong>{chartData.averageDailyVisits}</strong> визитов в день</span>
           </div>
         </div>
 
         <div class="stat-card stat-lavender">
           <div class="stat-top">
-            <span class="stat-title">Средний чек</span>
+            <span class="stat-title">Пиковый день выручки</span>
             <div class="stat-icon-wrap lavender">
-              <Receipt size={20} />
+              <Sparkles size={20} />
             </div>
           </div>
-          <div class="stat-value">
-            {summary.avgCheck > 0 
-              ? new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(summary.avgCheck)
-              : '0 ₴'}
+          <div class="stat-value small">
+            {formatCurrency(chartData.peakRevenue)}
           </div>
           <div class="stat-footer">
-            <span>Средний расход клиента на услуги</span>
+            <span>Дата рекорда: <strong>{chartData.peakDate}</strong></span>
           </div>
         </div>
       </div>
-      
-      <!-- Day Mode Hourly Breakdown -->
-      {#if selectedPeriod === 'day'}
-        <div class="card table-card mb-4">
-          <div class="card-head">
-            <div class="head-title-wrap">
-              <Clock size={20} class="title-icon" />
-              <div>
-                <h3>Почасовая загрузка за день</h3>
-                <p>Распределение визитов клиентов и денежного оборота по часам</p>
-              </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════ -->
+      <!-- 1. GRAPH 1: TURNOVER / REVENUE OVER TIME                               -->
+      <!-- ══════════════════════════════════════════════════════════════════════ -->
+      <div class="chart-card card mb-4">
+        <div class="chart-card-header">
+          <div class="chart-title-wrap">
+            <div class="chart-icon-box rose">
+              <TrendingUp size={18} />
+            </div>
+            <div>
+              <h3>График денежного оборота</h3>
+              <p>Динамика поступления средств за оказанные услуги</p>
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Время</th>
-                  <th>Клиентов</th>
-                  <th>Оборот за час</th>
-                  <th>Загруженность</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each hourlyData as row}
-                  <tr class:has-data={row.clients > 0}>
-                    <td class="cell-hour">
-                      <strong>{row.hour}</strong>
-                    </td>
-                    <td>
-                      <span class="clients-pill" class:active={row.clients > 0}>
-                        {row.clients} чел.
-                      </span>
-                    </td>
-                    <td class="cell-revenue">
-                      {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(row.revenue)}
-                    </td>
-                    <td class="cell-progress">
-                      <div class="mini-bar-track">
-                        <div 
-                          class="mini-bar-fill" 
-                          style="width: {Math.min(100, row.clients * 35)}%;"
-                        ></div>
-                      </div>
-                    </td>
-                  </tr>
-                {/each}
-                {#if hourlyData.length === 0}
-                  <tr>
-                    <td colspan="4" class="empty-cell">Нет записей на этот день</td>
-                  </tr>
-                {/if}
-              </tbody>
-            </table>
+          <div class="chart-legend">
+            <span class="legend-indicator rose"></span>
+            <span class="legend-text">Оборот (₴)</span>
           </div>
         </div>
 
-      <!-- Week / Month / Custom Mode Daily Breakdown -->
-      {:else}
-        <div class="card table-card mb-4">
-          <div class="card-head">
-            <div class="head-title-wrap">
-              <CalendarDays size={20} class="title-icon" />
-              <div>
-                <h3>Динамика по дням</h3>
-                <p>Детализация денежного оборота и потока клиентов</p>
-              </div>
+        <div class="svg-chart-container">
+          <svg viewBox="0 0 {svgWidth} {svgHeight}" class="chart-svg">
+            <defs>
+              <linearGradient id="roseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#DF9E8E" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="#DF9E8E" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <!-- Y-Axis Grid lines -->
+            {#each [0, 0.25, 0.5, 0.75, 1] as fraction}
+              {@const yPos = padding.top + chartHeight * (1 - fraction)}
+              <line 
+                x1={padding.left} 
+                y1={yPos} 
+                x2={svgWidth - padding.right} 
+                y2={yPos} 
+                stroke="rgba(255, 255, 255, 0.05)" 
+                stroke-dasharray="4 4"
+              />
+              <text 
+                x={padding.left - 10} 
+                y={yPos + 4} 
+                class="axis-text" 
+                text-anchor="end"
+              >
+                {Math.round(maxRevenue * fraction)} ₴
+              </text>
+            {/each}
+
+            <!-- Area Path -->
+            {#if revenueAreaPath}
+              <path d={revenueAreaPath} fill="url(#roseGradient)" />
+            {/if}
+
+            <!-- Line Path -->
+            {#if revenueLinePath}
+              <path 
+                d={revenueLinePath} 
+                fill="none" 
+                stroke="var(--pastel-rose)" 
+                stroke-width="3" 
+                stroke-linecap="round"
+                class="chart-line-anim"
+              />
+            {/if}
+
+            <!-- Points and X-Axis Labels -->
+            {#each revenuePoints as pt, i}
+              <!-- X-Axis Labels (show subset if many points) -->
+              {#if chartData.points.length <= 15 || i % Math.ceil(chartData.points.length / 10) === 0 || i === chartData.points.length - 1}
+                <text 
+                  x={pt.x} 
+                  y={svgHeight - 12} 
+                  class="axis-text" 
+                  text-anchor="middle"
+                >
+                  {pt.label}
+                </text>
+              {/if}
+
+              <!-- Point Circle -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <circle 
+                cx={pt.x} 
+                cy={pt.y} 
+                r={hoveredPoint?.fullDate === pt.fullDate && hoveredPoint?.type === 'revenue' ? 6 : 4} 
+                fill="var(--bg-surface)" 
+                stroke="var(--pastel-rose)" 
+                stroke-width="2.5"
+                class="chart-point"
+                on:mouseenter={(e) => handlePointHover(pt, 'revenue', e)}
+                on:mouseleave={handlePointLeave}
+              />
+            {/each}
+
+            <!-- Interactive Tooltip in SVG -->
+            {#if hoveredPoint && hoveredPoint.type === 'revenue'}
+              <g transform="translate({hoveredPoint.x}, {hoveredPoint.y - 12})">
+                <rect 
+                  x="-65" 
+                  y="-42" 
+                  width="130" 
+                  height="38" 
+                  rx="6" 
+                  fill="#1E293B" 
+                  stroke="rgba(223, 158, 142, 0.4)" 
+                  filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))"
+                />
+                <text x="0" y="-24" text-anchor="middle" fill="#94A3B8" font-size="10" font-weight="600">
+                  {hoveredPoint.label}
+                </text>
+                <text x="0" y="-10" text-anchor="middle" fill="#DF9E8E" font-size="12" font-weight="700">
+                  {formatCurrency(hoveredPoint.revenue)}
+                </text>
+              </g>
+            {/if}
+          </svg>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════ -->
+      <!-- 2. GRAPH 2: CLIENT VISITS OVER TIME                                   -->
+      <!-- ══════════════════════════════════════════════════════════════════════ -->
+      <div class="chart-card card mb-4">
+        <div class="chart-card-header">
+          <div class="chart-title-wrap">
+            <div class="chart-icon-box sage">
+              <Users size={18} />
+            </div>
+            <div>
+              <h3>График посещений клиентов</h3>
+              <p>Количество обслуженных клиентов по дням / месяцам</p>
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Дата</th>
-                  <th>Оборот за день</th>
-                  <th>Кол-во клиентов</th>
-                  <th>Средний чек дня</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each statsData as row}
-                  <tr class:has-data={row.clients > 0}>
-                    <td class="cell-date">{row.date}</td>
-                    <td class="cell-revenue">
-                      {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(row.revenue)}
-                    </td>
-                    <td>
-                      <span class="clients-pill" class:active={row.clients > 0}>
-                        {row.clients} чел.
-                      </span>
-                    </td>
-                    <td class="cell-avg">
-                      {row.clients > 0 
-                        ? new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(row.revenue / row.clients) 
-                        : '—'}
-                    </td>
-                  </tr>
-                {/each}
-                {#if statsData.length === 0}
-                  <tr>
-                    <td colspan="4" class="empty-cell">Нет данных за выбранный диапазон</td>
-                  </tr>
-                {/if}
-              </tbody>
-            </table>
+          <div class="chart-legend">
+            <span class="legend-indicator sage"></span>
+            <span class="legend-text">Визиты (чел.)</span>
           </div>
         </div>
-      {/if}
 
-      <!-- Transactions History Table -->
+        <div class="svg-chart-container">
+          <svg viewBox="0 0 {svgWidth} {svgHeight}" class="chart-svg">
+            <defs>
+              <linearGradient id="sageGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#A8C69B" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="#A8C69B" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <!-- Y-Axis Grid lines -->
+            {#each [0, 0.25, 0.5, 0.75, 1] as fraction}
+              {@const yPos = padding.top + chartHeight * (1 - fraction)}
+              <line 
+                x1={padding.left} 
+                y1={yPos} 
+                x2={svgWidth - padding.right} 
+                y2={yPos} 
+                stroke="rgba(255, 255, 255, 0.05)" 
+                stroke-dasharray="4 4"
+              />
+              <text 
+                x={padding.left - 10} 
+                y={yPos + 4} 
+                class="axis-text" 
+                text-anchor="end"
+              >
+                {Math.round(maxVisits * fraction)}
+              </text>
+            {/each}
+
+            <!-- Area Path -->
+            {#if visitsAreaPath}
+              <path d={visitsAreaPath} fill="url(#sageGradient)" />
+            {/if}
+
+            <!-- Line Path -->
+            {#if visitsLinePath}
+              <path 
+                d={visitsLinePath} 
+                fill="none" 
+                stroke="var(--pastel-sage)" 
+                stroke-width="3" 
+                stroke-linecap="round"
+                class="chart-line-anim"
+              />
+            {/if}
+
+            <!-- Points and X-Axis Labels -->
+            {#each visitsPoints as pt, i}
+              {#if chartData.points.length <= 15 || i % Math.ceil(chartData.points.length / 10) === 0 || i === chartData.points.length - 1}
+                <text 
+                  x={pt.x} 
+                  y={svgHeight - 12} 
+                  class="axis-text" 
+                  text-anchor="middle"
+                >
+                  {pt.label}
+                </text>
+              {/if}
+
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <circle 
+                cx={pt.x} 
+                cy={pt.y} 
+                r={hoveredPoint?.fullDate === pt.fullDate && hoveredPoint?.type === 'visits' ? 6 : 4} 
+                fill="var(--bg-surface)" 
+                stroke="var(--pastel-sage)" 
+                stroke-width="2.5"
+                class="chart-point"
+                on:mouseenter={(e) => handlePointHover(pt, 'visits', e)}
+                on:mouseleave={handlePointLeave}
+              />
+            {/each}
+
+            <!-- Interactive Tooltip in SVG -->
+            {#if hoveredPoint && hoveredPoint.type === 'visits'}
+              <g transform="translate({hoveredPoint.x}, {hoveredPoint.y - 12})">
+                <rect 
+                  x="-60" 
+                  y="-42" 
+                  width="120" 
+                  height="38" 
+                  rx="6" 
+                  fill="#1E293B" 
+                  stroke="rgba(168, 198, 155, 0.4)" 
+                  filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))"
+                />
+                <text x="0" y="-24" text-anchor="middle" fill="#94A3B8" font-size="10" font-weight="600">
+                  {hoveredPoint.label}
+                </text>
+                <text x="0" y="-10" text-anchor="middle" fill="#A8C69B" font-size="12" font-weight="700">
+                  {hoveredPoint.visits} визитов
+                </text>
+              </g>
+            {/if}
+          </svg>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════ -->
+      <!-- 3. TRANSACTIONS LOG                                                    -->
+      <!-- ══════════════════════════════════════════════════════════════════════ -->
       <div class="card table-card">
         <div class="card-head">
           <div class="head-title-wrap">
@@ -567,7 +653,7 @@
                     {#if tx.txhHash}
                       <span class="ton-amount">{tx.amount} TON</span>
                     {:else}
-                      <span class="uah-amount">{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(tx.amount)}</span>
+                      <span class="uah-amount">{formatCurrency(tx.amount)}</span>
                     {/if}
                   </td>
                   <td>
@@ -610,25 +696,63 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     flex-wrap: wrap;
     gap: 1.25rem;
   }
 
   .header-left h1 {
-    font-size: 2.2rem;
+    font-size: 2.1rem;
+    font-weight: 700;
     margin-bottom: 0.35rem;
+    letter-spacing: -0.02em;
   }
 
   .header-subtitle {
     color: var(--text-secondary);
-    font-size: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  /* Toasts */
+  .toast {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10000;
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .toast-success {
+    background: rgba(30, 41, 35, 0.95);
+    border: 1px solid rgba(168, 198, 155, 0.4);
+    color: var(--pastel-sage);
+  }
+
+  .toast-danger {
+    background: rgba(45, 25, 25, 0.95);
+    border: 1px solid rgba(242, 139, 130, 0.4);
+    color: var(--pastel-coral);
   }
 
   /* Period Tabs */
   .period-tabs {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.35rem;
     background: var(--bg-surface);
     padding: 0.35rem;
     border-radius: var(--radius-pill);
@@ -640,12 +764,12 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.5rem 1.1rem;
+    padding: 0.45rem 0.95rem;
     border-radius: var(--radius-pill);
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.22s var(--ease-spring);
@@ -662,116 +786,51 @@
     box-shadow: 0 2px 10px var(--pastel-rose-glow);
   }
 
-  /* Controls Bar */
-  .controls-bar {
+  /* Custom Range Card */
+  .custom-range-card {
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+  }
+
+  .custom-range-inner {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-    gap: 1rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
   }
 
-  .nav-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .nav-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--bg-surface-elevated);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .nav-btn:hover {
-    color: var(--pastel-rose);
-    border-color: var(--border-glass);
-    background: var(--bg-surface-hover);
-  }
-
-  .range-display {
+  .custom-range-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.45rem 1rem;
-    background: var(--bg-surface-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-  }
-
-  :global(.range-icon) {
-    color: var(--pastel-rose);
-  }
-
-  .range-text {
-    font-weight: 700;
-    font-size: 0.95rem;
+    font-weight: 600;
+    font-size: 0.92rem;
     color: var(--text-primary);
-    text-transform: capitalize;
   }
 
-  .date-input-wrap {
-    position: relative;
+  .custom-range-inputs {
     display: flex;
     align-items: center;
-  }
-
-  .date-picker {
-    padding: 0.45rem 0.85rem;
-    font-size: 0.9rem;
-    border-radius: var(--radius-md);
-  }
-
-  .date-input-wrap .date-picker {
-    padding-left: 2.5rem;
-  }
-
-  :global(.date-input-wrap .input-icon) {
-    position: absolute;
-    left: 0.85rem;
-    color: var(--pastel-rose);
-    pointer-events: none;
-  }
-
-  .custom-range-form {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
     flex-wrap: wrap;
   }
 
-  .custom-field {
+  .date-input-group {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
     font-size: 0.85rem;
     color: var(--text-secondary);
     font-weight: 600;
   }
 
-  .period-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.4rem 0.9rem;
-    background: var(--pastel-rose-dim);
-    color: var(--pastel-rose);
-    border: 1px solid rgba(223, 158, 142, 0.25);
-    border-radius: var(--radius-pill);
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: capitalize;
+  .date-field {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.88rem;
+    border-radius: var(--radius-md);
   }
 
   /* Loading */
@@ -789,24 +848,23 @@
     border: 3px solid rgba(223, 158, 142, 0.15);
     border-top: 3px solid var(--pastel-rose);
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     animation: spinSmooth 0.85s linear infinite;
   }
 
   /* Stats Grid */
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
   }
   
   .stat-card {
     background: var(--bg-surface);
     backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    padding: 1.75rem;
+    padding: 1.5rem;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-glass);
@@ -816,7 +874,7 @@
   }
 
   .stat-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: var(--border-glass);
   }
 
@@ -824,18 +882,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
   }
   
   .stat-title {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-secondary);
   }
 
   .stat-icon-wrap {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -851,7 +909,7 @@
   .stat-icon-wrap.sage {
     background: var(--pastel-sage-dim);
     color: var(--pastel-sage);
-    border: 1px solid rgba(152, 193, 169, 0.25);
+    border: 1px solid rgba(168, 198, 155, 0.25);
   }
 
   .stat-icon-wrap.lavender {
@@ -861,26 +919,134 @@
   }
 
   .stat-value {
-    font-size: 2.2rem;
+    font-size: 1.95rem;
     font-weight: 800;
     letter-spacing: -0.03em;
     color: var(--text-primary);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value.small {
+    font-size: 1.65rem;
   }
 
   .stat-footer {
     margin-top: auto;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
   }
 
-  /* Table Cards */
+  .stat-footer strong {
+    color: var(--text-primary);
+  }
+
+  /* Chart Cards */
+  .chart-card {
+    padding: 1.75rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .chart-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .chart-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .chart-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chart-icon-box.rose {
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border: 1px solid rgba(223, 158, 142, 0.3);
+  }
+
+  .chart-icon-box.sage {
+    background: var(--pastel-sage-dim);
+    color: var(--pastel-sage);
+    border: 1px solid rgba(168, 198, 155, 0.3);
+  }
+
+  .chart-title-wrap h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
+  }
+
+  .chart-title-wrap p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .legend-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .legend-indicator.rose { background: var(--pastel-rose); }
+  .legend-indicator.sage { background: var(--pastel-sage); }
+
+  .svg-chart-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: auto;
+    min-width: 600px;
+    display: block;
+    overflow: visible;
+  }
+
+  .axis-text {
+    font-size: 10px;
+    fill: var(--text-muted);
+    font-family: inherit;
+  }
+
+  .chart-point {
+    cursor: pointer;
+    transition: r 0.15s ease;
+  }
+
+  .chart-point:hover {
+    r: 6.5px;
+  }
+
+  /* Table Card */
   .table-card {
-    padding: 2rem;
+    padding: 1.75rem;
   }
 
   .card-head {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
   }
 
   .head-title-wrap {
@@ -894,13 +1060,15 @@
   }
 
   .head-title-wrap h3 {
-    font-size: 1.3rem;
-    margin-bottom: 0.2rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
   }
 
   .head-title-wrap p {
     color: var(--text-secondary);
-    font-size: 0.88rem;
+    font-size: 0.85rem;
+    margin: 0;
   }
 
   .table-responsive {
@@ -916,7 +1084,7 @@
     padding: 0.85rem 1rem;
     text-align: left;
     color: var(--text-secondary);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -924,79 +1092,28 @@
   }
 
   .table td {
-    padding: 1.1rem 1rem;
+    padding: 1rem;
     text-align: left;
-    border-bottom: 1px solid var(--border-subtle);
-    font-size: 0.93rem;
-  }
-
-  .table tbody tr {
-    transition: background-color 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 0.9rem;
   }
 
   .table tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.02);
   }
 
-  .cell-date, .cell-hour {
+  .cell-date {
     font-weight: 600;
     color: var(--text-primary);
-  }
-
-  .cell-revenue {
-    font-weight: 700;
-    color: var(--pastel-rose);
-  }
-
-  .cell-avg {
-    color: var(--pastel-lavender);
-    font-weight: 600;
-  }
-
-  .clients-pill {
-    display: inline-block;
-    padding: 0.25rem 0.65rem;
-    background: var(--bg-surface-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-pill);
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-  }
-
-  .clients-pill.active {
-    color: var(--pastel-sage);
-    border-color: rgba(152, 193, 169, 0.3);
-    background: var(--pastel-sage-dim);
-  }
-
-  .cell-progress {
-    width: 160px;
-  }
-
-  .mini-bar-track {
-    height: 8px;
-    background: var(--bg-surface-elevated);
-    border-radius: var(--radius-pill);
-    overflow: hidden;
-    width: 100%;
-    border: 1px solid var(--border-subtle);
-  }
-
-  .mini-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--pastel-rose), var(--pastel-sage));
-    border-radius: var(--radius-pill);
-    transition: width 0.3s ease;
   }
 
   .tx-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.25rem 0.7rem;
+    padding: 0.25rem 0.65rem;
     border-radius: var(--radius-pill);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
   }
 
@@ -1009,7 +1126,7 @@
   .tx-badge.rev {
     background-color: var(--pastel-sage-dim);
     color: var(--pastel-sage);
-    border: 1px solid rgba(152, 193, 169, 0.25);
+    border: 1px solid rgba(168, 198, 155, 0.25);
   }
 
   .ton-amount {
@@ -1026,8 +1143,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.6rem;
-    background: var(--bg-surface-elevated);
+    padding: 0.25rem 0.55rem;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -1036,12 +1153,12 @@
 
   .hash-tag:hover {
     border-color: var(--border-glass);
-    background: var(--bg-surface-hover);
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .hash-tag code {
     font-family: monospace;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
   }
 
@@ -1063,7 +1180,6 @@
     padding: 3rem 1rem !important;
   }
 
-  .mb-4 {
-    margin-bottom: 2rem;
-  }
+  .text-rose { color: var(--pastel-rose); }
+  .mb-4 { margin-bottom: 1.75rem; }
 </style>

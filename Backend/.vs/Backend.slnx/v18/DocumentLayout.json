@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\BarbershopB2B\\Backend\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\services\\excelexportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\services\\excelexportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|d:\\barbershopb2b\\backend\\backend\\controllers\\telegramcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\telegramcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -50,7 +54,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "ClientsController.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\ClientsController.cs",
               "RelativeDocumentMoniker": "Backend\\Controllers\\ClientsController.cs",
@@ -59,12 +63,11 @@
               "ViewState": "AgIAAFkBAAAAAAAAAAAuwGoBAABOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-08-10T07:58:19.117Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "NotifycationBackgroundService.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\BackgroundServices\\NotifycationBackgroundService.cs",
               "RelativeDocumentMoniker": "Backend\\BackgroundServices\\NotifycationBackgroundService.cs",
@@ -78,6 +81,23 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "ExcelExportService.cs",
+              "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\ExcelExportService.cs",
+              "RelativeDocumentMoniker": "Backend\\Services\\ExcelExportService.cs",
+              "ToolTip": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\ExcelExportService.cs",
+              "RelativeToolTip": "Backend\\Services\\ExcelExportService.cs",
+              "ViewState": "AgIAAJMAAAAAAAAAAAAiwKQAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-16T13:25:12.386Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{fbcae063-e2c0-4ab1-a516-996ea3dafb72}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "TelegramController.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\TelegramController.cs",
               "RelativeDocumentMoniker": "Backend\\Controllers\\TelegramController.cs",
@@ -90,7 +110,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "StatisticService.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Services\\StatisticService.cs",
               "RelativeDocumentMoniker": "Backend\\Services\\StatisticService.cs",
@@ -98,12 +118,11 @@
               "RelativeToolTip": "Backend\\Services\\StatisticService.cs",
               "ViewState": "AgIAABgAAAAAAAAAAAAhwCEAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-16T10:49:48.209Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-16T10:49:48.209Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "StatisticController.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\StatisticController.cs",
               "RelativeDocumentMoniker": "Backend\\Controllers\\StatisticController.cs",
@@ -111,16 +130,11 @@
               "RelativeToolTip": "Backend\\Controllers\\StatisticController.cs",
               "ViewState": "AgIAACQAAAAAAAAAAAAYwDwAAABHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-16T10:49:22.15Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{fbcae063-e2c0-4ab1-a516-996ea3dafb72}"
+              "WhenOpened": "2026-08-16T10:49:22.15Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "Client.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Client.cs",
               "RelativeDocumentMoniker": "Backend\\Models\\Client.cs",
@@ -128,12 +142,11 @@
               "RelativeToolTip": "Backend\\Models\\Client.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-14T08:04:36.969Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-14T08:04:36.969Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Program.cs",
               "RelativeDocumentMoniker": "Backend\\Program.cs",
@@ -145,7 +158,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "BarberController.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Controllers\\BarberController.cs",
               "RelativeDocumentMoniker": "Backend\\Controllers\\BarberController.cs",
@@ -153,12 +166,11 @@
               "RelativeToolTip": "Backend\\Controllers\\BarberController.cs",
               "ViewState": "AgIAAOUDAAAAAAAAAAAIwPQDAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-11T10:58:17.722Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-11T10:58:17.722Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "Appointment.cs",
               "DocumentMoniker": "D:\\BarbershopB2B\\Backend\\Backend\\Models\\Appointment.cs",
               "RelativeDocumentMoniker": "Backend\\Models\\Appointment.cs",

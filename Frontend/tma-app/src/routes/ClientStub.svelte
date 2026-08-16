@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { apiFetch } from '../lib/api';
   import Icon from '../lib/components/Icon.svelte';
+  import { theme, toggleTmaTheme } from '../lib/stores/theme';
 
   let currentView = 'booking'; // 'booking' | 'appointments'
   let myAppointments = [];
@@ -346,9 +347,19 @@
 </script>
 
 <div class="booking-container">
-  <div class="tabs">
-    <button class="tab-btn {currentView === 'booking' ? 'active' : ''}" on:click={() => switchView('booking')}>Новая запись</button>
-    <button class="tab-btn {currentView === 'appointments' ? 'active' : ''}" on:click={() => switchView('appointments')}>Мои записи</button>
+  <div class="top-nav-bar">
+    <div class="tabs">
+      <button class="tab-btn {currentView === 'booking' ? 'active' : ''}" on:click={() => switchView('booking')}>Новая запись</button>
+      <button class="tab-btn {currentView === 'appointments' ? 'active' : ''}" on:click={() => switchView('appointments')}>Мои записи</button>
+    </div>
+
+    <button class="theme-tma-toggle" on:click={toggleTmaTheme} title="Сменить тему">
+      {#if $theme === 'dark'}
+        <Icon name="sun" size={17} color="var(--pastel-amber)" />
+      {:else}
+        <Icon name="moon" size={17} color="var(--pastel-lavender)" />
+      {/if}
+    </button>
   </div>
 
   {#if currentView === 'booking'}
@@ -734,6 +745,76 @@
     animation: pageFadeIn 0.3s ease-out;
   }
 
+  .top-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .tabs {
+    display: flex;
+    align-items: center;
+    background: var(--bg-surface-elevated);
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-subtle);
+    flex: 1;
+    margin: 0;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 9px 14px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tab-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+  }
+
+  .theme-tma-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    flex-shrink: 0;
+    padding: 0;
+  }
+
+  .theme-tma-toggle:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--border-glass);
+  }
+
+  .theme-tma-toggle:active {
+    transform: scale(0.92);
+  }
+
   @keyframes pageFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -1100,35 +1181,6 @@
     box-shadow: 0 0 16px var(--pastel-rose-glow);
   }
 
-  /* Tabs */
-  .tabs {
-    display: flex;
-    margin-bottom: 24px;
-    background: rgba(23, 26, 35, 0.7);
-    border-radius: var(--radius-pill);
-    padding: 4px;
-    border: 1px solid var(--border-subtle);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-
-  .tab-btn {
-    flex: 1;
-    padding: 10px 14px;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-pill);
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s var(--ease-spring);
-  }
-
-  .tab-btn.active {
-    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
-    color: var(--text-inverse);
-    box-shadow: 0 4px 14px var(--pastel-rose-glow);
-  }
 
   /* Appointment Card */
   .appt-card {

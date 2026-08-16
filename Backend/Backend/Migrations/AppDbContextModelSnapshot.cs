@@ -310,6 +310,32 @@ namespace Backend.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("Backend.Models.SaasAdmin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordSalt")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SaasAdmins");
+                });
+
             modelBuilder.Entity("Backend.Models.Service", b =>
                 {
                     b.Property<Guid>("Id")

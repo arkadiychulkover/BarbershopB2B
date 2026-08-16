@@ -32,5 +32,7 @@ namespace Backend.DTOs
         public string WalletAddress { get; set; }
         public bool IsSubscribed { get; set; }
         public string Status { get; set; }
+        public DateTime NextPayment { get; set; }
+        public DateTime LastPayment { get; set; }
     }
 }
