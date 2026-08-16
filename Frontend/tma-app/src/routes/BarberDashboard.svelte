@@ -7,10 +7,11 @@
   import BarberServices from '../lib/components/BarberServices.svelte';
   import BarberAppointments from '../lib/components/BarberAppointments.svelte';
   import BarberReviews from '../lib/components/BarberReviews.svelte';
+  import BarberProfile from '../lib/components/BarberProfile.svelte';
   import ClientHistory from '../lib/components/ClientHistory.svelte';
   import Icon from '../lib/components/Icon.svelte';
 
-  let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' = 'appointments';
+  let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' | 'profile' = 'appointments';
   let clientHistoryId: string | null = null;
 
   let shifts = [];
@@ -151,6 +152,14 @@
         <span class="tab-icon"><Icon name="star" size={15} /></span>
         <span class="tab-label">Отзывы</span>
       </button>
+      <button 
+        class="tab" 
+        class:active={activeTab === 'profile'} 
+        on:click={() => activeTab = 'profile'}
+      >
+        <span class="tab-icon"><Icon name="user" size={15} /></span>
+        <span class="tab-label">Профиль</span>
+      </button>
     </div>
   </div>
 
@@ -208,6 +217,8 @@
       <BarberAppointments on:openClientHistory={(e) => { clientHistoryId = e.detail; }} />
     {:else if activeTab === 'reviews'}
       <BarberReviews />
+    {:else if activeTab === 'profile'}
+      <BarberProfile />
     {/if}
   </div>
 </div>
@@ -232,7 +243,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    padding: 12px 14px 8px;
+    padding: 10px 10px 6px;
     background: rgba(12, 14, 18, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -241,27 +252,34 @@
 
   .tabs {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     background: rgba(23, 26, 35, 0.7);
-    padding: 4px;
+    padding: 3px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-subtle);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 8px;
+    gap: 4px;
+    padding: 8px 6px;
     background: transparent;
     border: none;
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.25s var(--ease-spring);
     white-space: nowrap;

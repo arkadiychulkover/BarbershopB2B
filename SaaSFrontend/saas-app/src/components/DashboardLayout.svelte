@@ -436,7 +436,12 @@
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
-    animation: fadeIn 0.3s var(--ease-spring);
+    animation: contentFadeIn 0.3s ease-out;
+  }
+
+  @keyframes contentFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   
   @media (max-width: 900px) {

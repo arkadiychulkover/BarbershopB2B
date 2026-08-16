@@ -22,6 +22,8 @@
 
   // expanded card id (mobile list)
   let expandedId: string | null = null;
+  // selected appointment for full details modal (desktop/fullscreen)
+  let selectedDetailAppt: any = null;
 
   // photo upload state per appointment
   let uploadingId: string | null = null;
@@ -231,6 +233,9 @@
       await loadData();
       // keep card expanded after upload
       expandedId = pendingPhotoApptId;
+      if (selectedDetailAppt && selectedDetailAppt.id === pendingPhotoApptId) {
+        selectedDetailAppt = appointments.find(a => a.id === pendingPhotoApptId) || null;
+      }
     } catch(e) {
       hapticError();
       showAlert('Ошибка загрузки фото: ' + (e.message || 'неизвестная ошибка'));
@@ -270,6 +275,10 @@
         appointments[index].resultNote = res.comment;
         appointments = [...appointments];
       }
+      if (selectedDetailAppt && selectedDetailAppt.id === apptId) {
+        selectedDetailAppt.resultNote = res.comment;
+        selectedDetailAppt = { ...selectedDetailAppt };
+      }
       editingCommentId = null;
       hapticSuccess();
     } catch (e) {
@@ -291,6 +300,10 @@
           appointments[index].resultNote = null;
           appointments = [...appointments];
         }
+        if (selectedDetailAppt && selectedDetailAppt.id === apptId) {
+          selectedDetailAppt.resultNote = null;
+          selectedDetailAppt = { ...selectedDetailAppt };
+        }
         hapticSuccess();
       } catch (e) {
         console.error(e);
@@ -304,6 +317,15 @@
 <svelte:window bind:innerWidth />
 
 <div class="appointments-container" class:desktop-mode={isDesktop}>
+  <!-- hidden photo file input for both desktop and mobile -->
+  <input
+    type="file"
+    accept="image/*"
+    style="display:none"
+    bind:this={photoInputEl}
+    on:change={handlePhotoSelected}
+  />
+
   {#if view === 'list'}
     
     {#if isDesktop}
@@ -336,9 +358,9 @@
                   <!-- svelte-ignore a11y-click-events-have-key-events -->
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
                   <div
-                    class="appt-card mobile compact status-{appt.status}"
-                    class:expanded={expandedId === appt.id}
-                    on:click|stopPropagation={() => toggleExpand(appt.id)}
+                    class="appt-card compact desktop-card status-{appt.status}"
+                    class:has-photo={!!appt.photoResultUrl}
+                    on:click|stopPropagation={() => { selectedDetailAppt = appt; }}
                   >
                     <div class="card-main-row">
                       <div class="appt-time">
@@ -362,92 +384,144 @@
                             <Icon name="x" size={14} color="var(--pastel-coral)" />
                           {/if}
                         </div>
-                        <div class="expand-arrow" class:open={expandedId === appt.id}>
+                        {#if appt.photoResultUrl}
+                          <Icon name="camera" size={12} color="var(--pastel-rose)" />
+                        {/if}
+                        <div class="expand-arrow">
                           <Icon name="chevron-right" size={14} />
                         </div>
                       </div>
                     </div>
-
-                    {#if expandedId === appt.id}
-                      <div class="card-expanded" on:click|stopPropagation>
-                        <div class="expand-divider"></div>
-                        <div class="expand-meta">
-                          <span class="meta-badge status-badge-{appt.status}">
-                            {statusLabel(appt.status)}
-                          </span>
-                          <button class="edit-link" on:click={() => openEditForm(appt)}>
-                            <Icon name="edit" size={13} />
-                            <span>Редактировать</span>
-                          </button>
-                        </div>
-                        {#if appt.clientTelegramId && appt.clientTelegramId !== 'WALKIN'}
-                          <div class="client-tg-row">
-                            <span class="client-tg-label">Клиент:</span>
-                            <!-- svelte-ignore a11y-click-events-have-key-events -->
-                            <!-- svelte-ignore a11y-no-static-element-interactions -->
-                            <span
-                              class="client-tg-id"
-                              on:click={() => dispatch('openClientHistory', appt.clientId)}
-                            >
-                              <Icon name="user" size={13} color="var(--pastel-lavender)" />
-                              <span>{appt.clientName || appt.clientTelegramId} · @{appt.clientTelegramId}</span>
-                              <Icon name="chevron-right" size={12} />
-                            </span>
-                          </div>
-                        {/if}
-                        {#if appt.photoResultUrl}
-                          <div class="photo-preview-wrap">
-                            <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-preview" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;" />
-                            <button class="change-photo-btn" on:click={() => triggerPhotoUpload(appt.id)} disabled={uploadingId === appt.id}>
-                              {#if uploadingId === appt.id}
-                                <span class="spinner"></span> Загрузка...
-                              {:else}
-                                <Icon name="refresh" size={13} />
-                                <span>заменить фото</span>
-                              {/if}
-                            </button>
-                          </div>
-                        {:else}
-                          <button class="attach-photo-btn" on:click={() => triggerPhotoUpload(appt.id)} disabled={uploadingId === appt.id}>
-                            {#if uploadingId === appt.id}
-                              <span class="spinner"></span> Загрузка...
-                            {:else}
-                              <Icon name="paperclip" size={15} />
-                              <span>Прикрепить результат</span>
-                            {/if}
-                          </button>
-                        {/if}
-                        <!-- Comment Section -->
-                        <div class="appt-comment-section">
-                          {#if editingCommentId === appt.id}
-                            <textarea class="comment-input" bind:value={commentText} placeholder="Комментарий / Заметка..." on:click|stopPropagation></textarea>
-                            <div class="comment-actions" on:click|stopPropagation>
-                              <button class="btn-save" on:click={() => saveComment(appt.id)}>Сохранить</button>
-                              <button class="btn-cancel" on:click={cancelCommentEdit}>Отмена</button>
-                            </div>
-                          {:else if appt.resultNote}
-                            <div class="comment-display" on:click|stopPropagation>
-                              <div class="comment-text">
-                                <Icon name="comment" size={13} color="var(--pastel-rose)" />
-                                <span>{appt.resultNote}</span>
-                              </div>
-                              <div class="comment-actions-sm">
-                                <button on:click={() => openCommentEdit(appt)}>Ред.</button>
-                                <button class="text-danger" on:click={() => deleteComment(appt.id)}>Удал.</button>
-                              </div>
-                            </div>
-                          {:else}
-                            <button class="btn-add-comment" on:click|stopPropagation={() => openCommentEdit(appt)}>+ Добавить комментарий</button>
-                          {/if}
-                        </div>
-                      </div>
-                    {/if}
                   </div>
                 {/each}
               </div>
             </div>
           {/each}
         </div>
+
+        {#if selectedDetailAppt}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="modal-overlay" on:click={() => selectedDetailAppt = null}>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="detail-modal-card" on:click|stopPropagation>
+              <!-- Modal Header -->
+              <div class="detail-modal-header">
+                <div class="detail-modal-title-wrap">
+                  <div class="detail-time-badge">
+                    <Icon name="clock" size={16} />
+                    <span>{new Date(selectedDetailAppt.appointmentDate).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</span>
+                    <span class="detail-date-sub">({new Date(selectedDetailAppt.appointmentDate).toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'})})</span>
+                  </div>
+                  <span class="meta-badge status-badge-{selectedDetailAppt.status}">
+                    {statusLabel(selectedDetailAppt.status)}
+                  </span>
+                </div>
+                <button class="modal-close-btn" on:click={() => selectedDetailAppt = null}>
+                  <Icon name="x" size={18} />
+                </button>
+              </div>
+
+              <div class="detail-modal-body">
+                <!-- Service & Client Info Grid -->
+                <div class="detail-info-grid">
+                  <div class="detail-info-box">
+                    <span class="detail-box-label">Услуга</span>
+                    <span class="detail-box-value highlight">{selectedDetailAppt.serviceName || services.find(s => s.serviceId === selectedDetailAppt.serviceId)?.name || 'Услуга'}</span>
+                    <span class="detail-box-sub">
+                      {services.find(s => s.serviceId === selectedDetailAppt.serviceId)?.duration || 30} мин • 
+                      {services.find(s => s.serviceId === selectedDetailAppt.serviceId)?.price || selectedDetailAppt.price || 0} ₴
+                    </span>
+                  </div>
+
+                  <div class="detail-info-box">
+                    <span class="detail-box-label">Клиент</span>
+                    {#if selectedDetailAppt.clientTelegramId && selectedDetailAppt.clientTelegramId !== 'WALKIN'}
+                      <!-- svelte-ignore a11y-click-events-have-key-events -->
+                      <!-- svelte-ignore a11y-no-static-element-interactions -->
+                      <div 
+                        class="detail-client-link"
+                        on:click={() => { const cId = selectedDetailAppt.clientId; selectedDetailAppt = null; dispatch('openClientHistory', cId); }}
+                      >
+                        <span class="detail-box-value">{selectedDetailAppt.clientName || 'Клиент'}</span>
+                        <span class="detail-client-handle">@{selectedDetailAppt.clientTelegramId}</span>
+                      </div>
+                    {:else}
+                      <span class="detail-box-value">Гость (Вручную)</span>
+                    {/if}
+                  </div>
+                </div>
+
+                <!-- Photo Section -->
+                <div class="detail-section">
+                  <span class="detail-section-label">Фото результата стрижки</span>
+                  {#if selectedDetailAppt.photoResultUrl}
+                    <div class="detail-photo-card">
+                      <SecureImage src={selectedDetailAppt.photoResultUrl} alt="Результат" className="detail-photo-img" style="width:100%;max-height:280px;object-fit:contain;border-radius:12px;background:#111;" />
+                      <button class="change-photo-btn mt-2" on:click={() => triggerPhotoUpload(selectedDetailAppt.id)} disabled={uploadingId === selectedDetailAppt.id}>
+                        {#if uploadingId === selectedDetailAppt.id}
+                          <span class="spinner"></span> Загрузка...
+                        {:else}
+                          <Icon name="refresh" size={14} />
+                          <span>Заменить фото</span>
+                        {/if}
+                      </button>
+                    </div>
+                  {:else}
+                    <button class="attach-photo-btn" on:click={() => triggerPhotoUpload(selectedDetailAppt.id)} disabled={uploadingId === selectedDetailAppt.id}>
+                      {#if uploadingId === selectedDetailAppt.id}
+                        <span class="spinner"></span> Загрузка...
+                      {:else}
+                        <Icon name="paperclip" size={16} />
+                        <span>Прикрепить фото результата</span>
+                      {/if}
+                    </button>
+                  {/if}
+                </div>
+
+                <!-- Notes / Comments Section -->
+                <div class="detail-section">
+                  <span class="detail-section-label">Комментарий / Заметка мастера</span>
+                  {#if editingCommentId === selectedDetailAppt.id}
+                    <textarea class="comment-input" bind:value={commentText} placeholder="Введите заметку о предпочтениях клиента, насадках и т.д..."></textarea>
+                    <div class="comment-actions">
+                      <button class="btn-save" on:click={() => saveComment(selectedDetailAppt.id)}>Сохранить</button>
+                      <button class="btn-cancel" on:click={cancelCommentEdit}>Отмена</button>
+                    </div>
+                  {:else if selectedDetailAppt.resultNote}
+                    <div class="comment-display">
+                      <div class="comment-text">
+                        <Icon name="comment" size={14} color="var(--pastel-rose)" />
+                        <span>{selectedDetailAppt.resultNote}</span>
+                      </div>
+                      <div class="comment-actions-sm">
+                        <button on:click={() => openCommentEdit(selectedDetailAppt)}>Редактировать</button>
+                        <button class="text-danger" on:click={() => deleteComment(selectedDetailAppt.id)}>Удалить</button>
+                      </div>
+                    </div>
+                  {:else}
+                    <button class="btn-add-comment" on:click={() => openCommentEdit(selectedDetailAppt)}>
+                      <Icon name="plus" size={14} />
+                      <span>Добавить заметку о записи</span>
+                    </button>
+                  {/if}
+                </div>
+              </div>
+
+              <!-- Modal Footer Actions -->
+              <div class="detail-modal-footer">
+                <button class="primary-btn flex-1" on:click={() => { const a = selectedDetailAppt; selectedDetailAppt = null; openEditForm(a); }}>
+                  <Icon name="edit" size={15} />
+                  <span>Редактировать</span>
+                </button>
+                <button class="secondary-btn flex-1" on:click={() => selectedDetailAppt = null}>
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          </div>
+        {/if}
       {/if}
 
     {:else}
@@ -617,45 +691,57 @@
         <button class="add-btn" on:click={() => openNewForm(currentDate)}>+</button>
       {/if}
     {/if}
-    
-  {:else}
-    <div class="form-container card">
-      <h2>{editingAppt ? 'Изменение записи' : 'Новая запись'}</h2>
-      
-      <div class="form-group">
-        <label>Дата</label>
-        <input type="date" class="input" bind:value={formDateStr} />
-      </div>
+  {/if}
 
-      <div class="form-group">
-        <label>Время</label>
-        <input type="time" class="input" bind:value={formTime} />
-      </div>
-      
-      <div class="form-group">
-        <label>Услуга</label>
-        <select class="input" bind:value={formServiceId}>
-          {#each services as s}
-            <option value={s.serviceId}>{s.name} ({s.price} ₴)</option>
-          {/each}
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>Статус</label>
-        <select class="input" bind:value={formStatus}>
-          <option value="0">Запланировано</option>
-          <option value="1">Выполнено</option>
-          <option value="2">Отменено</option>
-        </select>
-      </div>
-      
-      <div class="form-actions">
-        <button class="primary-btn flex-1" on:click={saveAppt}>Сохранить</button>
-        {#if editingAppt}
-          <button class="danger-btn flex-1" on:click={deleteAppt}>Удалить</button>
-        {/if}
-        <button class="secondary-btn flex-1" on:click={cancelForm}>Отмена</button>
+  {#if view === 'form'}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="modal-overlay" on:click={cancelForm}>
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="form-modal-card" on:click|stopPropagation>
+        <div class="modal-header">
+          <h2>{editingAppt ? 'Изменение записи' : 'Новая запись'}</h2>
+          <button class="modal-close-btn" on:click={cancelForm} type="button" aria-label="Закрыть">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        
+        <div class="form-group">
+          <label for="barber-form-date">Дата</label>
+          <input id="barber-form-date" type="date" class="input" bind:value={formDateStr} />
+        </div>
+
+        <div class="form-group">
+          <label for="barber-form-time">Время</label>
+          <input id="barber-form-time" type="time" class="input" bind:value={formTime} />
+        </div>
+        
+        <div class="form-group">
+          <label for="barber-form-service">Услуга</label>
+          <select id="barber-form-service" class="input" bind:value={formServiceId}>
+            {#each services as s}
+              <option value={s.serviceId}>{s.name} ({s.price} ₴)</option>
+            {/each}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="barber-form-status">Статус</label>
+          <select id="barber-form-status" class="input" bind:value={formStatus}>
+            <option value="0">Запланировано</option>
+            <option value="1">Выполнено</option>
+            <option value="2">Отменено</option>
+          </select>
+        </div>
+        
+        <div class="form-actions">
+          <button class="primary-btn flex-1" on:click={saveAppt}>Сохранить</button>
+          {#if editingAppt}
+            <button class="danger-btn flex-1" on:click={deleteAppt}>Удалить</button>
+          {/if}
+          <button class="secondary-btn flex-1" on:click={cancelForm}>Отмена</button>
+        </div>
       </div>
     </div>
   {/if}
@@ -1304,5 +1390,235 @@
     border-right-color: transparent;
     border-radius: 50%;
     animation: spinSmooth 0.75s linear infinite;
+  }
+
+  /* Desktop Cards & Modal Styles */
+  .desktop-card {
+    transition: all 0.2s var(--ease-spring);
+    user-select: none;
+  }
+
+  .desktop-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-glass);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .desktop-card:active {
+    transform: scale(0.98);
+  }
+
+  .desktop-card .expand-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+    box-sizing: border-box;
+    animation: modalBgFade 0.2s ease-out;
+  }
+
+  @keyframes modalBgFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .detail-modal-card,
+  .form-modal-card {
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-glass);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    width: 92%;
+    max-width: 520px;
+    max-height: 88vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    color: var(--text-primary);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 24px rgba(223, 158, 142, 0.15);
+    animation: modalPop 0.25s var(--ease-spring);
+    box-sizing: border-box;
+    margin: auto;
+  }
+
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .detail-modal-header,
+  .form-modal-card .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 14px;
+  }
+
+  .form-modal-card .modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .detail-modal-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .detail-time-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .detail-date-sub {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .modal-close-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .modal-close-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass);
+    background: var(--bg-surface-hover);
+  }
+
+  .detail-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .detail-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .detail-info-box {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .detail-box-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  .detail-box-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .detail-box-value.highlight {
+    color: var(--pastel-rose);
+  }
+
+  .detail-box-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .detail-client-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+  }
+
+  .detail-client-link:hover .detail-box-value {
+    color: var(--pastel-rose);
+    text-decoration: underline;
+  }
+
+  .detail-client-handle {
+    font-size: 12px;
+    color: var(--pastel-lavender);
+    font-weight: 600;
+  }
+
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detail-section-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
+  .detail-photo-card {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .detail-modal-footer {
+    display: flex;
+    gap: 12px;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 16px;
   }
 </style>

@@ -11,7 +11,11 @@
     ShieldCheck, 
     AlertCircle,
     X,
-    Users
+    Users,
+    Edit3,
+    AtSign,
+    Check,
+    ExternalLink
   } from 'lucide-svelte';
   
   let masters = [];
@@ -19,10 +23,19 @@
   let errorMsg = '';
   
   let showAddForm = false;
-  let newMaster = { name: '', description: '', telegramId: '' };
+  let newMaster = { name: '', description: '', telegramId: '', telegramUsername: '' };
   let isSaving = false;
+
+  let editingMaster = null;
+  let isUpdating = false;
   
   onMount(async () => {
+    await loadMasters();
+  });
+
+  async function loadMasters() {
+    isLoading = true;
+    errorMsg = '';
     try {
       masters = await apiRequest('/api/Barber/all');
     } catch (e) {
@@ -30,7 +43,7 @@
     } finally {
       isLoading = false;
     }
-  });
+  }
 
   async function deleteMaster(id) {
     if (!confirm('Вы уверены, что хотите удалить этого мастера?')) return;
@@ -48,18 +61,83 @@
   async function addMaster() {
     isSaving = true;
     try {
+      const cleanUsername = newMaster.telegramUsername ? newMaster.telegramUsername.trim().replace(/^@/, '') : '';
+      const payload = {
+        name: newMaster.name.trim(),
+        description: newMaster.description?.trim() || null,
+        telegramId: newMaster.telegramId?.trim() || null,
+        telegramUsername: cleanUsername || null
+      };
+
       const res = await apiRequest('/api/Barber/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMaster)
+        body: JSON.stringify(payload)
       });
-      masters = [...masters, { id: res.barberId, name: newMaster.name, description: newMaster.description, telegramId: newMaster.telegramId, isActive: true }];
+      
+      masters = [
+        ...masters, 
+        { 
+          id: res.barberId, 
+          name: payload.name, 
+          description: payload.description, 
+          telegramId: payload.telegramId, 
+          telegramUsername: payload.telegramUsername,
+          isActive: true 
+        }
+      ];
       showAddForm = false;
-      newMaster = { name: '', description: '', telegramId: '' };
+      newMaster = { name: '', description: '', telegramId: '', telegramUsername: '' };
     } catch (e) {
       alert('Ошибка добавления: ' + (e.message || 'Неизвестная ошибка'));
     } finally {
       isSaving = false;
+    }
+  }
+
+  function startEdit(master) {
+    editingMaster = {
+      barberId: master.id,
+      name: master.name || '',
+      description: master.description || '',
+      telegramId: master.telegramId || '',
+      telegramUsername: master.telegramUsername ? master.telegramUsername.replace(/^@/, '') : '',
+      photoUrl: master.photoUrl || null,
+      isActive: master.isActive ?? true
+    };
+  }
+
+  function cancelEdit() {
+    editingMaster = null;
+  }
+
+  async function saveEdit() {
+    if (!editingMaster) return;
+    isUpdating = true;
+    try {
+      const cleanUsername = editingMaster.telegramUsername ? editingMaster.telegramUsername.trim().replace(/^@/, '') : '';
+      const payload = {
+        barberId: editingMaster.barberId,
+        name: editingMaster.name.trim(),
+        description: editingMaster.description?.trim() || null,
+        telegramId: editingMaster.telegramId?.trim() || null,
+        telegramUsername: cleanUsername || null,
+        photoUrl: editingMaster.photoUrl,
+        isActive: editingMaster.isActive
+      };
+
+      await apiRequest('/api/Barber/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      masters = masters.map(m => m.id === payload.barberId ? { ...m, ...payload, id: payload.barberId } : m);
+      editingMaster = null;
+    } catch (e) {
+      alert('Ошибка обновления: ' + (e.message || 'Неизвестная ошибка'));
+    } finally {
+      isUpdating = false;
     }
   }
 </script>
@@ -69,7 +147,7 @@
     <header class="page-header">
       <div class="header-left">
         <h1>Команда мастеров</h1>
-        <p class="header-subtitle">Управляйте барберами, их доступом и индивидуальными графиками</p>
+        <p class="header-subtitle">Управляйте барберами, их Telegram юзернеймами и профилями</p>
       </div>
       <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
         {#if showAddForm}
@@ -86,7 +164,7 @@
       <div class="card add-card mb-4">
         <div class="card-head">
           <h3>Новый мастер</h3>
-          <p>Введите контактные данные и Telegram ID мастера для уведомлений</p>
+          <p>Введите данные мастера, цифровой Telegram ID и юзернейм (@username) для прямой связи клиентов с барбером</p>
         </div>
 
         <form on:submit|preventDefault={addMaster}>
@@ -107,12 +185,22 @@
               </div>
             </div>
 
-            <div class="form-group full-width">
-              <label for="masterTg">Telegram ID (цифровой ID или юзернейм)</label>
+            <div class="form-group">
+              <label for="masterTg">Telegram ID (цифровой ID)</label>
               <div class="input-icon-wrap">
                 <Send size={16} class="input-icon" />
-                <input id="masterTg" type="text" class="input has-icon" bind:value={newMaster.telegramId} placeholder="987654321 или master_tg" required />
+                <input id="masterTg" type="text" class="input has-icon" bind:value={newMaster.telegramId} placeholder="123456789" required />
               </div>
+              <span class="field-hint">Для авторизации мастера в Telegram Mini App</span>
+            </div>
+
+            <div class="form-group">
+              <label for="masterTgUsername">Telegram Username (@username)</label>
+              <div class="input-icon-wrap">
+                <AtSign size={16} class="input-icon" />
+                <input id="masterTgUsername" type="text" class="input has-icon" bind:value={newMaster.telegramUsername} placeholder="barber_username (без @)" />
+              </div>
+              <span class="field-hint">Клиенты смогут сразу открыть чат через «Написать мастеру»</span>
             </div>
           </div>
 
@@ -121,6 +209,71 @@
               {isSaving ? 'Сохранение...' : 'Сохранить мастера'}
             </button>
             <button type="button" class="btn btn-secondary" on:click={() => showAddForm = false}>
+              Отмена
+            </button>
+          </div>
+        </form>
+      </div>
+    {/if}
+
+    {#if editingMaster}
+      <div class="card add-card mb-4 edit-card">
+        <div class="card-head">
+          <div class="card-head-title">
+            <Edit3 size={20} class="text-rose" />
+            <h3>Редактирование профиля мастера: {editingMaster.name}</h3>
+          </div>
+          <p>Измените контакты, цифровой Telegram ID или @username для связи с клиентами</p>
+        </div>
+
+        <form on:submit|preventDefault={saveEdit}>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="editName">Имя мастера</label>
+              <div class="input-icon-wrap">
+                <User size={16} class="input-icon" />
+                <input id="editName" type="text" class="input has-icon" bind:value={editingMaster.name} required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editDesc">Квалификация / Должность</label>
+              <div class="input-icon-wrap">
+                <Briefcase size={16} class="input-icon" />
+                <input id="editDesc" type="text" class="input has-icon" bind:value={editingMaster.description} placeholder="Top Barber" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editTgId">Telegram ID (цифровой ID)</label>
+              <div class="input-icon-wrap">
+                <Send size={16} class="input-icon" />
+                <input id="editTgId" type="text" class="input has-icon" bind:value={editingMaster.telegramId} placeholder="123456789" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editTgUsername">Telegram Username (@username)</label>
+              <div class="input-icon-wrap">
+                <AtSign size={16} class="input-icon" />
+                <input id="editTgUsername" type="text" class="input has-icon" bind:value={editingMaster.telegramUsername} placeholder="username" />
+              </div>
+              <span class="field-hint">Используется для ссылки t.me/username в кнопке «Написать мастеру»</span>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="checkbox-label">
+                <input type="checkbox" bind:checked={editingMaster.isActive} />
+                <span>Мастер активен (принимает онлайн-записи)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" disabled={isUpdating || !editingMaster.name}>
+              {isUpdating ? 'Сохранение...' : 'Сохранить изменения'}
+            </button>
+            <button type="button" class="btn btn-secondary" on:click={cancelEdit}>
               Отмена
             </button>
           </div>
@@ -168,6 +321,27 @@
             </div>
 
             <div class="master-meta">
+              {#if master.telegramUsername}
+                <div class="meta-row highlight-meta">
+                  <AtSign size={14} class="meta-icon text-rose" />
+                  <span>Юзернейм: <strong>@{master.telegramUsername.replace(/^@/, '')}</strong></span>
+                  <a 
+                    href={`https://t.me/${master.telegramUsername.replace(/^@/, '')}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="tg-ext-link"
+                    title="Открыть в Telegram"
+                  >
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+              {:else}
+                <div class="meta-row empty-meta">
+                  <AtSign size={14} class="meta-icon text-muted" />
+                  <span>Юзернейм: <em>не указан</em></span>
+                </div>
+              {/if}
+
               {#if master.telegramId}
                 <div class="meta-row">
                   <Send size={14} class="meta-icon" />
@@ -177,6 +351,10 @@
             </div>
 
             <div class="master-footer">
+              <button class="btn btn-secondary btn-sm" on:click={() => startEdit(master)}>
+                <Edit3 size={14} />
+                <span>Изменить</span>
+              </button>
               <button class="btn btn-danger btn-sm" on:click={() => deleteMaster(master.id)}>
                 <Trash2 size={14} />
                 <span>Удалить</span>
@@ -219,18 +397,32 @@
     animation: fadeIn 0.25s ease;
   }
 
+  .edit-card {
+    border-color: rgba(223, 158, 142, 0.35);
+    background: linear-gradient(180deg, rgba(28, 32, 44, 0.9) 0%, rgba(20, 24, 34, 0.85) 100%);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 20px rgba(223, 158, 142, 0.1);
+  }
+
   .card-head {
     margin-bottom: 1.5rem;
   }
 
+  .card-head-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
   .card-head h3 {
     font-size: 1.3rem;
-    margin-bottom: 0.25rem;
+    margin: 0;
   }
 
   .card-head p {
     color: var(--text-secondary);
     font-size: 0.9rem;
+    margin-top: 0.25rem;
   }
 
   .form-grid {
@@ -259,6 +451,21 @@
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-secondary);
+  }
+
+  .field-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    padding: 0.5rem 0;
   }
 
   .input-icon-wrap {
@@ -402,6 +609,9 @@
   }
 
   .master-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     background: var(--bg-surface-elevated);
     padding: 0.75rem 1rem;
     border-radius: var(--radius-md);
@@ -416,13 +626,48 @@
     color: var(--text-secondary);
   }
 
+  .highlight-meta {
+    color: var(--text-primary);
+  }
+
+  .highlight-meta strong {
+    color: var(--pastel-rose);
+  }
+
+  .empty-meta {
+    color: var(--text-muted);
+  }
+
+  .tg-ext-link {
+    color: var(--pastel-rose);
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  .tg-ext-link:hover {
+    opacity: 1;
+  }
+
   :global(.meta-icon) {
     color: var(--pastel-lavender);
+    flex-shrink: 0;
+  }
+
+  :global(.text-rose) {
+    color: var(--pastel-rose) !important;
+  }
+
+  :global(.text-muted) {
+    color: var(--text-muted) !important;
   }
 
   .master-footer {
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
     margin-top: auto;
   }
 

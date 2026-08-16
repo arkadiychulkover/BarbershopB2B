@@ -11,6 +11,7 @@ namespace Backend.Models
         public bool IsActive { get; set; } = true;
 
         public string? TelegramId { get; set; }
+        public string? TelegramUsername { get; set; }
 
         public Guid OwnerId { get; set; }
         public BarbershopOwner Owner { get; set; }

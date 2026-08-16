@@ -27,11 +27,18 @@ namespace Backend.Services
 
             var appointments = await context.Appointments
                 .AsNoTracking()
+                .Include(a => a.Service)
                 .Where(a => a.Master.OwnerId == ownerId
                          && a.AppointmentDate >= start
                          && a.AppointmentDate < end
-                         && a.Status == Models.Enums.AppointmentStatus.Completed)
-                .Select(a => new { a.AppointmentDate, a.OwnerProfit, a.MasterProfit, a.ClientId })
+                         && a.Status != Models.Enums.AppointmentStatus.Cancelled)
+                .Select(a => new
+                {
+                    a.AppointmentDate,
+                    Price = a.Service != null ? a.Service.Price : (a.OwnerProfit + a.MasterProfit),
+                    OwnerProfit = a.OwnerProfit > 0 ? a.OwnerProfit : (a.Service != null ? a.Service.Price : 0),
+                    a.ClientId
+                })
                 .ToListAsync();
 
             var grouped = appointments
@@ -40,7 +47,7 @@ namespace Backend.Services
                     g => g.Key,
                     g => new DailyStatisticDto
                     {
-                        TotalProfit = g.Sum(a => a.OwnerProfit + a.MasterProfit),
+                        TotalProfit = g.Sum(a => a.Price),
                         OwnerProfit = g.Sum(a => a.OwnerProfit),
                         ClientsCount = g.Select(a => a.ClientId).Distinct().Count()
                     }
@@ -61,6 +68,7 @@ namespace Backend.Services
 
             return result;
         }
+
         public async Task<Dictionary<int, DailyStatisticDto>> GetOwnerStatisticByHour(Guid ownerId, DateTime date)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -68,11 +76,18 @@ namespace Backend.Services
 
             var appointments = await context.Appointments
                 .AsNoTracking()
+                .Include(a => a.Service)
                 .Where(a => a.Master.OwnerId == ownerId
                          && a.AppointmentDate >= targetDate
                          && a.AppointmentDate < targetDate.AddDays(1)
-                         && a.Status == Models.Enums.AppointmentStatus.Completed)
-                .Select(a => new { a.AppointmentDate, a.OwnerProfit, a.MasterProfit, a.ClientId })
+                         && a.Status != Models.Enums.AppointmentStatus.Cancelled)
+                .Select(a => new
+                {
+                    a.AppointmentDate,
+                    Price = a.Service != null ? a.Service.Price : (a.OwnerProfit + a.MasterProfit),
+                    OwnerProfit = a.OwnerProfit > 0 ? a.OwnerProfit : (a.Service != null ? a.Service.Price : 0),
+                    a.ClientId
+                })
                 .ToListAsync();
 
             var grouped = appointments
@@ -81,7 +96,7 @@ namespace Backend.Services
                     g => g.Key,
                     g => new DailyStatisticDto
                     {
-                        TotalProfit = g.Sum(a => a.OwnerProfit + a.MasterProfit),
+                        TotalProfit = g.Sum(a => a.Price),
                         OwnerProfit = g.Sum(a => a.OwnerProfit),
                         ClientsCount = g.Select(a => a.ClientId).Distinct().Count()
                     }
@@ -107,12 +122,19 @@ namespace Backend.Services
 
             var appointments = await context.Appointments
                 .AsNoTracking()
+                .Include(a => a.Service)
                 .Where(a => a.MasterId == masterId
                          && a.Master.OwnerId == ownerId
                          && a.AppointmentDate >= start
                          && a.AppointmentDate < end
-                         && a.Status == Models.Enums.AppointmentStatus.Completed)
-                .Select(a => new { a.AppointmentDate, a.OwnerProfit, a.MasterProfit, a.ClientId })
+                         && a.Status != Models.Enums.AppointmentStatus.Cancelled)
+                .Select(a => new
+                {
+                    a.AppointmentDate,
+                    Price = a.Service != null ? a.Service.Price : (a.OwnerProfit + a.MasterProfit),
+                    OwnerProfit = a.OwnerProfit > 0 ? a.OwnerProfit : (a.Service != null ? a.Service.Price : 0),
+                    a.ClientId
+                })
                 .ToListAsync();
 
             var grouped = appointments
@@ -121,7 +143,7 @@ namespace Backend.Services
                     g => g.Key,
                     g => new DailyStatisticDto
                     {
-                        TotalProfit = g.Sum(a => a.OwnerProfit + a.MasterProfit),
+                        TotalProfit = g.Sum(a => a.Price),
                         OwnerProfit = g.Sum(a => a.OwnerProfit),
                         ClientsCount = g.Select(a => a.ClientId).Distinct().Count()
                     }
@@ -146,12 +168,19 @@ namespace Backend.Services
 
             var appointments = await context.Appointments
                 .AsNoTracking()
+                .Include(a => a.Service)
                 .Where(a => a.MasterId == masterId
                          && a.Master.OwnerId == ownerId
                          && a.AppointmentDate >= targetDate
                          && a.AppointmentDate < targetDate.AddDays(1)
-                         && a.Status == Models.Enums.AppointmentStatus.Completed)
-                .Select(a => new { a.AppointmentDate, a.OwnerProfit, a.MasterProfit, a.ClientId })
+                         && a.Status != Models.Enums.AppointmentStatus.Cancelled)
+                .Select(a => new
+                {
+                    a.AppointmentDate,
+                    Price = a.Service != null ? a.Service.Price : (a.OwnerProfit + a.MasterProfit),
+                    OwnerProfit = a.OwnerProfit > 0 ? a.OwnerProfit : (a.Service != null ? a.Service.Price : 0),
+                    a.ClientId
+                })
                 .ToListAsync();
 
             var grouped = appointments
@@ -160,7 +189,7 @@ namespace Backend.Services
                     g => g.Key,
                     g => new DailyStatisticDto
                     {
-                        TotalProfit = g.Sum(a => a.OwnerProfit + a.MasterProfit),
+                        TotalProfit = g.Sum(a => a.Price),
                         OwnerProfit = g.Sum(a => a.OwnerProfit),
                         ClientsCount = g.Select(a => a.ClientId).Distinct().Count()
                     }

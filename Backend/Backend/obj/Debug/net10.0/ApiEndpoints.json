@@ -408,6 +408,32 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetMyProfile",
+    "RelativePath": "api/Barber/my-profile",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UpdateMyProfile",
+    "RelativePath": "api/Barber/my-profile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.DTOs.UpdateMasterProfileRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "GetMyReviews",
     "RelativePath": "api/Barber/my-reviews",
     "HttpMethod": "GET",
@@ -505,6 +531,22 @@
       {
         "Name": "request",
         "Type": "Backend.Controllers.BarberController\u002BMyShiftRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UpdateMyUsername",
+    "RelativePath": "api/Barber/my-username",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.DTOs.UpdateMasterUsernameRequest",
         "IsRequired": true
       }
     ],

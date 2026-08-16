@@ -54,7 +54,7 @@
     <div class="stats-grid">
       <div class="stat-card stat-rose">
         <div class="stat-top">
-          <span class="stat-title">Выручка за сегодня</span>
+          <span class="stat-title">Денежный оборот за сегодня</span>
           <div class="stat-icon-wrap rose">
             <Wallet size={20} />
           </div>
@@ -63,7 +63,7 @@
           {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(summary.revenue)}
         </div>
         <div class="stat-footer">
-          <span class="stat-hint">Доход владельца за смену</span>
+          <span class="stat-hint">Общий объем оказанных услуг за день</span>
         </div>
       </div>
 

@@ -64,6 +64,7 @@ namespace Backend.Controllers
                 Name = request.Name,
                 Description = request.Description,
                 TelegramId = request.TelegramId,
+                TelegramUsername = !string.IsNullOrWhiteSpace(request.TelegramUsername) ? request.TelegramUsername.Trim().TrimStart('@') : null,
                 PhotoUrl = request.PhotoUrl,
                 OwnerId = owner.Id,
                 Ip = HttpContext.Connection.RemoteIpAddress ?? System.Net.IPAddress.Loopback
@@ -92,6 +93,10 @@ namespace Backend.Controllers
             barber.Name = request.Name;
             barber.Description = request.Description;
             barber.TelegramId = request.TelegramId;
+            if (request.TelegramUsername != null)
+            {
+                barber.TelegramUsername = !string.IsNullOrWhiteSpace(request.TelegramUsername) ? request.TelegramUsername.Trim().TrimStart('@') : null;
+            }
             barber.PhotoUrl = request.PhotoUrl;
             barber.IsActive = request.IsActive;
             await _context.SaveChangesAsync();
@@ -400,6 +405,122 @@ namespace Backend.Controllers
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Review added successfully", reviewId = review.Id });
+        }
+
+        // ─── Master: Profile & Username Management ─────────────────────────────────
+
+        [HttpGet("my-profile")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> GetMyProfile()
+        {
+            var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master == null)
+                return NotFound(new { message = "Master not found" });
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            var dto = new MasterProfileDto
+            {
+                Id = master.Id,
+                Name = master.Name,
+                Description = master.Description,
+                TelegramId = master.TelegramId,
+                TelegramUsername = master.TelegramUsername,
+                PhotoUrl = master.PhotoUrl,
+                Rating = master.Rating,
+                ReviewsCount = master.ReviewsCount,
+                IsActive = master.IsActive
+            };
+
+            return Ok(dto);
+        }
+
+        [HttpPut("my-username")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> UpdateMyUsername([FromBody] UpdateMasterUsernameRequest request)
+        {
+            var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master == null)
+                return NotFound(new { message = "Master not found" });
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            string? cleanUsername = null;
+            if (!string.IsNullOrWhiteSpace(request.TelegramUsername))
+            {
+                cleanUsername = request.TelegramUsername.Trim().TrimStart('@');
+                if (cleanUsername.Length > 64)
+                {
+                    return BadRequest(new { message = "Имя пользователя слишком длинное." });
+                }
+            }
+
+            master.TelegramUsername = cleanUsername;
+            await _context.SaveChangesAsync();
+
+            return Ok(new 
+            { 
+                message = "Имя пользователя успешно обновлено", 
+                telegramUsername = master.TelegramUsername 
+            });
+        }
+
+        [HttpPut("my-profile")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMasterProfileRequest request)
+        {
+            var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master == null)
+                return NotFound(new { message = "Master not found" });
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            if (!string.IsNullOrWhiteSpace(request.Name))
+            {
+                master.Name = request.Name.Trim();
+            }
+
+            if (request.Description != null)
+            {
+                master.Description = request.Description.Trim();
+            }
+
+            if (request.TelegramUsername != null)
+            {
+                master.TelegramUsername = !string.IsNullOrWhiteSpace(request.TelegramUsername)
+                    ? request.TelegramUsername.Trim().TrimStart('@')
+                    : null;
+            }
+
+            if (request.PhotoUrl != null)
+            {
+                master.PhotoUrl = request.PhotoUrl;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new 
+            { 
+                message = "Профиль успешно обновлен",
+                profile = new MasterProfileDto
+                {
+                    Id = master.Id,
+                    Name = master.Name,
+                    Description = master.Description,
+                    TelegramId = master.TelegramId,
+                    TelegramUsername = master.TelegramUsername,
+                    PhotoUrl = master.PhotoUrl,
+                    Rating = master.Rating,
+                    ReviewsCount = master.ReviewsCount,
+                    IsActive = master.IsActive
+                }
+            });
         }
 
         // ─── Master: Reviews & Services ────────────────────────────────────────────

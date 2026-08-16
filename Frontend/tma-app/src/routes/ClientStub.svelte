@@ -27,6 +27,7 @@
   let reviewingAppt = null;
   let reviewRating = 5;
   let reviewComment = '';
+  let submittingReview = false;
   let clientProfile = null;
   let showPhoneModal = false;
   let phoneInput = '';
@@ -91,6 +92,7 @@
     reviewingAppt = appt;
     reviewRating = 5;
     reviewComment = '';
+    error = '';
   }
 
   function closeReviewModal() {
@@ -99,6 +101,7 @@
   }
 
   async function submitReview() {
+    if (!reviewingAppt) return;
     submittingReview = true;
     error = '';
     try {
@@ -108,10 +111,14 @@
           barberId: reviewingAppt.masterId,
           appointmentId: reviewingAppt.id,
           rating: reviewRating,
-          comment: reviewComment
+          comment: reviewComment ? reviewComment.trim() : ''
         }
       });
       reviewingAppt.hasReview = true;
+      const idx = myAppointments.findIndex(a => a.id === reviewingAppt.id);
+      if (idx !== -1) {
+        myAppointments[idx].hasReview = true;
+      }
       myAppointments = [...myAppointments];
       closeReviewModal();
     } catch(err) {
@@ -228,6 +235,45 @@
     }
   }
 
+  function calculateSlotEndTime(timeStr: string, durationMinutes: number): string {
+    if (!timeStr || !durationMinutes) return timeStr;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    const totalMins = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10) + durationMinutes;
+    const endH = Math.floor(totalMins / 60) % 24;
+    const endM = totalMins % 60;
+    return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  }
+
+  function formatMasterHandle(handle: string): string {
+    if (!handle) return '';
+    return handle.startsWith('@') ? handle : `@${handle}`;
+  }
+
+  function openBarberChat(username: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    if (!username) {
+      showAlert('У мастера не настроен Telegram @username');
+      return;
+    }
+    const clean = String(username).trim().replace(/^@/, '');
+    if (!clean || /^\d+$/.test(clean)) {
+      showAlert('У мастера не настроен Telegram @username');
+      return;
+    }
+
+    const tmeUrl = `https://t.me/${clean}`;
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      tg.openTelegramLink(tmeUrl);
+    } else {
+      window.open(tmeUrl, '_blank', 'noopener,noreferrer');
+    }
+  }
+
   function goBack() {
     if (step > 1 && step < 4) {
       step--;
@@ -335,11 +381,28 @@
     {#if step === 1}
       <div class="list">
         {#each masters as master}
-          <div class="card" on:click={() => selectMaster(master)}>
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="card master-select-card" on:click={() => selectMaster(master)}>
             <div class="info">
-              <h3>{master.name}</h3>
+              <div class="master-title-line">
+                <h3>{master.name}</h3>
+                {#if master.username}
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
+                  <button 
+                    type="button"
+                    class="contact-master-btn" 
+                    on:click|stopPropagation={(e) => openBarberChat(master.username, e)}
+                    title="Написать мастеру в Telegram"
+                  >
+                    <Icon name="comment" size={13} color="var(--pastel-lavender)" />
+                    <span>Написать мастеру</span>
+                  </button>
+                {/if}
+              </div>
               {#if master.description}
-                <p>{master.description}</p>
+                <p class="master-desc-text">{master.description}</p>
               {/if}
             </div>
             <div class="arrow">
@@ -355,7 +418,20 @@
     {#if step === 2}
       <div class="master-header">
         <div class="info">
-          <h3>Мастер: {selectedMaster.name}</h3>
+          <div class="master-title-line">
+            <h3>Мастер: {selectedMaster.name}</h3>
+            {#if selectedMaster.username}
+              <button 
+                type="button"
+                class="contact-master-btn inline" 
+                on:click={(e) => openBarberChat(selectedMaster.username, e)}
+                title="Написать мастеру в Telegram"
+              >
+                <Icon name="comment" size={13} color="var(--pastel-lavender)" />
+                <span>Написать мастеру</span>
+              </button>
+            {/if}
+          </div>
           {#if masterRating !== null}
             <p>
               Рейтинг: 
@@ -389,6 +465,8 @@
       {:else}
         <div class="list">
           {#each services as service}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="card" on:click={() => selectService(service)}>
               <div class="info">
                 <h3>{service.name}</h3>
@@ -407,29 +485,48 @@
 
     {#if step === 3}
       <div class="datetime-picker">
+        <div class="booking-service-preview">
+          <div class="service-preview-left">
+            <span class="preview-service-name">{selectedService.name}</span>
+            <span class="preview-service-details">
+              <span>{selectedService.duration} мин</span>
+              <span class="dot">•</span>
+              <span class="preview-service-price">{selectedService.price} ₴</span>
+            </span>
+          </div>
+        </div>
+
         <label for="date">Выберите дату:</label>
         <input type="date" id="date" bind:value={selectedDate} on:change={fetchAvailableSlots} />
         
-        <label>Доступное время:</label>
+        <label>Доступное время (длительность: {selectedService.duration} мин):</label>
         <div class="slots">
           {#each availableSlots as slot}
             <button 
               class="slot-btn {selectedTime === slot ? 'selected' : ''}" 
               on:click={() => selectedTime = slot}
             >
-              {slot}
+              <span class="slot-time-main">{slot}</span>
+              <span class="slot-time-sub">{slot}–{calculateSlotEndTime(slot, selectedService.duration)}</span>
             </button>
           {:else}
-            <p class="empty-slots">Нет свободного времени на эту дату</p>
+            <p class="empty-slots">Нет свободного времени на эту дату для услуги длительностью {selectedService.duration} мин</p>
           {/each}
         </div>
+
+        {#if selectedTime}
+          <div class="selected-slot-banner">
+            <Icon name="check" size={16} color="var(--pastel-sage)" />
+            <span>Время записи: <strong>{selectedTime} — {calculateSlotEndTime(selectedTime, selectedService.duration)}</strong> ({selectedService.duration} мин)</span>
+          </div>
+        {/if}
 
         <button 
           class="primary-btn" 
           disabled={!selectedTime} 
           on:click={confirmBooking}
         >
-          Записаться
+          Записаться на {selectedTime ? `${selectedTime} (${selectedService.duration} мин)` : 'выбранное время'}
         </button>
       </div>
     {/if}
@@ -440,48 +537,101 @@
           <Icon name="check-circle" size={54} color="var(--pastel-sage)" />
         </div>
         <h2>Вы успешно записаны!</h2>
-        <p>Мастер: {selectedMaster.name}</p>
-        <p>Услуга: {selectedService.name}</p>
-        <p>Дата: {selectedDate} в {selectedTime}</p>
-        <button class="primary-btn" on:click={() => { reset(); switchView('appointments'); }}>Мои записи</button>
+        <div class="success-details-card">
+          <div class="success-master-line">
+            <span class="success-label">Мастер:</span>
+            <span class="success-val">{selectedMaster.name}</span>
+            {#if selectedMaster.username}
+              <button 
+                type="button"
+                class="contact-master-btn sm" 
+                on:click={(e) => openBarberChat(selectedMaster.username, e)}
+                title="Написать мастеру в Telegram"
+              >
+                <Icon name="comment" size={12} color="var(--pastel-lavender)" />
+                <span>Написать мастеру</span>
+              </button>
+            {/if}
+          </div>
+          <div class="success-detail-row">
+            <span class="success-label">Услуга:</span>
+            <span class="success-val">{selectedService.name}</span>
+          </div>
+          <div class="success-detail-row">
+            <span class="success-label">Дата и время:</span>
+            <span class="success-val highlight">{selectedDate} в {selectedTime}</span>
+          </div>
+        </div>
+        <button class="primary-btn mt-3" on:click={() => { reset(); switchView('appointments'); }}>Мои записи</button>
       </div>
     {/if}
   {/if}
   {/if}
 
   {#if reviewingAppt}
-    <div class="modal-overlay">
-      <div class="modal-content">
-        <h3>Оставить отзыв</h3>
-        <p>Мастер: {reviewingAppt.masterName}</p>
-        <p>Услуга: {reviewingAppt.serviceName}</p>
-        
-        <div class="stars">
-          {#each [1,2,3,4,5] as star}
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <span 
-              class="star {reviewRating >= star ? 'active' : ''}" 
-              on:click={() => reviewRating = star}
-            >
-              <Icon 
-                name={reviewRating >= star ? 'star' : 'star-outline'} 
-                size={32} 
-                color="var(--pastel-amber)" 
-              />
-            </span>
-          {/each}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="modal-overlay" on:click={closeReviewModal}>
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="modal-content review-modal-card" on:click|stopPropagation>
+        <div class="modal-header-row">
+          <div class="modal-header-text">
+            <h3>Оставить отзыв</h3>
+            <p class="modal-sub">Поделитесь впечатлениями о визите</p>
+          </div>
+          <button class="modal-close-btn" on:click={closeReviewModal} type="button" aria-label="Закрыть">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <div class="review-target-box">
+          <div class="review-target-row">
+            <span class="target-label">Мастер:</span>
+            <span class="target-value">{reviewingAppt.masterName || 'Барбер'}</span>
+          </div>
+          <div class="review-target-row">
+            <span class="target-label">Услуга:</span>
+            <span class="target-value highlight">{reviewingAppt.serviceName || 'Услуга'}</span>
+          </div>
         </div>
         
-        <textarea bind:value={reviewComment} placeholder="Напишите ваш отзыв..."></textarea>
+        <div class="stars-wrap">
+          <span class="stars-label">Ваша оценка:</span>
+          <div class="stars">
+            {#each [1,2,3,4,5] as star}
+              <button 
+                type="button"
+                class="star-btn" 
+                class:active={reviewRating >= star}
+                on:click={() => reviewRating = star}
+                aria-label="{star} звезд"
+              >
+                <Icon 
+                  name={reviewRating >= star ? 'star' : 'star-outline'} 
+                  size={36} 
+                  color="var(--pastel-amber)" 
+                />
+              </button>
+            {/each}
+          </div>
+          <div class="rating-text-hint">
+            {reviewRating === 5 ? '⭐⭐⭐⭐⭐ Отлично' : reviewRating === 4 ? '⭐⭐⭐⭐ Хорошо' : reviewRating === 3 ? '⭐⭐⭐ Нормально' : '⭐⭐ Есть замечания'}
+          </div>
+        </div>
         
-        {#if error}<p class="error">{error}</p>{/if}
+        <div class="form-group">
+          <label for="client-review-comment">Комментарий (необязательно)</label>
+          <textarea id="client-review-comment" bind:value={reviewComment} placeholder="Что вам понравилось больше всего?"></textarea>
+        </div>
+        
+        {#if error}<p class="error-msg-sm">{error}</p>{/if}
         
         <div class="modal-actions">
-          <button class="secondary-btn" on:click={closeReviewModal}>Отмена</button>
-          <button class="primary-btn" on:click={submitReview} disabled={submittingReview}>
-            {submittingReview ? 'Отправка...' : 'Отправить'}
+          <button class="primary-btn flex-1" on:click={submitReview} disabled={submittingReview}>
+            {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
           </button>
+          <button class="secondary-btn" on:click={closeReviewModal} disabled={submittingReview}>Отмена</button>
         </div>
       </div>
     </div>
@@ -535,7 +685,20 @@
           <div class="card appt-card">
             <div class="appt-info">
               <h3>{appt.serviceName}</h3>
-              <p>Мастер: {appt.masterName}</p>
+              <div class="appt-master-row">
+                <span class="appt-master-name">Мастер: <strong>{appt.masterName}</strong></span>
+                {#if appt.masterUsername}
+                  <button 
+                    type="button"
+                    class="contact-master-btn sm" 
+                    on:click={(e) => openBarberChat(appt.masterUsername, e)}
+                    title="Написать мастеру в Telegram"
+                  >
+                    <Icon name="comment" size={12} color="var(--pastel-lavender)" />
+                    <span>Написать мастеру</span>
+                  </button>
+                {/if}
+              </div>
               <p>Дата: {formatDate(appt.appointmentDate)}</p>
               <p>Статус: <span class="status-{appt.status}">{formatStatus(appt.status)}</span></p>
               <p>Цена: {appt.price ? appt.price + ' ₴' : 'Не указана'}</p>
@@ -568,7 +731,12 @@
     background-color: var(--bg-canvas);
     color: var(--text-primary);
     font-family: var(--font-family);
-    animation: fadeIn 0.3s var(--ease-spring);
+    animation: pageFadeIn 0.3s ease-out;
+  }
+
+  @keyframes pageFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .header {
@@ -714,28 +882,114 @@
     border-color: var(--border-active);
   }
 
+  .master-title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .master-username-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pastel-lavender);
+    background: var(--pastel-lavender-dim);
+    border: 1px solid rgba(186, 168, 222, 0.25);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.02em;
+  }
+
+  .master-username-badge.inline {
+    font-size: 13px;
+    padding: 3px 10px;
+  }
+
+  .master-desc-text {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .booking-service-preview {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .service-preview-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .preview-service-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+
+  .preview-service-details {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .preview-service-price {
+    font-weight: 600;
+    color: var(--pastel-rose);
+  }
+
+  .dot {
+    color: var(--text-muted);
+  }
+
   .slots {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
     gap: 10px;
-    margin-bottom: 26px;
+    margin-bottom: 20px;
   }
 
   .slot-btn {
-    padding: 12px 6px;
+    padding: 10px 6px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
     background-color: var(--bg-surface-elevated);
     color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s var(--ease-spring);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .slot-time-main {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slot-time-sub {
+    font-size: 11px;
+    color: var(--text-muted);
     font-variant-numeric: tabular-nums;
   }
 
   .slot-btn:hover {
     border-color: var(--border-glass);
+    color: var(--pastel-rose);
+  }
+
+  .slot-btn:hover .slot-time-sub {
     color: var(--pastel-rose);
   }
 
@@ -745,6 +999,24 @@
     border-color: transparent;
     box-shadow: 0 4px 14px var(--pastel-rose-glow);
     transform: scale(1.04);
+  }
+
+  .slot-btn.selected .slot-time-sub {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .selected-slot-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--pastel-sage-dim);
+    border: 1px solid rgba(152, 193, 169, 0.3);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    animation: fadeIn 0.2s ease;
   }
 
   .empty-slots {
@@ -977,15 +1249,27 @@
   /* Modal Overlay */
   .modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(12, 14, 18, 0.85);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 12, 16, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200;
-    animation: fadeIn 0.2s ease;
+    z-index: 9999;
+    padding: 16px;
+    box-sizing: border-box;
+    animation: modalBgFade 0.2s ease-out;
+  }
+
+  @keyframes modalBgFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .modal-content {
@@ -993,35 +1277,146 @@
     border: 1px solid var(--border-glass);
     padding: 24px;
     border-radius: var(--radius-lg);
-    width: 90%;
-    max-width: 400px;
+    width: 92%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
     color: var(--text-primary);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 24px rgba(223, 158, 142, 0.15);
+    animation: modalPop 0.25s var(--ease-spring);
+    box-sizing: border-box;
+    margin: auto;
   }
 
-  .modal-content h3 { margin: 0; font-size: 18px; font-weight: 700; }
-  .modal-content p { margin: 0; font-size: 14px; color: var(--text-secondary); }
-  
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 12px;
+  }
+
+  .modal-header-text h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .modal-sub {
+    margin: 3px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .modal-close-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .modal-close-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass);
+    background: var(--bg-surface-hover);
+  }
+
+  .review-target-box {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .review-target-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .target-label {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .target-value {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .target-value.highlight {
+    color: var(--pastel-rose);
+  }
+
+  .stars-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  .stars-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
   .stars {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    font-size: 32px;
-    margin: 8px 0;
+    gap: 10px;
+    margin: 4px 0;
   }
 
-  .star {
+  .star-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
     cursor: pointer;
-    opacity: 0.25;
-    transition: opacity 0.2s, transform 0.15s;
+    opacity: 0.3;
+    transition: all 0.2s var(--ease-spring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .star.active {
+
+  .star-btn:hover,
+  .star-btn.active {
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.15);
     filter: drop-shadow(0 0 8px var(--pastel-amber-glow));
+  }
+
+  .rating-text-hint {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pastel-amber);
+    min-height: 18px;
   }
 
   textarea {
@@ -1090,4 +1485,101 @@
     font-size: 13px;
     text-align: center;
   }
+
+  /* Contact Master Buttons & Info Styles */
+  .contact-master-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pastel-lavender-dim);
+    color: var(--pastel-lavender);
+    border: 1px solid rgba(179, 160, 219, 0.3);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s var(--ease-spring);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .contact-master-btn:hover {
+    background: rgba(179, 160, 219, 0.22);
+    border-color: var(--pastel-lavender);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--pastel-lavender-glow);
+  }
+
+  .contact-master-btn:active {
+    transform: scale(0.96);
+  }
+
+  .contact-master-btn.inline {
+    margin-left: 8px;
+  }
+
+  .contact-master-btn.sm {
+    padding: 4px 9px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .appt-master-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 4px 0;
+  }
+
+  .appt-master-name {
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .success-details-card {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .success-master-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .success-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .success-label {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .success-val {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .success-val.highlight {
+    color: var(--pastel-rose);
+  }
+
+  .mt-1 { margin-top: 6px; }
+  .mt-3 { margin-top: 14px; }
 </style>

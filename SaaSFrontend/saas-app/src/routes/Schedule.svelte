@@ -12,7 +12,8 @@
     CheckCircle2, 
     Trash2,
     Sparkles,
-    User
+    User,
+    X
   } from 'lucide-svelte';
   
   let masters = [];
@@ -267,29 +268,34 @@
     <div class="modal-backdrop" on:click={() => showModal = false}>
       <div class="modal-content card" on:click|stopPropagation>
         <div class="modal-header">
-          <h2>{editingAppt ? 'Редактировать запись' : 'Новая запись'}</h2>
-          <p class="modal-subtitle">Заполните детали визита клиента к мастеру</p>
+          <div class="modal-header-text">
+            <h2>{editingAppt ? 'Редактировать запись' : 'Новая запись'}</h2>
+            <p class="modal-subtitle">Заполните детали визита клиента к мастеру</p>
+          </div>
+          <button class="modal-close-btn" on:click={() => showModal = false} type="button" aria-label="Закрыть">
+            <X size={18} />
+          </button>
         </div>
         
         <div class="form-group">
-          <label>Дата</label>
-          <input type="date" class="input" bind:value={formDate}>
+          <label for="modal-form-date">Дата</label>
+          <input id="modal-form-date" type="date" class="input" bind:value={formDate}>
         </div>
         <div class="form-group mt-2">
-          <label>Время</label>
-          <input type="time" class="input" bind:value={formTime}>
+          <label for="modal-form-time">Время</label>
+          <input id="modal-form-time" type="time" class="input" bind:value={formTime}>
         </div>
         <div class="form-group mt-2">
-          <label>Услуга</label>
-          <select class="input" bind:value={formServiceId}>
+          <label for="modal-form-service">Услуга</label>
+          <select id="modal-form-service" class="input" bind:value={formServiceId}>
             {#each services as s}
               <option value={s.serviceId}>{s.name} ({s.price} ₴)</option>
             {/each}
           </select>
         </div>
         <div class="form-group mt-2">
-          <label>Статус</label>
-          <select class="input" bind:value={formStatus}>
+          <label for="modal-form-status">Статус</label>
+          <select id="modal-form-status" class="input" bind:value={formStatus}>
             <option value="0">Запланировано</option>
             <option value="1">Выполнено</option>
             <option value="2">Отменено</option>
@@ -297,7 +303,7 @@
         </div>
         
         <div class="modal-actions mt-4">
-          <button class="btn btn-primary" on:click={saveAppt}>Сохранить</button>
+          <button class="btn btn-primary flex-1" on:click={saveAppt}>Сохранить</button>
           {#if editingAppt}
             <button class="btn btn-danger" on:click={deleteAppt}>
               <Trash2 size={16} />
@@ -316,7 +322,12 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.3s var(--ease-spring);
+    animation: pageFadeIn 0.3s ease-out;
+  }
+
+  @keyframes pageFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .page-header {
@@ -554,39 +565,94 @@
   /* Modal */
   .modal-backdrop {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(12, 14, 18, 0.82);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 12, 16, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease;
+    z-index: 9999;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    animation: modalBgFade 0.2s ease-out;
+  }
+
+  @keyframes modalBgFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .modal-content {
-    width: 440px;
-    max-width: 92vw;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: auto;
     background: var(--bg-surface-solid);
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-lg);
     padding: 2.25rem 2rem;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 24px rgba(223, 158, 142, 0.15);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    animation: modalPop 0.25s var(--ease-spring);
+  }
+
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
     margin-bottom: 1.5rem;
   }
 
+  .modal-header-text {
+    flex: 1;
+  }
+
   .modal-header h2 { 
-    font-size: 1.5rem;
+    font-size: 1.45rem;
+    font-weight: 700;
     margin-bottom: 0.25rem;
+    color: var(--text-primary);
   }
 
   .modal-subtitle {
     color: var(--text-secondary);
     font-size: 0.88rem;
+  }
+
+  .modal-close-btn {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .modal-close-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass);
+    background: var(--bg-surface-hover);
   }
 
   .form-group {
@@ -607,6 +673,10 @@
     display: flex;
     gap: 0.75rem;
     margin-top: 1.75rem;
+  }
+
+  .flex-1 {
+    flex: 1;
   }
 
   .mt-2 { margin-top: 0.85rem; }

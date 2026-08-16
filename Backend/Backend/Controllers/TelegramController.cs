@@ -119,6 +119,10 @@ namespace Backend.Controllers
             }
 
             master.TelegramId = userId;
+            if (!string.IsNullOrWhiteSpace(tgUser.Username))
+            {
+                master.TelegramUsername = tgUser.Username.Trim().TrimStart('@');
+            }
             master.Ip = HttpContext.Connection.RemoteIpAddress;
 
             await context.SaveChangesAsync();

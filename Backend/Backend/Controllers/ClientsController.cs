@@ -182,6 +182,8 @@ namespace Backend.Controllers
                 {
                     Id = m.Id,
                     Name = m.Name,
+                    TelegramId = m.TelegramId,
+                    Username = m.TelegramUsername,
                     PhotoUrl = m.PhotoUrl,
                     Description = m.Description
                 })
@@ -240,14 +242,16 @@ namespace Backend.Controllers
 
             var appointments = await context.Appointments
                 .AsNoTracking()
+                .Include(a => a.Service)
                 .Where(a => a.MasterId == masterId
-                            && a.AppointmentDate >= startOfDay
+                            && a.Status != AppointmentStatus.Cancelled
                             && a.AppointmentDate < endOfDay
-                            && a.Status != AppointmentStatus.Cancelled)
+                            && (a.AppointmentEndDate > startOfDay || a.AppointmentDate >= startOfDay))
                 .ToListAsync();
 
             var availableSlots = new List<string>();
             var currentTime = shift.StartTime;
+            int stepMinutes = service.Duration > 0 && service.Duration < 30 ? service.Duration : 30;
 
             while (currentTime.AddMinutes(service.Duration) <= shift.EndTime)
             {
@@ -256,12 +260,19 @@ namespace Backend.Controllers
                 var slotEndDateTime = startOfDay.Add(slotEnd.ToTimeSpan());
 
                 bool isOverlap = appointments.Any(a =>
-                    slotStartDateTime < a.AppointmentEndDate && slotEndDateTime > a.AppointmentDate);
+                {
+                    var aStart = a.AppointmentDate;
+                    var aEnd = a.AppointmentEndDate > a.AppointmentDate
+                        ? a.AppointmentEndDate
+                        : a.AppointmentDate.AddMinutes(a.Service?.Duration ?? 60);
+
+                    return slotStartDateTime < aEnd && slotEndDateTime > aStart;
+                });
 
                 if (!isOverlap && slotStartDateTime > DateTime.UtcNow)
                     availableSlots.Add(currentTime.ToString("HH:mm"));
 
-                currentTime = currentTime.AddMinutes(30);
+                currentTime = currentTime.AddMinutes(stepMinutes);
             }
 
             return Ok(availableSlots);
@@ -283,6 +294,8 @@ namespace Backend.Controllers
                     Id = a.Id,
                     MasterId = a.MasterId,
                     MasterName = a.Master.Name,
+                    MasterTelegramId = a.Master.TelegramId,
+                    MasterUsername = a.Master.TelegramUsername,
                     ServiceName = a.Service.ServiceName.Name,
                     AppointmentDate = a.AppointmentDate,
                     AppointmentEndDate = a.AppointmentEndDate,
@@ -415,6 +428,8 @@ namespace Backend.Controllers
         public Guid Id { get; set; }
         public Guid MasterId { get; set; }
         public string MasterName { get; set; }
+        public string? MasterTelegramId { get; set; }
+        public string? MasterUsername { get; set; }
         public string ServiceName { get; set; }
         public DateTime AppointmentDate { get; set; }
         public DateTime AppointmentEndDate { get; set; }

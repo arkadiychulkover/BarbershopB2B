@@ -224,7 +224,7 @@
     <header class="page-header">
       <div class="header-left">
         <h1>Финансовая аналитика</h1>
-        <p class="header-subtitle">Анализ доходности заведения, загруженности мастеров и потока клиентов</p>
+        <p class="header-subtitle">Общий денежный оборот заведения, загруженность мастеров и поток клиентов</p>
       </div>
 
       <!-- Period Tabs -->
@@ -365,7 +365,7 @@
         <div class="stat-card stat-rose">
           <div class="stat-top">
             <span class="stat-title">
-              {selectedPeriod === 'day' ? 'Выручка за день' : 'Суммарная выручка'}
+              {selectedPeriod === 'day' ? 'Оборот за день' : 'Общий денежный оборот'}
             </span>
             <div class="stat-icon-wrap rose">
               <TrendingUp size={20} />
@@ -375,7 +375,7 @@
             {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(summary.totalRevenue)}
           </div>
           <div class="stat-footer">
-            <span>Доход заведения за выбранный период</span>
+            <span>Общий объем оказанных услуг за выбранный период</span>
           </div>
         </div>
 
@@ -409,7 +409,7 @@
               : '0 ₴'}
           </div>
           <div class="stat-footer">
-            <span>Средний расход на клиента</span>
+            <span>Средний расход клиента на услуги</span>
           </div>
         </div>
       </div>
@@ -422,7 +422,7 @@
               <Clock size={20} class="title-icon" />
               <div>
                 <h3>Почасовая загрузка за день</h3>
-                <p>Распределение визитов клиентов и выручки по часам</p>
+                <p>Распределение визитов клиентов и денежного оборота по часам</p>
               </div>
             </div>
           </div>
@@ -433,7 +433,7 @@
                 <tr>
                   <th>Время</th>
                   <th>Клиентов</th>
-                  <th>Выручка за час</th>
+                  <th>Оборот за час</th>
                   <th>Загруженность</th>
                 </tr>
               </thead>
@@ -479,7 +479,7 @@
               <CalendarDays size={20} class="title-icon" />
               <div>
                 <h3>Динамика по дням</h3>
-                <p>Детализация выручки и потока клиентов</p>
+                <p>Детализация денежного оборота и потока клиентов</p>
               </div>
             </div>
           </div>
@@ -489,7 +489,7 @@
               <thead>
                 <tr>
                   <th>Дата</th>
-                  <th>Выручка за день</th>
+                  <th>Оборот за день</th>
                   <th>Кол-во клиентов</th>
                   <th>Средний чек дня</th>
                 </tr>
