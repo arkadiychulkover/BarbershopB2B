@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace Backend.Controllers
 {
@@ -443,9 +444,9 @@ namespace Backend.Controllers
             if (!string.IsNullOrWhiteSpace(request.TelegramUsername))
             {
                 cleanUsername = request.TelegramUsername.Trim().TrimStart('@');
-                if (cleanUsername.Length > 64)
+                if (!Regex.IsMatch(cleanUsername, @"^[a-zA-Z0-9_]{5,32}$"))
                 {
-                    return BadRequest(new { message = "Имя пользователя слишком длинное." });
+                    return BadRequest(new { message = "Некорректный Telegram username. Допустимы латинские буквы, цифры и знак подчеркивания (от 5 до 32 символов)." });
                 }
             }
 
@@ -483,9 +484,19 @@ namespace Backend.Controllers
 
             if (request.TelegramUsername != null)
             {
-                master.TelegramUsername = !string.IsNullOrWhiteSpace(request.TelegramUsername)
-                    ? request.TelegramUsername.Trim().TrimStart('@')
-                    : null;
+                if (!string.IsNullOrWhiteSpace(request.TelegramUsername))
+                {
+                    var clean = request.TelegramUsername.Trim().TrimStart('@');
+                    if (!Regex.IsMatch(clean, @"^[a-zA-Z0-9_]{5,32}$"))
+                    {
+                        return BadRequest(new { message = "Некорректный Telegram username. Допустимы латинские буквы, цифры и знак подчеркивания (от 5 до 32 символов)." });
+                    }
+                    master.TelegramUsername = clean;
+                }
+                else
+                {
+                    master.TelegramUsername = null;
+                }
             }
 
             if (request.PhotoUrl != null)

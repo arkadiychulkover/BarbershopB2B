@@ -7,6 +7,7 @@ using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace Backend.Controllers
 {
@@ -46,18 +47,26 @@ namespace Backend.Controllers
         public async Task<IActionResult> UpdatePhone([FromBody] UpdateClientPhoneRequest request)
         {
             if (string.IsNullOrWhiteSpace(request?.Phone))
-                return BadRequest("Номер телефона не может быть пустым.");
+                return BadRequest(new { message = "Номер телефона не может быть пустым." });
+
+            var cleanedPhone = Regex.Replace(request.Phone.Trim(), @"[\s\-\(\)]", "");
+
+            var phoneRegex = new Regex(@"^\+[0-9]{1,3}[0-9]{9}$");
+            if (!phoneRegex.IsMatch(cleanedPhone))
+            {
+                return BadRequest(new { message = "Некорректный номер телефона. Номер должен начинаться с \"+\", содержать код страны (1-3 цифры) и 9 цифр номера (например, +380991234567 или +79991234567)." });
+            }
 
             var clientId = User.GetUserId();
 
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var client = await context.Clients.FindAsync(clientId);
-            if (client == null) return NotFound("Client not found.");
+            if (client == null) return NotFound(new { message = "Клиент не найден." });
 
-            client.Phone = request.Phone.Trim();
+            client.Phone = cleanedPhone;
             await context.SaveChangesAsync();
 
-            return Ok(new { Message = "Phone updated successfully", Phone = client.Phone });
+            return Ok(new { message = "Номер телефона успешно сохранен", phone = client.Phone });
         }
 
         [HttpPost("Zapisatsa")]

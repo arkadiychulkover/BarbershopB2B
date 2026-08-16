@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -45,12 +46,23 @@ namespace Backend.Controllers
                 return BadRequest(new { message = "Пользователь с таким email уже зарегистрирован." });
             }
 
+            string? cleanedPhone = null;
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                cleanedPhone = Regex.Replace(request.PhoneNumber.Trim(), @"[\s\-\(\)]", "");
+                var phoneRegex = new Regex(@"^\+[0-9]{1,3}[0-9]{9}$");
+                if (!phoneRegex.IsMatch(cleanedPhone))
+                {
+                    return BadRequest(new { message = "Некорректный номер телефона. Номер должен начинаться с \"+\", содержать код страны (1-3 цифры) и 9 цифр номера (например, +380991234567 или +79991234567)." });
+                }
+            }
+
             string passwordHash = PasswordSecurity.HashPassword(request.Password);
 
             _context.BarbershopOwners.Add(new BarbershopOwner
             {
                 OwnerName = request.OwnerName?.Trim(),
-                PhoneNumber = request.PhoneNumber?.Trim(),
+                PhoneNumber = cleanedPhone ?? "",
                 Email = cleanEmail,
                 TelegramId = request.TelegramId?.Trim(),
                 BarbershopName = request.BarbershopName?.Trim(),

@@ -38,6 +38,17 @@
     isLoading = true;
     errorMsg = '';
     
+    if (formData.phoneNumber) {
+      const cleaned = formData.phoneNumber.trim().replace(/[\s\-\(\)]/g, '');
+      const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
+      if (!phoneRegex.test(cleaned)) {
+        errorMsg = 'Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, 1-3 цифры кода, 9 цифр номера)';
+        isLoading = false;
+        return;
+      }
+      formData.phoneNumber = cleaned;
+    }
+
     try {
       await apiRequest('/api/Regestration/register', {
         method: 'POST',

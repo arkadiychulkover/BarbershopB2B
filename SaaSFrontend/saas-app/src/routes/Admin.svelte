@@ -325,6 +325,17 @@
 
   async function submitEditOwner() {
     if (!editingOwner) return;
+
+    if (editingOwner.phoneNumber) {
+      const cleaned = editingOwner.phoneNumber.trim().replace(/[\s\-\(\)]/g, '');
+      const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
+      if (!phoneRegex.test(cleaned)) {
+        showError('Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, 1-3 цифры кода, 9 цифр номера)');
+        return;
+      }
+      editingOwner.phoneNumber = cleaned;
+    }
+
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/owners/${editingOwner.id}`, {

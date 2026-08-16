@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace Backend.Controllers
 {
@@ -256,7 +257,16 @@ namespace Backend.Controllers
                 return NotFound(new { message = "Владелец заведения не найден" });
 
             if (!string.IsNullOrWhiteSpace(request.OwnerName)) owner.OwnerName = request.OwnerName.Trim();
-            if (!string.IsNullOrWhiteSpace(request.PhoneNumber)) owner.PhoneNumber = request.PhoneNumber.Trim();
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                var cleanedPhone = Regex.Replace(request.PhoneNumber.Trim(), @"[\s\-\(\)]", "");
+                var phoneRegex = new Regex(@"^\+[0-9]{1,3}[0-9]{9}$");
+                if (!phoneRegex.IsMatch(cleanedPhone))
+                {
+                    return BadRequest(new { message = "Некорректный номер телефона. Номер должен начинаться с \"+\", содержать код страны (1-3 цифры) и 9 цифр номера (например, +380991234567 или +79991234567)." });
+                }
+                owner.PhoneNumber = cleanedPhone;
+            }
             if (!string.IsNullOrWhiteSpace(request.BarbershopName)) owner.BarbershopName = request.BarbershopName.Trim();
             if (request.BarbershopAddress != null) owner.BarbershopAddress = request.BarbershopAddress.Trim();
             if (request.BarbershopDescription != null) owner.BarbershopDescription = request.BarbershopDescription.Trim();

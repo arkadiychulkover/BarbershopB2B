@@ -60,6 +60,15 @@
 
     try {
       const cleanUsername = formUsername.trim().replace(/^@/, '');
+      if (cleanUsername) {
+        const usernameRegex = /^[a-zA-Z0-9_]{5,32}$/;
+        if (!usernameRegex.test(cleanUsername)) {
+          showAlert('Некорректный username. Допустимы латинские буквы, цифры и _ (от 5 до 32 символов).');
+          saving = false;
+          return;
+        }
+      }
+
       const response = await apiFetch('/api/Barber/my-profile', {
         method: 'PUT',
         body: {

@@ -4,7 +4,7 @@
   import Icon from '../lib/components/Icon.svelte';
   import { theme, toggleTmaTheme } from '../lib/stores/theme';
 
-  let currentView = 'booking'; // 'booking' | 'appointments'
+  let currentView: 'booking' | 'appointments' | 'profile' = 'booking';
   let myAppointments = [];
   let loadingAppointments = false;
 
@@ -34,6 +34,69 @@
   let phoneInput = '';
   let savingPhone = false;
   let phoneError = '';
+
+  let editingPhone = false;
+  let profilePhoneInput = '';
+  let profilePhoneError = '';
+  let profilePhoneSuccess = '';
+  let savingProfilePhone = false;
+
+  function validatePhone(phone: string): { valid: boolean; cleaned: string; error?: string } {
+    if (!phone || !phone.trim()) {
+      return { valid: false, cleaned: '', error: 'Укажите номер телефона' };
+    }
+    const cleaned = phone.trim().replace(/[\s\-\(\)]/g, '');
+    const regex = /^\+[0-9]{1,3}[0-9]{9}$/;
+    if (!regex.test(cleaned)) {
+      return { 
+        valid: false, 
+        cleaned, 
+        error: 'Номер должен начинаться с + и содержать код страны (1-3 цифры) и 9 цифр номера (например, +380991234567 или +79991234567)' 
+      };
+    }
+    return { valid: true, cleaned };
+  }
+
+  function startEditPhone() {
+    profilePhoneInput = clientProfile?.phone || '';
+    profilePhoneError = '';
+    profilePhoneSuccess = '';
+    editingPhone = true;
+  }
+
+  function cancelEditPhone() {
+    editingPhone = false;
+    profilePhoneError = '';
+  }
+
+  async function saveProfilePhone() {
+    const val = validatePhone(profilePhoneInput);
+    if (!val.valid) {
+      profilePhoneError = val.error || 'Некорректный номер';
+      return;
+    }
+
+    savingProfilePhone = true;
+    profilePhoneError = '';
+    profilePhoneSuccess = '';
+    try {
+      await apiFetch('/api/Clients/update-phone', {
+        method: 'POST',
+        body: { phone: val.cleaned }
+      });
+      if (!clientProfile) clientProfile = {};
+      clientProfile.phone = val.cleaned;
+      profilePhoneSuccess = 'Номер телефона успешно сохранен!';
+      editingPhone = false;
+      setTimeout(() => {
+        profilePhoneSuccess = '';
+      }, 3000);
+    } catch (err: any) {
+      profilePhoneError = err.message || 'Ошибка сохранения номера';
+    } finally {
+      savingProfilePhone = false;
+    }
+  }
 
   onMount(async () => {
     await fetchMasters();
@@ -184,9 +247,9 @@
   }
 
   async function savePhoneAndBook() {
-    const trimmed = phoneInput.trim();
-    if (!trimmed || trimmed.length < 6) {
-      phoneError = 'Введите корректный номер телефона (не менее 6 символов)';
+    const val = validatePhone(phoneInput);
+    if (!val.valid) {
+      phoneError = val.error || 'Некорректный номер';
       return;
     }
 
@@ -195,13 +258,16 @@
     try {
       await apiFetch('/api/Clients/update-phone', {
         method: 'POST',
-        body: { phone: trimmed }
+        body: { phone: val.cleaned }
       });
       if (!clientProfile) clientProfile = {};
-      clientProfile.phone = trimmed;
+      clientProfile.phone = val.cleaned;
       showPhoneModal = false;
-      await executeBooking();
-    } catch (err) {
+      
+      if (step === 3 && selectedTime && selectedMaster && selectedService) {
+        await executeBooking();
+      }
+    } catch (err: any) {
       phoneError = err.message || 'Не удалось сохранить номер';
     } finally {
       savingPhone = false;
@@ -337,10 +403,13 @@
     });
   }
 
-  function switchView(view) {
+  function switchView(view: 'booking' | 'appointments' | 'profile') {
     currentView = view;
     error = '';
     if (view === 'appointments') {
+      fetchMyAppointments();
+    } else if (view === 'profile') {
+      fetchClientProfile();
       fetchMyAppointments();
     }
   }
@@ -349,8 +418,9 @@
 <div class="booking-container">
   <div class="top-nav-bar">
     <div class="tabs">
-      <button class="tab-btn {currentView === 'booking' ? 'active' : ''}" on:click={() => switchView('booking')}>Новая запись</button>
+      <button class="tab-btn {currentView === 'booking' ? 'active' : ''}" on:click={() => switchView('booking')}>Запись</button>
       <button class="tab-btn {currentView === 'appointments' ? 'active' : ''}" on:click={() => switchView('appointments')}>Мои записи</button>
+      <button class="tab-btn {currentView === 'profile' ? 'active' : ''}" on:click={() => switchView('profile')}>Профиль</button>
     </div>
 
     <button class="theme-tma-toggle" on:click={toggleTmaTheme} title="Сменить тему">
@@ -532,6 +602,24 @@
           </div>
         {/if}
 
+        <div class="client-phone-info-banner">
+          <div class="phone-banner-content">
+            <Icon name="phone" size={15} color="var(--pastel-lavender)" />
+            <div class="phone-banner-text">
+              <span class="phone-banner-label">Телефон для записи:</span>
+              <span class="phone-banner-value">{clientProfile?.phone || 'Не указан'}</span>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            class="phone-banner-edit-btn" 
+            on:click={() => { phoneInput = clientProfile?.phone || ''; phoneError = ''; showPhoneModal = true; }}
+          >
+            <Icon name="edit" size={12} />
+            <span>{clientProfile?.phone ? 'Изменить' : 'Указать'}</span>
+          </button>
+        </div>
+
         <button 
           class="primary-btn" 
           disabled={!selectedTime} 
@@ -656,8 +744,8 @@
         <div class="modal-header-icon">
           <Icon name="phone" size={26} color="var(--pastel-rose)" />
         </div>
-        <h3 style="text-align:center;">Укажите номер телефона</h3>
-        <p style="text-align:center;">Для завершения записи мастеру необходим контактный номер телефона.</p>
+        <h3 style="text-align:center;">{clientProfile?.phone ? 'Изменить номер телефона' : 'Укажите номер телефона'}</h3>
+        <p style="text-align:center;">Контактный номер необходим мастеру для подтверждения и связи по вашей записи.</p>
 
         <div class="phone-input-wrap">
           <input
@@ -667,6 +755,9 @@
             placeholder="+380... или +7..."
             on:keydown={(e) => e.key === 'Enter' && savePhoneAndBook()}
           />
+          <div class="phone-format-hint">
+            Формат: <code>+380991234567</code> или <code>+79991234567</code> (+, 1-3 цифры кода, 9 цифр номера)
+          </div>
         </div>
 
         {#if phoneError}
@@ -678,7 +769,7 @@
             Отмена
           </button>
           <button class="primary-btn" on:click={savePhoneAndBook} disabled={savingPhone || !phoneInput.trim()}>
-            {savingPhone ? 'Сохранение...' : 'Записаться'}
+            {savingPhone ? 'Сохранение...' : (step === 3 && selectedTime ? 'Сохранить и записаться' : 'Сохранить')}
           </button>
         </div>
       </div>
@@ -731,6 +822,98 @@
         {/each}
       </div>
     {/if}
+  {/if}
+
+  {#if currentView === 'profile'}
+    <div class="client-profile-container">
+      <div class="profile-card">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">
+            <Icon name="user" size={32} color="var(--pastel-lavender)" />
+          </div>
+          <div class="profile-meta">
+            <h3>{clientProfile?.name || 'Клиент'}</h3>
+            <span class="profile-tg-id">ID: {clientProfile?.telegramId || '—'}</span>
+          </div>
+        </div>
+
+        {#if profilePhoneSuccess}
+          <div class="success-alert">
+            <Icon name="check" size={16} color="var(--pastel-sage)" />
+            <span>{profilePhoneSuccess}</span>
+          </div>
+        {/if}
+
+        <div class="profile-field-group">
+          <div class="field-label-row">
+            <span class="field-title">
+              <Icon name="phone" size={15} color="var(--pastel-rose)" />
+              Контактный номер телефона
+            </span>
+            {#if !editingPhone}
+              <button class="edit-action-btn" type="button" on:click={startEditPhone}>
+                <Icon name="edit" size={13} />
+                <span>{clientProfile?.phone ? 'Изменить' : 'Указать'}</span>
+              </button>
+            {/if}
+          </div>
+
+          {#if editingPhone}
+            <div class="edit-phone-box">
+              <input
+                type="tel"
+                class="phone-input"
+                bind:value={profilePhoneInput}
+                placeholder="+380991234567 или +79991234567"
+                on:keydown={(e) => e.key === 'Enter' && saveProfilePhone()}
+              />
+              <div class="phone-format-hint">
+                Формат: <code>+380991234567</code> или <code>+79991234567</code> (+, 1-3 цифры кода, 9 цифр номера)
+              </div>
+
+              {#if profilePhoneError}
+                <div class="error-msg-sm">{profilePhoneError}</div>
+              {/if}
+
+              <div class="edit-phone-actions">
+                <button class="secondary-btn sm" type="button" on:click={cancelEditPhone} disabled={savingProfilePhone}>
+                  Отмена
+                </button>
+                <button class="primary-btn sm" type="button" on:click={saveProfilePhone} disabled={savingProfilePhone || !profilePhoneInput.trim()}>
+                  {savingProfilePhone ? 'Сохранение...' : 'Сохранить'}
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="phone-display-card">
+              {#if clientProfile?.phone}
+                <span class="phone-value">{clientProfile.phone}</span>
+                <span class="phone-verified-tag">
+                  <Icon name="check" size={12} color="var(--pastel-sage)" /> Привязан
+                </span>
+              {:else}
+                <span class="phone-empty">Номер не указан</span>
+                <button class="btn-add-phone-sm" type="button" on:click={startEditPhone}>
+                  + Добавить номер
+                </button>
+              {/if}
+            </div>
+          {/if}
+        </div>
+
+        <div class="profile-stats-card">
+          <div class="profile-stat-item">
+            <span class="stat-num">{myAppointments.length || 0}</span>
+            <span class="stat-label">Всего записей</span>
+          </div>
+          <div class="profile-stat-divider"></div>
+          <button class="profile-stat-link" type="button" on:click={() => switchView('appointments')}>
+            <span>История визитов</span>
+            <Icon name="chevron-right" size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
   {/if}
 </div>
 
@@ -1634,4 +1817,303 @@
 
   .mt-1 { margin-top: 6px; }
   .mt-3 { margin-top: 14px; }
+
+  .phone-format-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    text-align: left;
+  }
+
+  .phone-format-hint code {
+    background: var(--bg-surface);
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: var(--pastel-rose);
+    font-size: 11px;
+  }
+
+  .client-phone-info-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin: 12px 0 16px;
+  }
+
+  .phone-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .phone-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+  }
+
+  .phone-banner-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .phone-banner-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .phone-banner-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--pastel-lavender-dim);
+    color: var(--pastel-lavender);
+    border: 1px solid rgba(179, 160, 219, 0.3);
+    padding: 5px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    white-space: nowrap;
+  }
+
+  .phone-banner-edit-btn:hover {
+    background: rgba(179, 160, 219, 0.25);
+    transform: translateY(-1px);
+  }
+
+  /* Profile View Styles */
+  .client-profile-container {
+    animation: pageFadeIn 0.25s ease-out;
+  }
+
+  .profile-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .profile-avatar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .profile-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--pastel-lavender-dim);
+    border: 1px solid rgba(179, 160, 219, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px var(--pastel-lavender-glow);
+    flex-shrink: 0;
+  }
+
+  .profile-meta h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .profile-tg-id {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    display: block;
+  }
+
+  .success-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(184, 216, 190, 0.15);
+    border: 1px solid var(--pastel-sage);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    color: var(--pastel-sage);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .profile-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .field-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .edit-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--pastel-rose);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+  }
+
+  .edit-action-btn:hover {
+    background: var(--pastel-rose-dim);
+  }
+
+  .phone-display-card {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .phone-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+  }
+
+  .phone-verified-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pastel-sage);
+    background: rgba(184, 216, 190, 0.12);
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+  }
+
+  .phone-empty {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  .btn-add-phone-sm {
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border: 1px solid rgba(223, 158, 142, 0.3);
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+  }
+
+  .btn-add-phone-sm:hover {
+    background: rgba(223, 158, 142, 0.25);
+  }
+
+  .edit-phone-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-active);
+    border-radius: var(--radius-md);
+    padding: 14px;
+  }
+
+  .edit-phone-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .profile-stats-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-top: 4px;
+  }
+
+  .profile-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pastel-rose);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .profile-stat-divider {
+    width: 1px;
+    height: 30px;
+    background: var(--border-subtle);
+  }
+
+  .profile-stat-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+  }
+
+  .profile-stat-link:hover {
+    color: var(--pastel-rose);
+    background: var(--bg-surface);
+  }
 </style>
