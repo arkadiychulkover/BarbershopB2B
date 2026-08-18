@@ -19,12 +19,15 @@
   let profile: MasterProfile | null = null;
   let loading = true;
   let saving = false;
+  let uploadingPhoto = false;
   let errorMsg = '';
   let successMsg = '';
 
   let formName = '';
   let formUsername = '';
   let formDescription = '';
+
+  let fileInput: HTMLInputElement;
 
   onMount(async () => {
     await loadProfile();
@@ -45,6 +48,59 @@
       errorMsg = 'Не удалось загрузить профиль мастера';
     } finally {
       loading = false;
+    }
+  }
+
+  function triggerFileInput() {
+    fileInput?.click();
+  }
+
+  async function handlePhotoSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const files = target?.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (!file) return;
+
+    if (file.size > 30 * 1024 * 1024) {
+      showAlert('Максимальный размер фото: 30 МБ');
+      return;
+    }
+
+    uploadingPhoto = true;
+    errorMsg = '';
+    successMsg = '';
+
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await apiFetch('/api/Barber/upload-photo', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res && res.photoUrl) {
+        if (profile) {
+          profile.photoUrl = res.photoUrl;
+        }
+        hapticSuccess();
+        successMsg = 'Фото профиля успешно обновлено!';
+        setTimeout(() => {
+          successMsg = '';
+        }, 4000);
+      }
+    } catch (e: any) {
+      hapticError();
+      console.error('Upload photo error:', e);
+      errorMsg = e?.message || 'Ошибка загрузки фотографии';
+      showAlert(errorMsg);
+    } finally {
+      uploadingPhoto = false;
+      if (fileInput) {
+        fileInput.value = '';
+      }
     }
   }
 
@@ -114,10 +170,38 @@
   {:else if profile}
     <!-- Profile Header Card -->
     <div class="card profile-header-card">
+      <input 
+        type="file" 
+        accept="image/jpeg,image/png,image/webp" 
+        class="hidden-file-input" 
+        bind:this={fileInput} 
+        on:change={handlePhotoSelected} 
+      />
+
       <div class="avatar-wrap">
-        <div class="avatar">
-          {(profile.name || 'M')[0].toUpperCase()}
-        </div>
+        {#if profile.photoUrl}
+          <img src={profile.photoUrl} alt={profile.name} class="avatar-img" />
+        {:else}
+          <div class="avatar">
+            {(profile.name || 'M')[0].toUpperCase()}
+          </div>
+        {/if}
+
+        <button 
+          type="button" 
+          class="avatar-camera-btn" 
+          on:click={triggerFileInput} 
+          disabled={uploadingPhoto}
+          title="Загрузить фотографию мастера"
+          aria-label="Загрузить фото"
+        >
+          {#if uploadingPhoto}
+            <div class="spinner-tiny"></div>
+          {:else}
+            <Icon name="camera" size={15} color="#ffffff" />
+          {/if}
+        </button>
+
         {#if profile.isActive}
           <span class="online-indicator" title="Активен"></span>
         {/if}
@@ -127,6 +211,16 @@
         <h2>{profile.name}</h2>
         <span class="role-badge">{profile.description || 'Мастер'}</span>
       </div>
+
+      <button 
+        type="button" 
+        class="change-photo-text-btn" 
+        on:click={triggerFileInput} 
+        disabled={uploadingPhoto}
+      >
+        <Icon name="camera" size={13} color="var(--pastel-lavender)" />
+        <span>{uploadingPhoto ? 'Загрузка...' : (profile.photoUrl ? 'Изменить фото' : 'Загрузить фото')}</span>
+      </button>
 
       <div class="stats-row">
         <div class="stat-pill">
@@ -272,28 +366,107 @@
     border: 1px solid var(--border-subtle);
   }
 
+  .hidden-file-input {
+    display: none;
+  }
+
   .avatar-wrap {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 24px var(--pastel-rose-glow);
   }
 
   .avatar {
-    width: 72px;
-    height: 72px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--pastel-rose), #9e5b4d);
     color: var(--text-inverse);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 700;
     box-shadow: 0 8px 24px var(--pastel-rose-glow);
     border: 2px solid rgba(255, 255, 255, 0.12);
   }
 
+  .avatar-camera-btn {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pastel-rose), #9e5b4d);
+    border: 2px solid var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+    transition: all 0.2s var(--ease-spring);
+    padding: 0;
+  }
+
+  .avatar-camera-btn:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+  }
+
+  .avatar-camera-btn:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  .change-photo-text-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-glass);
+    color: var(--pastel-lavender);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    user-select: none;
+    margin-top: -2px;
+  }
+
+  .change-photo-text-btn:hover:not(:disabled) {
+    background: var(--bg-surface);
+    border-color: var(--pastel-lavender);
+    transform: translateY(-1px);
+  }
+
+  .change-photo-text-btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  .spinner-tiny {
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid #fff;
+    border-radius: 50%;
+    animation: spinSmooth 0.85s linear infinite;
+  }
+
   .online-indicator {
     position: absolute;
-    bottom: 2px;
+    top: 2px;
     right: 2px;
     width: 14px;
     height: 14px;

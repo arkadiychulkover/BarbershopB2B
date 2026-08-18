@@ -21,9 +21,58 @@
   let selectedDate = '';
   let selectedTime = '';
 
+  let reminderPresets = [1, 2, 3, 5, 24];
+  let selectedReminderHours = 2;
+  let isCustomReminder = false;
+  let customReminderHours = 2;
+
+  function formatHoursText(h: number): string {
+    const abs = Math.abs(h) % 100;
+    const last = abs % 10;
+    if (abs >= 11 && abs <= 19) return 'часов';
+    if (last === 1) return 'час';
+    if (last >= 2 && last <= 4) return 'часа';
+    return 'часов';
+  }
+
+  function getEffectiveReminderHours(): number {
+    if (isCustomReminder) {
+      const val = parseInt(String(customReminderHours), 10);
+      return isNaN(val) || val <= 0 ? 2 : val;
+    }
+    const val = parseInt(String(selectedReminderHours), 10);
+    return isNaN(val) || val <= 0 ? 2 : val;
+  }
+
   let masterRating = null;
   let masterReviews = [];
   let showReviews = false;
+  let viewingReviewsMaster = null;
+  let loadingMasterReviews = false;
+
+  async function openMasterReviews(master, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    viewingReviewsMaster = master;
+    loadingMasterReviews = true;
+    masterReviews = [];
+    try {
+      await loadReviews(master.id);
+    } finally {
+      loadingMasterReviews = false;
+    }
+  }
+
+  function closeMasterReviewsModal() {
+    viewingReviewsMaster = null;
+  }
+
+  function selectMasterFromReviewsModal(master) {
+    closeMasterReviewsModal();
+    selectMaster(master);
+  }
 
   let reviewingAppt = null;
   let reviewRating = 5;
@@ -280,13 +329,15 @@
     try {
       // Combine date and time to ISO string
       const dateTimeString = `${selectedDate}T${selectedTime}:00Z`;
+      const hoursBefore = getEffectiveReminderHours();
       
       await apiFetch('/api/Clients/Zapisatsa', {
         method: 'POST',
         body: {
           masterId: selectedMaster.id,
           serviceId: selectedService.id,
-          appointmentDate: dateTimeString
+          appointmentDate: dateTimeString,
+          reminderHoursBefore: hoursBefore
         }
       });
       step = 4;
@@ -354,6 +405,9 @@
     selectedService = null;
     selectedDate = '';
     selectedTime = '';
+    selectedReminderHours = 2;
+    customReminderHours = 2;
+    isCustomReminder = false;
     error = '';
   }
 
@@ -465,29 +519,65 @@
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div class="card master-select-card" on:click={() => selectMaster(master)}>
-            <div class="info">
+            {#if master.photoUrl}
+              <img src={master.photoUrl} alt={master.name} class="master-avatar-thumb" />
+            {/if}
+            <div class="master-card-info">
               <div class="master-title-line">
                 <h3>{master.name}</h3>
-                {#if master.username}
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <button 
-                    type="button"
-                    class="contact-master-btn" 
-                    on:click|stopPropagation={(e) => openBarberChat(master.username, e)}
-                    title="Написать мастеру в Telegram"
-                  >
-                    <Icon name="comment" size={13} color="var(--pastel-lavender)" />
-                    <span>Написать мастеру</span>
-                  </button>
-                {/if}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <button 
+                  type="button" 
+                  class="master-rating-tag" 
+                  on:click|stopPropagation={(e) => openMasterReviews(master, e)}
+                  title="Посмотреть отзывы о мастере"
+                >
+                  <Icon name="star" size={13} color="var(--pastel-amber)" />
+                  <span class="rating-val">{master.rating && Number(master.rating) > 0 ? Number(master.rating).toFixed(1) : 'Новый'}</span>
+                  {#if master.reviewsCount > 0}
+                    <span class="rating-count">({master.reviewsCount})</span>
+                  {/if}
+                </button>
               </div>
               {#if master.description}
                 <p class="master-desc-text">{master.description}</p>
               {/if}
             </div>
-            <div class="arrow">
-              <Icon name="chevron-right" size={18} />
+
+            <div class="master-card-right">
+              {#if master.username}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <button 
+                  type="button"
+                  class="master-square-btn write-btn" 
+                  on:click|stopPropagation={(e) => openBarberChat(master.username, e)}
+                  title="Написать мастеру в Telegram"
+                  aria-label="Написать мастеру в Telegram"
+                >
+                  <Icon name="telegram" size={20} color="var(--pastel-lavender)" />
+                </button>
+              {/if}
+
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <button 
+                type="button" 
+                class="master-square-btn reviews-btn" 
+                on:click|stopPropagation={(e) => openMasterReviews(master, e)}
+                title="Отзывы о мастере"
+                aria-label="Отзывы о мастере"
+              >
+                <Icon name="review-rating" size={20} color="var(--pastel-rose)" />
+                {#if master.reviewsCount > 0}
+                  <span class="square-btn-badge">{master.reviewsCount}</span>
+                {/if}
+              </button>
+
+              <div class="arrow">
+                <Icon name="chevron-right" size={18} />
+              </div>
             </div>
           </div>
         {:else}
@@ -498,52 +588,76 @@
 
     {#if step === 2}
       <div class="master-header">
-        <div class="info">
+        {#if selectedMaster.photoUrl}
+          <img src={selectedMaster.photoUrl} alt={selectedMaster.name} class="master-avatar-thumb lg" />
+        {/if}
+        <div class="master-card-info">
           <div class="master-title-line">
             <h3>Мастер: {selectedMaster.name}</h3>
-            {#if selectedMaster.username}
-              <button 
-                type="button"
-                class="contact-master-btn inline" 
-                on:click={(e) => openBarberChat(selectedMaster.username, e)}
-                title="Написать мастеру в Telegram"
-              >
-                <Icon name="comment" size={13} color="var(--pastel-lavender)" />
-                <span>Написать мастеру</span>
-              </button>
-            {/if}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <button 
+              type="button" 
+              class="master-rating-tag" 
+              on:click|stopPropagation={(e) => openMasterReviews(selectedMaster, e)}
+              title="Посмотреть отзывы о мастере"
+            >
+              <Icon name="star" size={13} color="var(--pastel-amber)" />
+              <span class="rating-val">
+                {#if masterRating !== null && masterRating > 0}
+                  {Number(masterRating).toFixed(1)}
+                {:else if selectedMaster.rating && Number(selectedMaster.rating) > 0}
+                  {Number(selectedMaster.rating).toFixed(1)}
+                {:else}
+                  Новый
+                {/if}
+              </span>
+              {#if selectedMaster.reviewsCount > 0}
+                <span class="rating-count">({selectedMaster.reviewsCount})</span>
+              {/if}
+            </button>
           </div>
-          {#if masterRating !== null}
-            <p>
-              Рейтинг: 
-              <Icon name="star" size={14} color="var(--pastel-amber)" />
-              <span>{masterRating > 0 ? masterRating.toFixed(1) : 'Нет оценок'}</span>
-            </p>
+          {#if selectedMaster.description}
+            <p class="master-desc-text">{selectedMaster.description}</p>
           {/if}
         </div>
-        <button class="secondary-btn" on:click={() => { showReviews = !showReviews; if (showReviews) loadReviews(selectedMaster.id); }}>
-          {showReviews ? 'Скрыть отзывы' : 'Отзывы'}
-        </button>
+
+        <div class="master-card-right">
+          {#if selectedMaster.username}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <button 
+              type="button"
+              class="master-square-btn write-btn" 
+              on:click|stopPropagation={(e) => openBarberChat(selectedMaster.username, e)}
+              title="Написать мастеру в Telegram"
+              aria-label="Написать мастеру в Telegram"
+            >
+              <Icon name="telegram" size={20} color="var(--pastel-lavender)" />
+            </button>
+          {/if}
+
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <button 
+            type="button" 
+            class="master-square-btn reviews-btn" 
+            on:click|stopPropagation={(e) => openMasterReviews(selectedMaster, e)}
+            title="Отзывы о мастере"
+            aria-label="Отзывы о мастере"
+          >
+            <Icon name="review-rating" size={20} color="var(--pastel-rose)" />
+            {#if selectedMaster.reviewsCount > 0}
+              <span class="square-btn-badge">{selectedMaster.reviewsCount}</span>
+            {/if}
+          </button>
+        </div>
       </div>
 
-      {#if showReviews}
-        <div class="reviews-list">
-          {#each masterReviews as r}
-            <div class="review-card">
-              <div class="review-head">
-                <strong>{r.clientName || 'Клиент'}</strong>
-                <span>
-                  <Icon name="star" size={14} color="var(--pastel-amber)" />
-                  <span>{r.rating}</span>
-                </span>
-              </div>
-              <p>{r.comment}</p>
-            </div>
-          {:else}
-            <p class="empty">Отзывов пока нет.</p>
-          {/each}
-        </div>
-      {:else}
+      <div class="step-subheading">
+        <Icon name="scissors" size={16} color="var(--pastel-lavender)" />
+        <h3>Выберете услугу</h3>
+      </div>
         <div class="list">
           {#each services as service}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -561,7 +675,6 @@
             <p class="empty">У этого мастера нет доступных услуг</p>
           {/each}
         </div>
-      {/if}
     {/if}
 
     {#if step === 3}
@@ -580,7 +693,58 @@
         <label for="date">Выберите дату:</label>
         <input type="date" id="date" bind:value={selectedDate} on:change={fetchAvailableSlots} />
         
-        <label>Доступное время (длительность: {selectedService.duration} мин):</label>
+        <div class="reminder-section">
+          <div class="reminder-label-row">
+            <span class="reminder-label">
+              <Icon name="bell" size={15} color="var(--pastel-lavender)" />
+              <span>Напомнить до записи за:</span>
+            </span>
+          </div>
+
+          <div class="reminder-presets-row">
+            {#each reminderPresets as hours}
+              <button 
+                type="button" 
+                class="reminder-preset-pill {selectedReminderHours === hours && !isCustomReminder ? 'active' : ''}"
+                on:click={() => { selectedReminderHours = hours; isCustomReminder = false; }}
+              >
+                {hours === 24 ? '1 день' : `${hours} ч.`}
+              </button>
+            {/each}
+            <button 
+              type="button" 
+              class="reminder-preset-pill {isCustomReminder ? 'active' : ''}"
+              on:click={() => { isCustomReminder = true; }}
+            >
+              Своё
+            </button>
+          </div>
+
+          {#if isCustomReminder}
+            <div class="custom-reminder-box">
+              <input 
+                type="number" 
+                id="reminder-hours-input"
+                class="custom-reminder-input"
+                min="1" 
+                max="168"
+                step="1"
+                placeholder="Часов"
+                bind:value={customReminderHours}
+              />
+              <span class="custom-reminder-suffix">{formatHoursText(customReminderHours || 1)}</span>
+            </div>
+          {/if}
+
+          <div class="reminder-note-text">
+            <Icon name="info" size={13} color="var(--text-muted)" />
+            <span>
+              Уведомление в Telegram придет за {getEffectiveReminderHours()} {formatHoursText(getEffectiveReminderHours())} до начала
+            </span>
+          </div>
+        </div>
+
+        <label for="date">Доступное время (длительность: {selectedService.duration} мин):</label>
         <div class="slots">
           {#each availableSlots as slot}
             <button 
@@ -659,6 +823,10 @@
           <div class="success-detail-row">
             <span class="success-label">Дата и время:</span>
             <span class="success-val highlight">{selectedDate} в {selectedTime}</span>
+          </div>
+          <div class="success-detail-row">
+            <span class="success-label">Напоминание:</span>
+            <span class="success-val">За {getEffectiveReminderHours()} {formatHoursText(getEffectiveReminderHours())}</span>
           </div>
         </div>
         <button class="primary-btn mt-3" on:click={() => { reset(); switchView('appointments'); }}>Мои записи</button>
@@ -771,6 +939,74 @@
           <button class="primary-btn" on:click={savePhoneAndBook} disabled={savingPhone || !phoneInput.trim()}>
             {savingPhone ? 'Сохранение...' : (step === 3 && selectedTime ? 'Сохранить и записаться' : 'Сохранить')}
           </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  {#if viewingReviewsMaster}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="modal-overlay" on:click={closeMasterReviewsModal}>
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="modal-content master-reviews-modal-content" on:click|stopPropagation>
+        <div class="modal-header-row">
+          <div class="modal-header-text">
+            <h3>Отзывы: {viewingReviewsMaster.name}</h3>
+            <div class="modal-rating-badge">
+              <Icon name="star" size={14} color="var(--pastel-amber)" />
+              <strong>{viewingReviewsMaster.rating > 0 ? Number(viewingReviewsMaster.rating).toFixed(1) : 'Нет оценок'}</strong>
+              {#if masterReviews.length > 0}
+                <span class="modal-reviews-count">({masterReviews.length} {masterReviews.length === 1 ? 'отзыв' : (masterReviews.length < 5 ? 'отзыва' : 'отзывов')})</span>
+              {/if}
+            </div>
+          </div>
+          <button class="modal-close-btn" on:click={closeMasterReviewsModal} type="button" aria-label="Закрыть">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <div class="modal-reviews-scroll">
+          {#if loadingMasterReviews}
+            <div class="reviews-loading-box">
+              <div class="spinner sm"></div>
+              <span>Загрузка отзывов...</span>
+            </div>
+          {:else if masterReviews.length === 0}
+            <div class="empty-reviews-state">
+              <Icon name="comment" size={32} color="var(--text-muted)" />
+              <p>У мастера пока нет отзывов. Вы можете стать первым!</p>
+            </div>
+          {:else}
+            <div class="reviews-list">
+              {#each masterReviews as r}
+                <div class="review-card">
+                  <div class="review-head">
+                    <strong>{r.clientName || 'Клиент'}</strong>
+                    <span class="review-stars-badge">
+                      <Icon name="star" size={13} color="var(--pastel-amber)" />
+                      <span>{r.rating}</span>
+                    </span>
+                  </div>
+                  {#if r.comment}
+                    <p class="review-comment-text">{r.comment}</p>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
+        <div class="modal-actions mt-3">
+          <button 
+            type="button" 
+            class="primary-btn flex-1"
+            on:click={() => selectMasterFromReviewsModal(viewingReviewsMaster)}
+          >
+            Записаться к {viewingReviewsMaster.name}
+          </button>
+          <button class="secondary-btn" on:click={closeMasterReviewsModal} type="button">Закрыть</button>
         </div>
       </div>
     </div>
@@ -2115,5 +2351,334 @@
   .profile-stat-link:hover {
     color: var(--pastel-rose);
     background: var(--bg-surface);
+  }
+
+  .step-subheading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 12px 4px;
+  }
+
+  .step-subheading h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .reminder-section {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin: 12px 0 16px 0;
+  }
+
+  .reminder-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .reminder-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .reminder-presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .reminder-preset-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+  }
+
+  .reminder-preset-pill:hover {
+    border-color: var(--pastel-rose);
+    color: var(--pastel-rose);
+  }
+
+  .reminder-preset-pill.active {
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: var(--text-inverse);
+    border-color: transparent;
+    box-shadow: 0 2px 10px var(--pastel-rose-glow);
+    font-weight: 600;
+    transform: scale(1.03);
+  }
+
+  .custom-reminder-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .custom-reminder-input {
+    width: 100px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-glass);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .custom-reminder-input:focus {
+    border-color: var(--pastel-rose);
+    box-shadow: 0 0 0 2px var(--pastel-rose-glow);
+  }
+
+  .custom-reminder-suffix {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .reminder-note-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  .master-select-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+
+  .master-avatar-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-glass);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .master-avatar-thumb.lg {
+    width: 52px;
+    height: 52px;
+  }
+
+  .master-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .master-card-info h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .master-desc-text {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.3;
+  }
+
+  .master-rating-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-glass);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    width: fit-content;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    user-select: none;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .master-rating-tag:hover {
+    background: var(--bg-surface);
+    border-color: var(--pastel-amber);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(235, 194, 133, 0.25);
+  }
+
+  .master-rating-tag:active {
+    transform: scale(0.94);
+  }
+
+  .master-rating-tag .rating-count {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 11px;
+  }
+
+  .master-card-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .master-square-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid var(--border-glass);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s var(--ease-spring);
+    user-select: none;
+    box-shadow: var(--shadow-sm);
+    padding: 0;
+  }
+
+  .master-square-btn.write-btn {
+    background: var(--pastel-lavender-dim);
+    color: var(--pastel-lavender);
+    border-color: rgba(179, 160, 219, 0.35);
+  }
+
+  .master-square-btn.write-btn:hover {
+    background: rgba(179, 160, 219, 0.25);
+    border-color: var(--pastel-lavender);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px var(--pastel-lavender-glow);
+  }
+
+  .master-square-btn.reviews-btn {
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border-color: rgba(223, 158, 142, 0.35);
+  }
+
+  .master-square-btn.reviews-btn:hover {
+    background: rgba(223, 158, 142, 0.25);
+    border-color: var(--pastel-rose);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+  }
+
+  .master-square-btn:active {
+    transform: scale(0.92);
+  }
+
+  .square-btn-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border: 1px solid var(--bg-surface);
+  }
+
+  .master-reviews-modal-content {
+    max-width: 440px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-rating-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .modal-reviews-count {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .modal-reviews-scroll {
+    overflow-y: auto;
+    max-height: 50vh;
+    padding-right: 4px;
+    margin: 14px 0 6px 0;
+  }
+
+  .reviews-loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 30px 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .empty-reviews-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .review-stars-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--pastel-amber);
+  }
+
+  .review-comment-text {
+    line-height: 1.4;
   }
 </style>

@@ -14,6 +14,11 @@ export default defineConfig({
         target: 'http://localhost:5111',
         changeOrigin: true,
         secure: false,
+      },
+      '/barbers_photo': {
+        target: 'http://localhost:5111',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }

@@ -54,8 +54,26 @@
     <path d="m15 5 4 4" />
   {:else if name === 'paperclip' || name === 'clip'}
     <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-  {:else if name === 'message' || name === 'comment'}
+  {:else if name === 'message' || name === 'comment' || name === 'chat'}
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  {:else if name === 'message-square' || name === 'reviews' || name === 'review-rating'}
+    <!-- Chat bubble with stars and feedback thumbs up -->
+    <path d="M4 7a2 2 0 0 1 2-2h5" />
+    <path d="M4 7v8a2 2 0 0 0 2 2h5l3 3.5v-3.5h3a2 2 0 0 0 2-2v-3" />
+    <!-- Thumbs up top right -->
+    <path d="M13 3v2h-1v4h3.5a1.2 1.2 0 0 0 1.2-1.2V6.5a.8.8 0 0 0-.8-.8H15V3a1 1 0 0 0-1-1h-.5a1 1 0 0 0-.5 1z" />
+    <!-- Review stars inside -->
+    <polygon points="6.5 10 7 11.2 8.3 11.3 7.3 12.1 7.6 13.3 6.5 12.6 5.4 13.3 5.7 12.1 4.7 11.3 6 11.2" fill="currentColor" stroke="none" />
+    <polygon points="10 10 10.5 11.2 11.8 11.3 10.8 12.1 11.1 13.3 10 12.6 8.9 13.3 9.2 12.1 8.2 11.3 9.5 11.2" fill="currentColor" stroke="none" />
+    <polygon points="13.5 10 14 11.2 15.3 11.3 14.3 12.1 14.6 13.3 13.5 12.6 12.4 13.3 12.7 12.1 11.7 11.3 13 11.2" fill="currentColor" stroke="none" />
+    <polygon points="17 10 17.5 11.2 18.8 11.3 17.8 12.1 18.1 13.3 17 12.6 15.9 13.3 16.2 12.1 15.2 11.3 16.5 11.2" fill="currentColor" stroke="none" />
+  {:else if name === 'bell'}
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+  {:else if name === 'telegram' || name === 'send'}
+    <path d="M21.5 2.5L2 10.5L9.5 14L13.5 21.5L16 16.5L21.5 2.5Z" />
+    <path d="M9.5 14L21.5 2.5" />
+    <path d="M13.5 14.5L9.5 17.5V14" />
   {:else if name === 'phone'}
     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
   {:else if name === 'camera'}

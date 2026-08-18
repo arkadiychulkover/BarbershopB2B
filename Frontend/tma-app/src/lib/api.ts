@@ -14,7 +14,7 @@ export async function apiFetch(endpoint, options = {}) {
     if (currentToken && !options.skipAuth) {
         headers.set('Authorization', `Bearer ${currentToken}`);
     }
-    if (!headers.has('Content-Type') && options.body && typeof options.body !== 'string') {
+    if (!headers.has('Content-Type') && options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)) {
         headers.set('Content-Type', 'application/json');
         options.body = JSON.stringify(options.body);
     }
