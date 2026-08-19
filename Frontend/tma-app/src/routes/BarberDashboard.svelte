@@ -8,6 +8,7 @@
   import BarberAppointments from '../lib/components/BarberAppointments.svelte';
   import BarberReviews from '../lib/components/BarberReviews.svelte';
   import BarberProfile from '../lib/components/BarberProfile.svelte';
+  import ClientHistory from '../lib/components/ClientHistory.svelte';
   import Icon from '../lib/components/Icon.svelte';
   import { theme, toggleTmaTheme } from '../lib/stores/theme';
 
@@ -17,6 +18,8 @@
   let shifts = [];
   let loading = true;
   let view: 'list' | 'form' = 'list';
+  let editingShift: any = null;
+  let shiftSaving = false;
   let tabsContainer: HTMLElement;
   let scrollPercent = 0;
   let thumbWidthPercent = 35;
@@ -97,8 +100,10 @@
   }
 
   async function handleSaveForm(event) {
+    if (shiftSaving) return;
     const formData = event.detail;
     
+    shiftSaving = true;
     try {
       if (editingShift) {
         await apiFetch(`/api/Barber/my-shift/update/${editingShift.id}`, {
@@ -114,14 +119,17 @@
       
       hapticSuccess();
       view = 'list';
+      editingShift = null;
       await loadShifts();
-    } catch (error) {
+    } catch (error: any) {
       hapticError();
       if (error.status === 409) {
         showAlert(error.message || 'Смена пересекается с уже существующей!');
       } else {
-        showAlert('Не удалось сохранить смену');
+        showAlert('Не удалось сохранить смену: ' + (error.message || 'ошибка'));
       }
+    } finally {
+      shiftSaving = false;
     }
   }
 
@@ -252,6 +260,7 @@
         {:else}
           <ShiftForm 
             initialData={editingShift} 
+            saving={shiftSaving}
             on:save={handleSaveForm} 
             on:cancel={handleCancelForm} 
           />

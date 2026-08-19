@@ -61,7 +61,7 @@ namespace Backend.BackgroundServices
                 var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, ownerTimeZone);
                 var nowLocalUtcKind = DateTime.SpecifyKind(nowLocal, DateTimeKind.Utc);
                 
-                var targetTime = appointment.AppointmentDate.Subtract(TimeSpan.FromHours(owner.ReminderHoursBefore));
+                var targetTime = appointment.ReminderTime ?? appointment.AppointmentDate.Subtract(TimeSpan.FromHours(owner.ReminderHoursBefore));
 
                 if (!appointment.ReminderSent && nowLocalUtcKind >= targetTime && nowLocalUtcKind < appointment.AppointmentDate)
                 {

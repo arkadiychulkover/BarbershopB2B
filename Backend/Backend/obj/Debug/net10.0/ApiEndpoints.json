@@ -648,6 +648,22 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetBarberPhotoByQuery",
+    "RelativePath": "api/Barber/get-photo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "barberId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "GetReview",
     "RelativePath": "api/Barber/Get-Review/{reviewId}",
     "HttpMethod": "GET",
@@ -729,6 +745,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetMyBarberPhoto",
+    "RelativePath": "api/Barber/my-photo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -879,6 +905,22 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetBarberPhoto",
+    "RelativePath": "api/Barber/photo/{barberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "barberId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "PostPhoto",
     "RelativePath": "api/Barber/put-photo/{appointmentId}",
     "HttpMethod": "POST",
@@ -930,6 +972,69 @@
       {
         "Name": "request",
         "Type": "Backend.Controllers.BarberController\u002BAddShiftRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UploadBarberPhoto",
+    "RelativePath": "api/Barber/upload-barber-photo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "photo",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "barberId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UploadBarberPhoto",
+    "RelativePath": "api/Barber/upload-photo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "photo",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "barberId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UploadBarberPhoto",
+    "RelativePath": "api/Barber/upload-photo/{barberId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "photo",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "barberId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": true
       }
     ],

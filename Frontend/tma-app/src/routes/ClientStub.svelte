@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { apiFetch } from '../lib/api';
   import Icon from '../lib/components/Icon.svelte';
+  import SecureImage from '../lib/components/SecureImage.svelte';
   import { theme, toggleTmaTheme } from '../lib/stores/theme';
 
   let currentView: 'booking' | 'appointments' | 'profile' = 'booking';
@@ -1040,6 +1041,11 @@
               <p>Дата: {formatDate(appt.appointmentDate)}</p>
               <p>Статус: <span class="status-{appt.status}">{formatStatus(appt.status)}</span></p>
               <p>Цена: {appt.price ? appt.price + ' ₴' : 'Не указана'}</p>
+              {#if appt.photoResultUrl}
+                <div class="client-result-photo-box">
+                  <SecureImage src={appt.photoResultUrl} alt="Результат стрижки" className="client-result-photo" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin-top:8px;background:rgba(0,0,0,0.2);" />
+                </div>
+              {/if}
               {#if appt.resultNote}
                 <div class="master-note">
                   <strong>Заметка мастера:</strong> {appt.resultNote}

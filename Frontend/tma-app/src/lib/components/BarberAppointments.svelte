@@ -34,7 +34,11 @@
   let formDateStr = '';
   let formTime = '';
   let formServiceId = '';
-  let formStatus = 0;
+  let formStatus: number | string = 0;
+  let formClientName = '';
+  let formClientPhone = '';
+  let formComment = '';
+  let saving = false;
   
   $: dateString = new Date(currentDate.getTime() - currentDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
@@ -102,16 +106,17 @@
     currentWeekStart = d;
   }
   
-  function getApptsForDayDate(date) {
+  function getApptsForDayDate(date, apptsList = appointments) {
+    if (!date || !apptsList) return [];
     const dStr = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    return appointments.filter(a => {
+    return apptsList.filter(a => {
         const apptDate = new Date(a.appointmentDate);
         const apptDateStr = new Date(apptDate.getTime() - apptDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
         return apptDateStr === dStr;
     }).sort((a,b) => a.appointmentDate.localeCompare(b.appointmentDate));
   }
 
-  $: currentDayAppts = getApptsForDayDate(currentDate);
+  $: currentDayAppts = getApptsForDayDate(currentDate, appointments);
 
   function toggleExpand(apptId: string) {
     expandedId = expandedId === apptId ? null : apptId;
@@ -120,10 +125,14 @@
   function openNewForm(dateToUse) {
     expandedId = null;
     editingAppt = null;
-    formDateStr = new Date(dateToUse.getTime() - dateToUse.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const targetDate = dateToUse ? new Date(dateToUse) : new Date();
+    formDateStr = new Date(targetDate.getTime() - targetDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     formTime = '10:00';
     formServiceId = services.length > 0 ? services[0].serviceId : '';
     formStatus = 0;
+    formClientName = '';
+    formClientPhone = '';
+    formComment = '';
     view = 'form';
   }
   
@@ -132,9 +141,14 @@
     editingAppt = appt;
     const d = new Date(appt.appointmentDate);
     formDateStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    formTime = d.toTimeString().substring(0,5);
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    formTime = `${hours}:${mins}`;
     formServiceId = appt.serviceId || (services.length > 0 ? services[0].serviceId : '');
     formStatus = appt.status;
+    formClientName = appt.clientName || '';
+    formClientPhone = appt.clientPhone || '';
+    formComment = appt.resultNote || '';
     view = 'form';
   }
   
@@ -144,41 +158,78 @@
   }
   
   async function saveAppt() {
+    if (saving) return;
+
     if (!formServiceId) {
-        showAlert('Выберите услугу!');
-        return;
+      showAlert('Выберите услугу!');
+      return;
     }
-    
-    const appointmentDate = new Date(`${formDateStr}T${formTime}:00`).toISOString();
-    
-    const body = {
+
+    if (!formDateStr || !formTime) {
+      showAlert('Укажите дату и время!');
+      return;
+    }
+
+    const timeParts = formTime.split(':');
+    const h = parseInt(timeParts[0], 10) || 0;
+    const m = parseInt(timeParts[1], 10) || 0;
+
+    const [year, month, day] = formDateStr.split('-').map(Number);
+    const dateObj = new Date(year, month - 1, day, h, m, 0);
+
+    if (isNaN(dateObj.getTime())) {
+      showAlert('Некорректная дата или время');
+      return;
+    }
+
+    const appointmentDate = dateObj.toISOString();
+
+    const body: any = {
       serviceId: formServiceId,
       appointmentDate: appointmentDate,
-      status: parseInt(formStatus)
+      status: parseInt(String(formStatus), 10) || 0,
+      clientName: formClientName ? formClientName.trim() : null,
+      clientPhone: formClientPhone ? formClientPhone.trim() : null,
+      comment: formComment ? formComment.trim() : null
     };
-    
+
+    saving = true;
     try {
+      let createdApptId: string | null = null;
       if (editingAppt) {
         await apiFetch(`/api/Barber/my-appointments/update/${editingAppt.id}`, {
           method: 'PUT',
           body
         });
+        createdApptId = editingAppt.id;
       } else {
-        await apiFetch('/api/Barber/my-appointments/add', {
+        const res = await apiFetch('/api/Barber/my-appointments/add', {
           method: 'POST',
           body
         });
+        createdApptId = res?.appointmentId || null;
       }
       hapticSuccess();
+
+      // Immediately sync active view date to the appointment date
+      currentDate = new Date(year, month - 1, day, 12, 0, 0);
+      currentWeekStart = getMonday(currentDate);
+
       view = 'list';
+      editingAppt = null;
+      if (createdApptId) {
+        expandedId = createdApptId;
+      }
       await loadData();
-    } catch(e) {
+    } catch(e: any) {
       hapticError();
       if (e.status === 409) {
-          showAlert('Это время пересекается с другой записью!');
+        showAlert('Это время пересекается с другой записью!');
       } else {
-          showAlert("Ошибка: " + e.message);
+        showAlert('Ошибка: ' + (e.message || 'не удалось сохранить запись'));
       }
+    } finally {
+      saving = false;
     }
   }
   
@@ -202,6 +253,11 @@
   }
 
   function triggerPhotoUpload(apptId: string) {
+    const targetAppt = appointments.find(a => a.id === apptId) || (selectedDetailAppt?.id === apptId ? selectedDetailAppt : null);
+    if (targetAppt && targetAppt.status !== 1) {
+      showAlert('Фото результата можно прикрепить только к выполненным записям.');
+      return;
+    }
     pendingPhotoApptId = apptId;
     photoInputEl.value = '';
     photoInputEl.click();
@@ -354,7 +410,7 @@
                 <div class="day-date">{day.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'})}</div>
               </div>
               <div class="day-body">
-                {#each getApptsForDayDate(day) as appt}
+                {#each getApptsForDayDate(day, appointments) as appt}
                   <!-- svelte-ignore a11y-click-events-have-key-events -->
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
                   <div
@@ -437,38 +493,48 @@
 
                   <div class="detail-info-box">
                     <span class="detail-box-label">Клиент</span>
-                    {#if selectedDetailAppt.clientTelegramId && selectedDetailAppt.clientTelegramId !== 'WALKIN'}
+                    {#if selectedDetailAppt.clientId}
                       <!-- svelte-ignore a11y-click-events-have-key-events -->
                       <!-- svelte-ignore a11y-no-static-element-interactions -->
                       <div 
                         class="detail-client-link"
                         on:click={() => { const cId = selectedDetailAppt.clientId; selectedDetailAppt = null; dispatch('openClientHistory', cId); }}
+                        title="Открыть историю клиента"
                       >
                         <span class="detail-box-value">{selectedDetailAppt.clientName || 'Клиент'}</span>
-                        <span class="detail-client-handle">@{selectedDetailAppt.clientTelegramId}</span>
+                        {#if selectedDetailAppt.clientTelegramId && selectedDetailAppt.clientTelegramId !== 'WALKIN'}
+                          <span class="detail-client-handle">@{selectedDetailAppt.clientTelegramId}</span>
+                        {:else}
+                          <span class="detail-client-handle">История визитов &rarr;</span>
+                        {/if}
                       </div>
                     {:else}
-                      <span class="detail-box-value">Гость (Вручную)</span>
+                      <span class="detail-box-value">{selectedDetailAppt.clientName || 'Гость (Вручную)'}</span>
                     {/if}
                   </div>
                 </div>
 
                 <!-- Photo Section -->
-                <div class="detail-section">
-                  <span class="detail-section-label">Фото результата стрижки</span>
-                  {#if selectedDetailAppt.photoResultUrl}
+                {#if selectedDetailAppt.photoResultUrl}
+                  <div class="detail-section">
+                    <span class="detail-section-label">Фото результата стрижки</span>
                     <div class="detail-photo-card">
                       <SecureImage src={selectedDetailAppt.photoResultUrl} alt="Результат" className="detail-photo-img" style="width:100%;max-height:280px;object-fit:contain;border-radius:12px;background:#111;" />
-                      <button class="change-photo-btn mt-2" on:click={() => triggerPhotoUpload(selectedDetailAppt.id)} disabled={uploadingId === selectedDetailAppt.id}>
-                        {#if uploadingId === selectedDetailAppt.id}
-                          <span class="spinner"></span> Загрузка...
-                        {:else}
-                          <Icon name="refresh" size={14} />
-                          <span>Заменить фото</span>
-                        {/if}
-                      </button>
+                      {#if selectedDetailAppt.status === 1}
+                        <button class="change-photo-btn mt-2" on:click={() => triggerPhotoUpload(selectedDetailAppt.id)} disabled={uploadingId === selectedDetailAppt.id}>
+                          {#if uploadingId === selectedDetailAppt.id}
+                            <span class="spinner"></span> Загрузка...
+                          {:else}
+                            <Icon name="refresh" size={14} />
+                            <span>Заменить фото</span>
+                          {/if}
+                        </button>
+                      {/if}
                     </div>
-                  {:else}
+                  </div>
+                {:else if selectedDetailAppt.status === 1}
+                  <div class="detail-section">
+                    <span class="detail-section-label">Фото результата стрижки</span>
                     <button class="attach-photo-btn" on:click={() => triggerPhotoUpload(selectedDetailAppt.id)} disabled={uploadingId === selectedDetailAppt.id}>
                       {#if uploadingId === selectedDetailAppt.id}
                         <span class="spinner"></span> Загрузка...
@@ -477,8 +543,8 @@
                         <span>Прикрепить фото результата</span>
                       {/if}
                     </button>
-                  {/if}
-                </div>
+                  </div>
+                {/if}
 
                 <!-- Notes / Comments Section -->
                 <div class="detail-section">
@@ -605,7 +671,7 @@
                     </button>
                   </div>
 
-                  {#if appt.clientTelegramId && appt.clientTelegramId !== 'WALKIN'}
+                  {#if appt.clientId}
                     <div class="client-tg-row">
                       <span class="client-tg-label">Клиент:</span>
                       <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -613,9 +679,14 @@
                       <span
                         class="client-tg-id"
                         on:click={() => dispatch('openClientHistory', appt.clientId)}
+                        title="Открыть историю клиента"
                       >
                         <Icon name="user" size={14} color="var(--pastel-lavender)" />
-                        <span>{appt.clientName || appt.clientTelegramId} · @{appt.clientTelegramId}</span>
+                        {#if appt.clientTelegramId && appt.clientTelegramId !== 'WALKIN'}
+                          <span>{appt.clientName || appt.clientTelegramId} · @{appt.clientTelegramId}</span>
+                        {:else}
+                          <span>{appt.clientName || 'Гость (Вручную)'}</span>
+                        {/if}
                         <Icon name="chevron-right" size={12} />
                       </span>
                     </div>
@@ -629,20 +700,22 @@
                         className="photo-preview"
                         style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;"
                       />
-                      <button
-                        class="change-photo-btn"
-                        on:click={() => triggerPhotoUpload(appt.id)}
-                        disabled={uploadingId === appt.id}
-                      >
-                        {#if uploadingId === appt.id}
-                          <span class="spinner"></span> Загрузка...
-                        {:else}
-                          <Icon name="refresh" size={13} />
-                          <span>заменить фото</span>
-                        {/if}
-                      </button>
+                      {#if appt.status === 1}
+                        <button
+                          class="change-photo-btn"
+                          on:click={() => triggerPhotoUpload(appt.id)}
+                          disabled={uploadingId === appt.id}
+                        >
+                          {#if uploadingId === appt.id}
+                            <span class="spinner"></span> Загрузка...
+                          {:else}
+                            <Icon name="refresh" size={13} />
+                            <span>заменить фото</span>
+                          {/if}
+                        </button>
+                      {/if}
                     </div>
-                  {:else}
+                  {:else if appt.status === 1}
                     <button
                       class="attach-photo-btn"
                       on:click={() => triggerPhotoUpload(appt.id)}
@@ -706,6 +779,22 @@
             <Icon name="x" size={18} />
           </button>
         </div>
+
+        {#if services.length === 0}
+          <div class="services-empty-warning" style="margin-bottom:16px;padding:12px;border-radius:10px;background:rgba(235,160,50,0.12);color:var(--pastel-peach);font-size:13px;border:1px solid rgba(235,160,50,0.25);">
+            ⚠️ У вас еще нет настроенных активных услуг. Пожалуйста, включите и настройте услуги во вкладке «Услуги».
+          </div>
+        {/if}
+
+        <div class="form-group">
+          <label for="barber-form-client">Имя клиента (необязательно)</label>
+          <input id="barber-form-client" type="text" class="input" bind:value={formClientName} placeholder="Гость / Имя клиента" />
+        </div>
+
+        <div class="form-group">
+          <label for="barber-form-phone">Телефон (необязательно)</label>
+          <input id="barber-form-phone" type="tel" class="input" bind:value={formClientPhone} placeholder="+7 (999) 000-00-00" />
+        </div>
         
         <div class="form-group">
           <label for="barber-form-date">Дата</label>
@@ -729,18 +818,25 @@
         <div class="form-group">
           <label for="barber-form-status">Статус</label>
           <select id="barber-form-status" class="input" bind:value={formStatus}>
-            <option value="0">Запланировано</option>
-            <option value="1">Выполнено</option>
-            <option value="2">Отменено</option>
+            <option value={0}>Запланировано</option>
+            <option value={1}>Выполнено</option>
+            <option value={2}>Отменено</option>
           </select>
+        </div>
+
+        <div class="form-group">
+          <label for="barber-form-comment">Заметка / Комментарий</label>
+          <textarea id="barber-form-comment" class="input" bind:value={formComment} placeholder="Заметка к записи..." rows="2" style="resize:vertical;"></textarea>
         </div>
         
         <div class="form-actions">
-          <button class="primary-btn flex-1" on:click={saveAppt}>Сохранить</button>
+          <button class="primary-btn flex-1" on:click={saveAppt} disabled={saving || services.length === 0}>
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
           {#if editingAppt}
-            <button class="danger-btn flex-1" on:click={deleteAppt}>Удалить</button>
+            <button class="danger-btn flex-1" on:click={deleteAppt} disabled={saving}>Удалить</button>
           {/if}
-          <button class="secondary-btn flex-1" on:click={cancelForm}>Отмена</button>
+          <button class="secondary-btn flex-1" on:click={cancelForm} disabled={saving}>Отмена</button>
         </div>
       </div>
     </div>

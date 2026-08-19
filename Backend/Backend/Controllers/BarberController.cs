@@ -524,6 +524,122 @@ namespace Backend.Controllers
             });
         }
 
+        [HttpPost("upload-photo")]
+        [HttpPost("upload-barber-photo")]
+        [HttpPost("upload-photo/{barberId}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> UploadBarberPhoto(IFormFile photo, [FromRoute] Guid? barberId = null)
+        {
+            if (photo == null || photo.Length == 0)
+                return BadRequest(new { message = "Файл фотографии обязателен для загрузки" });
+
+            if (photo.Length > 30 * 1024 * 1024)
+                return BadRequest(new { message = "Максимальный размер фото: 30 МБ" });
+
+            var extension = Path.GetExtension(photo.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(extension) || !AllowedImageExtensions.Contains(extension))
+                return BadRequest(new { message = "Недопустимый формат файла. Разрешены только JPG, PNG, WEBP." });
+
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            Guid targetMasterId;
+            if (isOwner)
+            {
+                if (!barberId.HasValue || barberId.Value == Guid.Empty)
+                    return BadRequest(new { message = "Для владельца необходимо указать barberId мастера" });
+                targetMasterId = barberId.Value;
+            }
+            else
+            {
+                targetMasterId = userId;
+            }
+
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == targetMasterId);
+            if (master == null)
+                return NotFound(new { message = "Мастер не найден" });
+
+            if (isOwner && master.OwnerId != userId)
+                return Unauthorized();
+
+            if (master.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
+
+            string dir = Path.Combine("wwwroot", "barbers_photo");
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            string fileName = $"{Guid.NewGuid()}{extension}";
+            string filePath = Path.Combine(dir, fileName);
+
+            using (var readStream = photo.OpenReadStream())
+            using (var fs = new FileStream(filePath, FileMode.Create))
+            {
+                await readStream.CopyToAsync(fs);
+            }
+
+            string photoUrl = $"/barbers_photo/{fileName}";
+            master.PhotoUrl = photoUrl;
+            await _context.SaveChangesAsync();
+
+            return Ok(new 
+            { 
+                message = "Фото барбера успешно загружено", 
+                photoUrl = master.PhotoUrl,
+                barberId = master.Id 
+            });
+        }
+
+        [HttpGet("photo/{barberId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetBarberPhoto([FromRoute] Guid barberId)
+        {
+            var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == barberId);
+            if (master == null || string.IsNullOrWhiteSpace(master.PhotoUrl))
+                return NotFound(new { message = "Фото барбера не найдено" });
+
+            var relativePath = master.PhotoUrl.TrimStart('/');
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            if (System.IO.File.Exists(filePath))
+            {
+                var extension = Path.GetExtension(filePath).ToLowerInvariant();
+                var contentType = extension switch
+                {
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".png" => "image/png",
+                    ".webp" => "image/webp",
+                    _ => "application/octet-stream"
+                };
+                return PhysicalFile(Path.GetFullPath(filePath), contentType);
+            }
+
+            return Ok(new { photoUrl = master.PhotoUrl, barberId = master.Id });
+        }
+
+        [HttpGet("get-photo")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetBarberPhotoByQuery([FromQuery] Guid barberId)
+        {
+            var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == barberId);
+            if (master == null || string.IsNullOrWhiteSpace(master.PhotoUrl))
+                return NotFound(new { message = "Фото барбера не найдено" });
+
+            return Ok(new { photoUrl = master.PhotoUrl, barberId = master.Id });
+        }
+
+        [HttpGet("my-photo")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> GetMyBarberPhoto()
+        {
+            var masterId = User.GetUserId();
+            var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master == null)
+                return NotFound(new { message = "Мастер не найден" });
+
+            return Ok(new { photoUrl = master.PhotoUrl, barberId = master.Id });
+        }
+
         [HttpGet("my-reviews")]
         [Authorize(Roles = "Master")]
         public async Task<IActionResult> GetMyReviews()
@@ -664,6 +780,7 @@ namespace Backend.Controllers
                 AppointmentEndDate = a.AppointmentEndDate,
                 Status = a.Status,
                 ReminderSent = a.ReminderSent,
+                ReminderTime = a.ReminderTime,
                 ServiceId = a.ServiceId,
                 ServiceName = a.Service?.ServiceName?.Name,
                 PhotoResultUrl = a.PhotoResultUrl,
@@ -683,14 +800,39 @@ namespace Backend.Controllers
 
             var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.MasterId == masterId);
             if (service == null || !service.IsActive)
-                return NotFound(new { message = "Service not found or inactive" });
+                return NotFound(new { message = "Услуга не найдена или не активна" });
 
             Guid finalClientId;
             if (request.ClientId.HasValue && request.ClientId.Value != Guid.Empty)
             {
                 var client = await _context.Clients.FindAsync(request.ClientId.Value);
                 if (client == null || client.OwnerId != master.OwnerId)
-                    return NotFound(new { message = "Client not found or doesn't belong to this shop" });
+                    return NotFound(new { message = "Клиент не найден" });
+                finalClientId = client.Id;
+            }
+            else if (!string.IsNullOrWhiteSpace(request.ClientName) || !string.IsNullOrWhiteSpace(request.ClientPhone))
+            {
+                var clientName = string.IsNullOrWhiteSpace(request.ClientName) ? "Гость" : request.ClientName.Trim();
+                var clientPhone = string.IsNullOrWhiteSpace(request.ClientPhone) ? null : request.ClientPhone.Trim();
+
+                Client? client = null;
+                if (!string.IsNullOrEmpty(clientPhone))
+                {
+                    client = await _context.Clients.FirstOrDefaultAsync(c => c.OwnerId == master.OwnerId && c.Phone == clientPhone);
+                }
+                if (client == null)
+                {
+                    client = new Client
+                    {
+                        Id = Guid.NewGuid(),
+                        OwnerId = master.OwnerId,
+                        Name = clientName,
+                        TelegramId = "WALKIN",
+                        Phone = clientPhone
+                    };
+                    _context.Clients.Add(client);
+                    await _context.SaveChangesAsync();
+                }
                 finalClientId = client.Id;
             }
             else
@@ -698,22 +840,28 @@ namespace Backend.Controllers
                 finalClientId = await GetOrCreateDummyClientAsync(master.OwnerId);
             }
 
-            var appointmentEndDateTime = request.AppointmentDate.AddMinutes(service.Duration);
-            var startOfDay = DateTime.SpecifyKind(request.AppointmentDate.Date, DateTimeKind.Utc);
-            var endOfDay = startOfDay.AddDays(1);
+            var utcAppointmentDate = request.AppointmentDate.Kind switch
+            {
+                DateTimeKind.Utc => request.AppointmentDate,
+                DateTimeKind.Local => request.AppointmentDate.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(request.AppointmentDate, DateTimeKind.Utc)
+            };
+            var duration = service.Duration > 0 ? service.Duration : 30;
+            var appointmentEndDateTime = DateTime.SpecifyKind(utcAppointmentDate.AddMinutes(duration), DateTimeKind.Utc);
 
-            var overlappingAppointments = await _context.Appointments
-                .Where(a => a.MasterId == masterId
-                            && a.AppointmentDate >= startOfDay
-                            && a.AppointmentDate < endOfDay
-                            && a.Status != AppointmentStatus.Cancelled)
-                .ToListAsync();
+            if (request.Status != AppointmentStatus.Cancelled)
+            {
+                var isOverlap = await _context.Appointments.AnyAsync(a =>
+                    a.MasterId == masterId
+                    && a.Status != AppointmentStatus.Cancelled
+                    && utcAppointmentDate < (a.AppointmentEndDate > a.AppointmentDate ? a.AppointmentEndDate : a.AppointmentDate.AddMinutes(30))
+                    && appointmentEndDateTime > a.AppointmentDate);
 
-            bool isOverlap = overlappingAppointments.Any(a =>
-                request.AppointmentDate < a.AppointmentEndDate && appointmentEndDateTime > a.AppointmentDate);
+                if (isOverlap)
+                    return Conflict(new { message = "Это время пересекается с другой записью." });
+            }
 
-            if (isOverlap)
-                return Conflict(new { message = "The requested time overlaps with another appointment." });
+            var reminderTime = DateTime.SpecifyKind(utcAppointmentDate.Subtract(TimeSpan.FromHours(master?.Owner?.ReminderHoursBefore ?? 2)), DateTimeKind.Utc);
 
             var appointment = new Appointment
             {
@@ -721,8 +869,9 @@ namespace Backend.Controllers
                 MasterId = masterId,
                 ClientId = finalClientId,
                 ServiceId = request.ServiceId,
-                AppointmentDate = request.AppointmentDate,
+                AppointmentDate = utcAppointmentDate,
                 AppointmentEndDate = appointmentEndDateTime,
+                ReminderTime = reminderTime,
                 Status = request.Status,
                 MasterProfit = 0,
                 OwnerProfit = 0,
@@ -741,21 +890,51 @@ namespace Backend.Controllers
                 .Include(a => a.Master)
                     .ThenInclude(m => m.Owner)
                 .FirstOrDefaultAsync(a => a.Id == appointmentId && a.MasterId == masterId);
-            if (appointment == null) return NotFound(new { message = "Appointment not found" });
+            if (appointment == null) return NotFound(new { message = "Запись не найдена" });
 
             if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Изменение записей заблокировано." });
 
             var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.MasterId == masterId);
             if (service == null || !service.IsActive)
-                return NotFound(new { message = "Service not found or inactive" });
+                return NotFound(new { message = "Услуга не найдена или не активна" });
 
             Guid finalClientId;
             if (request.ClientId.HasValue && request.ClientId.Value != Guid.Empty)
             {
                 var client = await _context.Clients.FindAsync(request.ClientId.Value);
                 if (client == null || client.OwnerId != appointment.Master.OwnerId)
-                    return NotFound(new { message = "Client not found or doesn't belong to this shop" });
+                    return NotFound(new { message = "Клиент не найден" });
+                finalClientId = client.Id;
+            }
+            else if (!string.IsNullOrWhiteSpace(request.ClientName) || !string.IsNullOrWhiteSpace(request.ClientPhone))
+            {
+                var clientName = string.IsNullOrWhiteSpace(request.ClientName) ? "Гость" : request.ClientName.Trim();
+                var clientPhone = string.IsNullOrWhiteSpace(request.ClientPhone) ? null : request.ClientPhone.Trim();
+
+                Client? client = null;
+                if (!string.IsNullOrEmpty(clientPhone))
+                {
+                    client = await _context.Clients.FirstOrDefaultAsync(c => c.OwnerId == appointment.Master.OwnerId && c.Phone == clientPhone);
+                }
+                if (client == null)
+                {
+                    client = new Client
+                    {
+                        Id = Guid.NewGuid(),
+                        OwnerId = appointment.Master.OwnerId,
+                        Name = clientName,
+                        TelegramId = "WALKIN",
+                        Phone = clientPhone
+                    };
+                    _context.Clients.Add(client);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    client.Name = clientName;
+                    await _context.SaveChangesAsync();
+                }
                 finalClientId = client.Id;
             }
             else
@@ -763,27 +942,31 @@ namespace Backend.Controllers
                 finalClientId = appointment.ClientId;
             }
 
-            var appointmentEndDateTime = request.AppointmentDate.AddMinutes(service.Duration);
-            var startOfDay = DateTime.SpecifyKind(request.AppointmentDate.Date, DateTimeKind.Utc);
-            var endOfDay = startOfDay.AddDays(1);
+            var utcAppointmentDate = request.AppointmentDate.Kind switch
+            {
+                DateTimeKind.Utc => request.AppointmentDate,
+                DateTimeKind.Local => request.AppointmentDate.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(request.AppointmentDate, DateTimeKind.Utc)
+            };
+            var duration = service.Duration > 0 ? service.Duration : 30;
+            var appointmentEndDateTime = DateTime.SpecifyKind(utcAppointmentDate.AddMinutes(duration), DateTimeKind.Utc);
 
-            var overlappingAppointments = await _context.Appointments
-                .Where(a => a.Id != appointmentId
-                            && a.MasterId == masterId
-                            && a.AppointmentDate >= startOfDay
-                            && a.AppointmentDate < endOfDay
-                            && a.Status != AppointmentStatus.Cancelled)
-                .ToListAsync();
+            if (request.Status != AppointmentStatus.Cancelled)
+            {
+                var isOverlap = await _context.Appointments.AnyAsync(a =>
+                    a.Id != appointmentId
+                    && a.MasterId == masterId
+                    && a.Status != AppointmentStatus.Cancelled
+                    && utcAppointmentDate < (a.AppointmentEndDate > a.AppointmentDate ? a.AppointmentEndDate : a.AppointmentDate.AddMinutes(30))
+                    && appointmentEndDateTime > a.AppointmentDate);
 
-            bool isOverlap = overlappingAppointments.Any(a =>
-                request.AppointmentDate < a.AppointmentEndDate && appointmentEndDateTime > a.AppointmentDate);
-
-            if (isOverlap && request.Status != AppointmentStatus.Cancelled)
-                return Conflict(new { message = "The requested time overlaps with another appointment." });
+                if (isOverlap)
+                    return Conflict(new { message = "Это время пересекается с другой записью." });
+            }
 
             appointment.ClientId = finalClientId;
             appointment.ServiceId = request.ServiceId;
-            appointment.AppointmentDate = request.AppointmentDate;
+            appointment.AppointmentDate = utcAppointmentDate;
             appointment.AppointmentEndDate = appointmentEndDateTime;
             appointment.Status = request.Status;
             
@@ -836,6 +1019,7 @@ namespace Backend.Controllers
                     AppointmentEndDate = a.AppointmentEndDate,
                     Status = a.Status,
                     ReminderSent = a.ReminderSent,
+                    ReminderTime = a.ReminderTime,
                     ServiceId = a.ServiceId,
                     ServiceName = a.Service != null ? a.Service.ServiceName.Name : null,
                     PhotoResultUrl = a.PhotoResultUrl,
@@ -897,6 +1081,7 @@ namespace Backend.Controllers
                     AppointmentEndDate = a.AppointmentEndDate,
                     Status = a.Status,
                     ReminderSent = a.ReminderSent,
+                    ReminderTime = a.ReminderTime,
                     ServiceId = a.ServiceId,
                     PhotoResultUrl = a.PhotoResultUrl,
                     ResultNote = a.ResultNote
@@ -1026,6 +1211,9 @@ namespace Backend.Controllers
             if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
+            if (appointment.Status != AppointmentStatus.Completed)
+                return BadRequest(new { message = "Фото результата можно прикрепить только к выполненным записям." });
+
             string dir = Path.Combine("wwwroot", "results");
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
@@ -1088,6 +1276,7 @@ namespace Backend.Controllers
                     AppointmentEndDate = a.AppointmentEndDate,
                     Status = a.Status,
                     ReminderSent = a.ReminderSent,
+                    ReminderTime = a.ReminderTime,
                     ServiceId = a.ServiceId,
                     ServiceName = a.Service != null ? a.Service.ServiceName.Name : null,
                     PhotoResultUrl = a.PhotoResultUrl,
@@ -1241,6 +1430,8 @@ namespace Backend.Controllers
         {
             public Guid? MasterId { get; set; }
             public Guid? ClientId { get; set; }
+            public string? ClientName { get; set; }
+            public string? ClientPhone { get; set; }
             public Guid ServiceId { get; set; }
             public DateTime AppointmentDate { get; set; }
             public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;

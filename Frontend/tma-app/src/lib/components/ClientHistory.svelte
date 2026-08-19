@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { apiFetch, fetchImageBlob } from '../api';
+  import { showAlert, showConfirm, hapticSuccess, hapticError } from '../telegram';
   import SecureImage from './SecureImage.svelte';
   import Icon from './Icon.svelte';
 
@@ -12,6 +13,11 @@
   let client: any = null;
   let appointments: any[] = [];
   let error = '';
+
+  // Photo upload state
+  let uploadingId: string | null = null;
+  let photoInputEl: HTMLInputElement;
+  let pendingPhotoApptId: string | null = null;
 
   onMount(async () => {
     await loadHistory();
@@ -43,6 +49,63 @@
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
+  }
+
+  function triggerPhotoUpload(apptId: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const appt = appointments.find(a => a.id === apptId);
+    if (appt && appt.status !== 1) {
+      showAlert('Фото результата можно прикрепить только к выполненным записям.');
+      return;
+    }
+    pendingPhotoApptId = apptId;
+    if (photoInputEl) {
+      photoInputEl.value = '';
+      photoInputEl.click();
+    }
+  }
+
+  async function handlePhotoSelected(event: any) {
+    const file = event.target.files?.[0];
+    if (!file || !pendingPhotoApptId) return;
+
+    uploadingId = pendingPhotoApptId;
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const { authStore } = await import('../stores/auth');
+      let token = null;
+      const unsub = authStore.subscribe(s => { token = s.token; });
+      unsub();
+
+      const res = await fetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Ошибка загрузки фото');
+      }
+
+      const result = await res.json();
+      const idx = appointments.findIndex(a => a.id === pendingPhotoApptId);
+      if (idx !== -1) {
+        appointments[idx].photoResultUrl = result.photoUrl;
+        appointments = [...appointments];
+      }
+      hapticSuccess();
+    } catch (e: any) {
+      hapticError();
+      showAlert('Ошибка загрузки фото: ' + (e.message || 'неизвестная ошибка'));
+    } finally {
+      uploadingId = null;
+      pendingPhotoApptId = null;
+    }
   }
 
   let editingCommentId: string | null = null;
@@ -98,6 +161,14 @@
 
   let lightboxSrc: string | null = null; // server path
 </script>
+
+<input
+  type="file"
+  accept="image/*"
+  style="display:none"
+  bind:this={photoInputEl}
+  on:change={handlePhotoSelected}
+/>
 
 <!-- Lightbox overlay -->
 {#if lightboxSrc}
@@ -184,14 +255,49 @@
               <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
               <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
               {#if appt.photoResultUrl}
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
-                  <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
-                  <span class="photo-thumb-label">
-                    <Icon name="camera" size={14} color="var(--pastel-rose)" />
-                    <span>Фото результата</span>
-                  </span>
+                <div class="photo-result-row">
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
+                  <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
+                    <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
+                    <span class="photo-thumb-label">
+                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <span>Фото результата</span>
+                    </span>
+                  </div>
+                  {#if appt.status === 1}
+                    <button 
+                      type="button" 
+                      class="btn-change-photo"
+                      on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                      disabled={uploadingId === appt.id}
+                      title="Заменить фото"
+                    >
+                      {#if uploadingId === appt.id}
+                        <span class="spinner-sm"></span>
+                      {:else}
+                        <Icon name="refresh" size={13} color="var(--pastel-lavender)" />
+                        <span>Заменить</span>
+                      {/if}
+                    </button>
+                  {/if}
+                </div>
+              {:else if appt.status === 1}
+                <div class="attach-photo-wrap">
+                  <button 
+                    type="button"
+                    class="btn-attach-photo"
+                    on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                    disabled={uploadingId === appt.id}
+                  >
+                    {#if uploadingId === appt.id}
+                      <span class="spinner-sm"></span>
+                      <span>Загрузка...</span>
+                    {:else}
+                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <span>Прикрепить фото результата</span>
+                    {/if}
+                  </button>
                 </div>
               {/if}
             </div>
@@ -234,14 +340,49 @@
               <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
               <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
               {#if appt.photoResultUrl}
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
-                  <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
-                  <span class="photo-thumb-label">
-                    <Icon name="camera" size={14} color="var(--pastel-rose)" />
-                    <span>Фото результата</span>
-                  </span>
+                <div class="photo-result-row">
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
+                  <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
+                    <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
+                    <span class="photo-thumb-label">
+                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <span>Фото результата</span>
+                    </span>
+                  </div>
+                  {#if appt.status === 1}
+                    <button 
+                      type="button" 
+                      class="btn-change-photo"
+                      on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                      disabled={uploadingId === appt.id}
+                      title="Заменить фото"
+                    >
+                      {#if uploadingId === appt.id}
+                        <span class="spinner-sm"></span>
+                      {:else}
+                        <Icon name="refresh" size={13} color="var(--pastel-lavender)" />
+                        <span>Заменить</span>
+                      {/if}
+                    </button>
+                  {/if}
+                </div>
+              {:else if appt.status === 1}
+                <div class="attach-photo-wrap">
+                  <button 
+                    type="button"
+                    class="btn-attach-photo"
+                    on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                    disabled={uploadingId === appt.id}
+                  >
+                    {#if uploadingId === appt.id}
+                      <span class="spinner-sm"></span>
+                      <span>Загрузка...</span>
+                    {:else}
+                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <span>Прикрепить фото результата</span>
+                    {/if}
+                  </button>
                 </div>
               {/if}
             </div>
@@ -587,12 +728,23 @@
     color: var(--text-primary);
   }
 
-  /* Photo thumb */
+  /* Photo thumb & result row */
+  .photo-result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    background: var(--bg-surface-elevated);
+    padding: 6px 12px 6px 6px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+  }
+
   .photo-thumb-wrap {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 10px;
     cursor: pointer;
   }
 
@@ -609,6 +761,66 @@
     font-size: 13px;
     color: var(--pastel-rose);
     font-weight: 600;
+  }
+
+  .btn-change-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+  }
+  .btn-change-photo:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass);
+    background: var(--bg-surface-hover);
+  }
+  .btn-change-photo:active {
+    transform: scale(0.96);
+  }
+
+  .attach-photo-wrap {
+    margin-top: 10px;
+  }
+
+  .btn-attach-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface-elevated);
+    border: 1px dashed rgba(223, 158, 142, 0.4);
+    color: var(--pastel-rose);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+  }
+  .btn-attach-photo:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--pastel-rose);
+  }
+  .btn-attach-photo:active {
+    transform: scale(0.97);
+  }
+
+  .spinner-sm {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(223, 158, 142, 0.25);
+    border-top: 2px solid var(--pastel-rose);
+    border-radius: 50%;
+    animation: spinSmooth 0.8s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
   }
 
   /* Badge */

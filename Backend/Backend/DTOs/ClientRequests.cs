@@ -1,6 +1,12 @@
 namespace Backend.DTOs
 {
-    public record BookAppointmentRequest(Guid MasterId, Guid ServiceId, DateTime AppointmentDate);
+    public record BookAppointmentRequest(
+        Guid MasterId,
+        Guid ServiceId,
+        DateTime AppointmentDate,
+        int? ReminderHoursBefore = null,
+        DateTime? ReminderTime = null
+    );
 
     public record UpdateClientPhoneRequest(string Phone);
 
@@ -20,6 +26,8 @@ namespace Backend.DTOs
         public string? Username { get; set; }
         public string? PhotoUrl { get; set; }
         public string? Description { get; set; }
+        public decimal Rating { get; set; }
+        public int ReviewsCount { get; set; }
     }
 
     public class ClientServiceDto

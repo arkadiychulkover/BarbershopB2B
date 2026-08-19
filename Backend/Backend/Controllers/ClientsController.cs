@@ -129,6 +129,16 @@ namespace Backend.Controllers
                     return BadRequest("The requested time overlaps with another appointment.");
                 }
 
+                DateTime? reminderTime = request.ReminderTime;
+                if (!reminderTime.HasValue && request.ReminderHoursBefore.HasValue)
+                {
+                    reminderTime = request.AppointmentDate.Subtract(TimeSpan.FromHours(request.ReminderHoursBefore.Value));
+                }
+                else if (!reminderTime.HasValue)
+                {
+                    reminderTime = request.AppointmentDate.Subtract(TimeSpan.FromHours(master.Owner?.ReminderHoursBefore ?? 2));
+                }
+
                 var appointment = new Appointment
                 {
                     Id = Guid.NewGuid(),
@@ -137,6 +147,7 @@ namespace Backend.Controllers
                     ServiceId = request.ServiceId,
                     AppointmentDate = request.AppointmentDate,
                     AppointmentEndDate = appointmentEndDateTime,
+                    ReminderTime = reminderTime,
                     Status = AppointmentStatus.Scheduled,
                     MasterProfit = 0,
                     OwnerProfit = 0,
@@ -193,7 +204,9 @@ namespace Backend.Controllers
                     TelegramId = m.TelegramId,
                     Username = m.TelegramUsername,
                     PhotoUrl = m.PhotoUrl,
-                    Description = m.Description
+                    Description = m.Description,
+                    Rating = m.Rating,
+                    ReviewsCount = m.Reviews.Count
                 })
                 .ToListAsync();
 
@@ -307,9 +320,11 @@ namespace Backend.Controllers
                     ServiceName = a.Service.ServiceName.Name,
                     AppointmentDate = a.AppointmentDate,
                     AppointmentEndDate = a.AppointmentEndDate,
+                    ReminderTime = a.ReminderTime,
                     Status = a.Status,
                     Price = a.Service.Price,
-                    HasReview = a.ReviewId != Guid.Empty
+                    HasReview = a.ReviewId != Guid.Empty,
+                    PhotoResultUrl = a.PhotoResultUrl
                 })
                 .ToListAsync();
 
@@ -441,9 +456,11 @@ namespace Backend.Controllers
         public string ServiceName { get; set; }
         public DateTime AppointmentDate { get; set; }
         public DateTime AppointmentEndDate { get; set; }
+        public DateTime? ReminderTime { get; set; }
         public AppointmentStatus Status { get; set; }
         public decimal? Price { get; set; }
         public bool HasReview { get; set; }
+        public string? PhotoResultUrl { get; set; }
     }
 
     public class ReviewDTO

@@ -4,6 +4,9 @@ export function initTelegram() {
     if (tg) {
         tg.ready();
         tg.expand();
+        if (tg.MainButton) {
+            try { tg.MainButton.hide(); } catch (e) { }
+        }
     }
 }
 
@@ -12,18 +15,20 @@ export function getInitData() {
 }
 
 export function showMainButton(text, onClick) {
-    if (!tg) return;
+    if (!tg || !tg.MainButton) return;
     tg.MainButton.setText(text);
     tg.MainButton.onClick(onClick);
     tg.MainButton.show();
 }
 
-export function hideMainButton(onClick) {
-    if (!tg) return;
-    if (onClick) {
-        tg.MainButton.offClick(onClick);
-    }
-    tg.MainButton.hide();
+export function hideMainButton(onClick?: any) {
+    if (!tg || !tg.MainButton) return;
+    try {
+        if (onClick) {
+            tg.MainButton.offClick(onClick);
+        }
+        tg.MainButton.hide();
+    } catch (e) { }
 }
 
 export function showBackButton(onClick) {

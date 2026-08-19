@@ -24,6 +24,7 @@ namespace Backend.Models
         public DateTime AppointmentEndDate { get; set; }
         
         public bool ReminderSent { get; set; } = false;
+        public DateTime? ReminderTime { get; set; }
 
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
 

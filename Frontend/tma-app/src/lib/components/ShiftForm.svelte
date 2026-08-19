@@ -1,14 +1,16 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
-  import { showMainButton, hideMainButton, showBackButton, hideBackButton } from '../telegram';
+  import { hideMainButton, showBackButton, hideBackButton } from '../telegram';
+  import Icon from './Icon.svelte';
   
   export let initialData: any = null;
+  export let saving = false;
   
   const dispatch = createEventDispatcher();
   
   let dayOfWeek = 1;
-  let startTime = '';
-  let endTime = '';
+  let startTime = '09:00';
+  let endTime = '18:00';
 
   const daysOfWeekOptions = [
     { value: 1, label: 'Понедельник' },
@@ -21,43 +23,34 @@
   ];
 
   onMount(() => {
+    // Hide Telegram bottom MainButton
+    hideMainButton();
+
     if (initialData) {
-      dayOfWeek = initialData.dayOfWeek;
-      startTime = initialData.startTime.substring(0, 5);
-      endTime = initialData.endTime.substring(0, 5);
+      dayOfWeek = Number(initialData.dayOfWeek);
+      startTime = initialData.startTime ? initialData.startTime.substring(0, 5) : '09:00';
+      endTime = initialData.endTime ? initialData.endTime.substring(0, 5) : '18:00';
     } else {
       dayOfWeek = 1;
       startTime = '09:00';
       endTime = '18:00';
     }
     
-    showMainButton('Сохранить', onSubmit);
     showBackButton(onCancel);
   });
   
   onDestroy(() => {
-    hideMainButton(onSubmit);
+    hideMainButton();
     hideBackButton(onCancel);
   });
-  $: isValid = (dayOfWeek >= 0 && dayOfWeek <= 6) && startTime && endTime && (startTime < endTime);
-  import { tg } from '../telegram';
-  $: {
-    if (tg && tg.MainButton) {
-      if (isValid) {
-        tg.MainButton.enable();
-        tg.MainButton.setParams({ color: tg.themeParams.button_color || '#3390ec' });
-      } else {
-        tg.MainButton.disable();
-        tg.MainButton.setParams({ color: tg.themeParams.hint_color || '#999999' });
-      }
-    }
-  }
+
+  $: isValid = (Number(dayOfWeek) >= 0 && Number(dayOfWeek) <= 6) && !!startTime && !!endTime && (startTime < endTime);
 
   function onSubmit() {
-    if (!isValid) return;
+    if (!isValid || saving) return;
     
     const formData = {
-      dayOfWeek,
+      dayOfWeek: Number(dayOfWeek),
       startTime: `${startTime}:00`,
       endTime: `${endTime}:00`
     };
@@ -71,7 +64,12 @@
 </script>
 
 <div class="shift-form">
-  <h2>{initialData ? 'Редактирование смены' : 'Новая смена'}</h2>
+  <div class="form-header">
+    <h2>{initialData ? 'Редактирование смены' : 'Новая смена'}</h2>
+    <button class="close-btn" type="button" on:click={onCancel} aria-label="Закрыть">
+      <Icon name="x" size={18} />
+    </button>
+  </div>
   
   <div class="form-group">
     <label for="dayOfWeek">День недели</label>
@@ -97,32 +95,75 @@
   {#if startTime && endTime && startTime >= endTime}
     <p class="error-msg">Время начала должно быть раньше времени окончания</p>
   {/if}
+
+  <div class="form-actions">
+    <button 
+      type="button" 
+      class="btn-submit flex-1" 
+      on:click={onSubmit} 
+      disabled={!isValid || saving}
+    >
+      {saving ? 'Сохранение...' : (initialData ? 'Сохранить изменения' : 'Добавить смену')}
+    </button>
+    <button 
+      type="button" 
+      class="btn-cancel flex-1" 
+      on:click={onCancel}
+      disabled={saving}
+    >
+      Отмена
+    </button>
+  </div>
 </div>
 
 <style>
   .shift-form {
-    padding: 24px;
+    padding: 22px;
     background: var(--bg-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-glass);
-    animation: fadeIn 0.3s var(--ease-spring);
+    animation: fadeIn 0.25s var(--ease-spring);
+    margin-bottom: 24px;
   }
 
-  h2 {
-    margin-top: 0;
-    margin-bottom: 24px;
-    font-size: 20px;
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .form-header h2 {
+    margin: 0;
+    font-size: 19px;
     font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s;
+  }
+
+  .close-btn:hover {
     color: var(--text-primary);
   }
 
   .form-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     flex: 1;
   }
 
@@ -132,7 +173,7 @@
   }
 
   label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
     margin-bottom: 6px;
@@ -149,11 +190,12 @@
     font-size: 15px;
     font-family: var(--font-family);
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   input:focus, select:focus {
     border-color: var(--border-active);
+    box-shadow: 0 0 0 2px rgba(212, 165, 165, 0.15);
   }
 
   select {
@@ -166,7 +208,76 @@
   .error-msg {
     color: var(--pastel-coral);
     font-size: 13px;
-    margin-top: 8px;
+    margin-top: 4px;
+    margin-bottom: 14px;
     font-weight: 500;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  .btn-submit, .btn-cancel {
+    padding: 13px 18px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+
+  .btn-submit {
+    background: linear-gradient(135deg, var(--pastel-rose, #e0a39a), #c88777);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 14px var(--pastel-rose-glow, rgba(224, 163, 154, 0.25));
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    box-shadow: 0 6px 20px var(--pastel-rose-glow, rgba(224, 163, 154, 0.4));
+    transform: translateY(-1px);
+  }
+
+  .btn-submit:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: var(--bg-surface-elevated, #23222a);
+    color: var(--text-tertiary, #888888);
+    box-shadow: none;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  }
+
+  .btn-cancel {
+    background: var(--bg-surface-elevated, #23222a);
+    color: var(--text-primary, #ffffff);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  }
+
+  .btn-cancel:hover:not(:disabled) {
+    background: var(--bg-surface, #1e1d24);
+    border-color: var(--border-glass, rgba(255, 255, 255, 0.2));
+  }
+
+  .btn-cancel:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
