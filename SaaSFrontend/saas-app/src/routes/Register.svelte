@@ -75,7 +75,7 @@
     </div>
 
     <h2>Создать аккаунт</h2>
-    <p class="subtitle">Подключите ваш барбершоп к платформе онлайн-записи</p>
+    <p class="subtitle">Подключите ваше заведение к платформе онлайн-записи</p>
     
     {#if errorMsg}
       <div class="alert alert-danger">
@@ -131,15 +131,15 @@
       </div>
 
       <div class="section-divider">
-        <span>2. Информация о барбершопе</span>
+        <span>2. Информация о заведении</span>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
-          <label for="barbershopName">Название барбершопа</label>
+          <label for="barbershopName">Название заведения</label>
           <div class="input-icon-wrap">
             <Building2 size={16} class="input-icon" />
-            <input id="barbershopName" type="text" class="input has-icon" bind:value={formData.barbershopName} placeholder="Chop & Blade" required />
+            <input id="barbershopName" type="text" class="input has-icon" bind:value={formData.barbershopName} placeholder="Название студии или салона" required />
           </div>
         </div>
 
@@ -159,7 +159,7 @@
           class="input" 
           bind:value={formData.barbershopDescription} 
           rows="2" 
-          placeholder="Лучший барбершоп в центре города с опытными мастерами..."
+          placeholder="Уютное заведение в центре города с опытными мастерами..."
           required
         ></textarea>
       </div>
@@ -181,7 +181,7 @@
           <label for="botUsername">Username бота (без @)</label>
           <div class="input-icon-wrap">
             <Bot size={16} class="input-icon" />
-            <input id="botUsername" type="text" class="input has-icon" bind:value={formData.botUsername} placeholder="my_barber_bot" required />
+            <input id="botUsername" type="text" class="input has-icon" bind:value={formData.botUsername} placeholder="my_booking_bot" required />
           </div>
         </div>
 
@@ -208,7 +208,7 @@
       </div>
 
       <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading}>
-        <span>{isLoading ? 'Создание кабинета...' : 'Зарегистрировать барбершоп'}</span>
+        <span>{isLoading ? 'Создание кабинета...' : 'Зарегистрировать заведение'}</span>
         {#if !isLoading}
           <ArrowRight size={17} />
         {/if}

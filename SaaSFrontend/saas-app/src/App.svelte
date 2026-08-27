@@ -3,6 +3,8 @@
   import Landing from './routes/Landing.svelte';
   import Register from './routes/Register.svelte';
   import Login from './routes/Login.svelte';
+  import ForgotPassword from './routes/ForgotPassword.svelte';
+  import ResetPassword from './routes/ResetPassword.svelte';
   import Payment from './routes/Payment.svelte';
   
   import Overview from './routes/Overview.svelte';
@@ -13,12 +15,15 @@
   import Statistics from './routes/Statistics.svelte';
   import BotSetup from './routes/BotSetup.svelte';
   import Schedule from './routes/Schedule.svelte';
+  import Timeline from './routes/Timeline.svelte';
   import Admin from './routes/Admin.svelte';
 
   const routes = {
     '/': Landing,
     '/register': Register,
     '/login': Login,
+    '/forgot-password': ForgotPassword,
+    '/reset-password': ResetPassword,
     '/payment': Payment,
     '/admin': Admin,
     '/dashboard': Overview,
@@ -29,6 +34,7 @@
     '/dashboard/statistics': Statistics,
     '/dashboard/bot-setup': BotSetup,
     '/dashboard/schedule': Schedule,
+    '/dashboard/timeline': Timeline,
   };
 </script>
 

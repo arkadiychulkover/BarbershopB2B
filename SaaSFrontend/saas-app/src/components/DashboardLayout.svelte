@@ -21,7 +21,8 @@
     Moon,
     HelpCircle,
     Send,
-    ExternalLink
+    ExternalLink,
+    TableProperties
   } from 'lucide-svelte';
   
   let isLoading = true;
@@ -36,9 +37,11 @@
     try {
       const settings = await apiRequest('/api/Settings');
       profileStore.set({
-        ownerId: settings.ownerName,
+        ownerId: settings.id,
+        ownerName: settings.ownerName,
         status: settings.status,
-        email: $profileStore.email || settings.email || ''
+        email: settings.email || $profileStore.email || '',
+        botUsername: settings.botUsername || ''
       });
       if (settings.status !== 'Active' && $currentLocation !== '/payment') {
         push('/payment');
@@ -133,6 +136,10 @@
           <Bot size={19} />
           <span>Telegram Бот</span>
         </a>
+        <a href="#/dashboard/timeline" class="nav-item" class:active={$currentLocation.includes('/timeline')} on:click={closeMobile}>
+          <TableProperties size={19} />
+          <span>Шахматка</span>
+        </a>
         <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.includes('/settings')} on:click={closeMobile}>
           <Settings size={19} />
           <span>Настройки</span>
@@ -164,7 +171,7 @@
           </div>
           <div class="user-info">
             <span class="user-name">{$profileStore.ownerId || 'Владелец'}</span>
-            <span class="user-email">{$profileStore.email || 'barber@shop.com'}</span>
+            <span class="user-email">{$profileStore.email || 'master@shop.com'}</span>
           </div>
         </div>
         <button class="logout-btn" on:click={handleLogout} title="Выйти из аккаунта">

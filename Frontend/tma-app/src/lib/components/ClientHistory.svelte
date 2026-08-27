@@ -1,9 +1,15 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { apiFetch, fetchImageBlob } from '../api';
-  import { showAlert, showConfirm, hapticSuccess, hapticError } from '../telegram';
-  import SecureImage from './SecureImage.svelte';
-  import Icon from './Icon.svelte';
+  import { createEventDispatcher, onMount } from "svelte";
+  import { apiFetch, fetchImageBlob } from "../api";
+  import {
+    showAlert,
+    showConfirm,
+    hapticSuccess,
+    hapticError,
+    hapticWarning,
+  } from "../telegram";
+  import SecureImage from "./SecureImage.svelte";
+  import Icon from "./Icon.svelte";
 
   export let clientId: string;
 
@@ -12,7 +18,7 @@
   let loading = true;
   let client: any = null;
   let appointments: any[] = [];
-  let error = '';
+  let error = "";
 
   // Photo upload state
   let uploadingId: string | null = null;
@@ -25,13 +31,13 @@
 
   async function loadHistory() {
     loading = true;
-    error = '';
+    error = "";
     try {
       const data = await apiFetch(`/api/Barber/client-history/${clientId}`);
       client = data.client;
       appointments = data.appointments;
     } catch (e) {
-      error = 'Не удалось загрузить историю клиента';
+      error = "Не удалось загрузить историю клиента";
       console.error(e);
     } finally {
       loading = false;
@@ -39,15 +45,18 @@
   }
 
   function statusLabel(status: number): string {
-    if (status === 1) return 'Выполнено';
-    if (status === 2) return 'Отменено';
-    return 'Запланировано';
+    if (status === 1) return "Выполнено";
+    if (status === 2) return "Отменено";
+    return "Запланировано";
   }
 
   function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString('ru-RU', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+    return new Date(iso).toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 
@@ -55,14 +64,16 @@
     if (event) {
       event.stopPropagation();
     }
-    const appt = appointments.find(a => a.id === apptId);
+    const appt = appointments.find((a) => a.id === apptId);
     if (appt && appt.status !== 1) {
-      showAlert('Фото результата можно прикрепить только к выполненным записям.');
+      showAlert(
+        "Фото результата можно прикрепить только к выполненным записям.",
+      );
       return;
     }
     pendingPhotoApptId = apptId;
     if (photoInputEl) {
-      photoInputEl.value = '';
+      photoInputEl.value = "";
       photoInputEl.click();
     }
   }
@@ -74,26 +85,28 @@
     uploadingId = pendingPhotoApptId;
     try {
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append("photo", file);
 
-      const { authStore } = await import('../stores/auth');
+      const { authStore } = await import("../stores/auth");
       let token = null;
-      const unsub = authStore.subscribe(s => { token = s.token; });
+      const unsub = authStore.subscribe((s) => {
+        token = s.token;
+      });
       unsub();
 
       const res = await fetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
-        method: 'POST',
+        method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData
+        body: formData,
       });
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(errText || 'Ошибка загрузки фото');
+        throw new Error(errText || "Ошибка загрузки фото");
       }
 
       const result = await res.json();
-      const idx = appointments.findIndex(a => a.id === pendingPhotoApptId);
+      const idx = appointments.findIndex((a) => a.id === pendingPhotoApptId);
       if (idx !== -1) {
         appointments[idx].photoResultUrl = result.photoUrl;
         appointments = [...appointments];
@@ -101,7 +114,7 @@
       hapticSuccess();
     } catch (e: any) {
       hapticError();
-      showAlert('Ошибка загрузки фото: ' + (e.message || 'неизвестная ошибка'));
+      showAlert("Ошибка загрузки фото: " + (e.message || "неизвестная ошибка"));
     } finally {
       uploadingId = null;
       pendingPhotoApptId = null;
@@ -109,11 +122,11 @@
   }
 
   let editingCommentId: string | null = null;
-  let commentText = '';
+  let commentText = "";
 
   function openCommentEdit(appt: any) {
     editingCommentId = appt.id;
-    commentText = appt.resultNote || '';
+    commentText = appt.resultNote || "";
   }
 
   function cancelCommentEdit() {
@@ -123,10 +136,10 @@
   async function saveComment(apptId: string) {
     try {
       const res = await apiFetch(`/api/Barber/appointment-comment/${apptId}`, {
-        method: 'POST',
-        body: { comment: commentText }
+        method: "POST",
+        body: { comment: commentText },
       });
-      const index = appointments.findIndex(a => a.id === apptId);
+      const index = appointments.findIndex((a) => a.id === apptId);
       if (index !== -1) {
         appointments[index].resultNote = res.comment;
         appointments = [...appointments];
@@ -134,30 +147,87 @@
       editingCommentId = null;
     } catch (e) {
       console.error(e);
-      alert('Ошибка при сохранении комментария');
+      alert("Ошибка при сохранении комментария");
     }
   }
 
   async function deleteComment(apptId: string) {
-    if (!confirm('Удалить комментарий?')) return;
+    if (!confirm("Удалить комментарий?")) return;
     try {
       await apiFetch(`/api/Barber/appointment-comment/${apptId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
-      const index = appointments.findIndex(a => a.id === apptId);
+      const index = appointments.findIndex((a) => a.id === apptId);
       if (index !== -1) {
         appointments[index].resultNote = null;
         appointments = [...appointments];
       }
     } catch (e) {
       console.error(e);
-      alert('Ошибка при удалении комментария');
+      alert("Ошибка при удалении комментария");
     }
   }
 
+  function cancelAppointment(apptId: string) {
+    hapticWarning();
+    showConfirm(
+      "Вы действительно хотите отменить эту запись?",
+      async (confirmed) => {
+        if (!confirmed) return;
+        try {
+          await apiFetch(`/api/Barber/my-appointments/cancel/${apptId}`, {
+            method: "PUT",
+          });
+          hapticSuccess();
+          showAlert("Запись успешно отменена");
+          await loadHistory();
+        } catch (e: any) {
+          hapticError();
+          showAlert("Ошибка: " + (e.message || "не удалось отменить запись"));
+        }
+      },
+    );
+  }
+
   // split appointments by upcoming vs past
-  $: upcoming = appointments.filter(a => new Date(a.appointmentDate) >= new Date() && a.status !== 2);
-  $: past = appointments.filter(a => new Date(a.appointmentDate) < new Date() || a.status === 2);
+  $: upcoming = appointments.filter(
+    (a) => new Date(a.appointmentDate) >= new Date() && a.status !== 2,
+  );
+  $: past = appointments.filter(
+    (a) => new Date(a.appointmentDate) < new Date() || a.status === 2,
+  );
+
+  let isEditingClientNotes = false;
+  let clientNotesText = "";
+  let savingClientNotes = false;
+
+  function startEditClientNotes() {
+    clientNotesText = client?.notes || "";
+    isEditingClientNotes = true;
+  }
+
+  function cancelEditClientNotes() {
+    isEditingClientNotes = false;
+  }
+
+  async function saveClientNotes() {
+    savingClientNotes = true;
+    try {
+      await apiFetch(`/api/Barber/client-notes/${clientId}`, {
+        method: "PATCH",
+        body: { notes: clientNotesText },
+      });
+      if (client) {
+        client.notes = clientNotesText.trim() || null;
+      }
+      isEditingClientNotes = false;
+      hapticSuccess();
+    } catch (e) {
+      alert("Ошибка при сохранении заметок о клиенте");
+    } finally {
+      savingClientNotes = false;
+    }
+  }
 
   let lightboxSrc: string | null = null; // server path
 </script>
@@ -174,9 +244,14 @@
 {#if lightboxSrc}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="lightbox" on:click={() => lightboxSrc = null}>
-    <SecureImage src={lightboxSrc} alt="Результат" className="lightbox-img" style="max-height:85vh;object-fit:contain;" />
-    <button class="lightbox-close" on:click={() => lightboxSrc = null}>
+  <div class="lightbox" on:click={() => (lightboxSrc = null)}>
+    <SecureImage
+      src={lightboxSrc}
+      alt="Результат"
+      className="lightbox-img"
+      style="max-height:85vh;object-fit:contain;"
+    />
+    <button class="lightbox-close" on:click={() => (lightboxSrc = null)}>
       <Icon name="x" size={20} />
     </button>
   </div>
@@ -184,16 +259,16 @@
 
 <div class="history-page">
   <div class="history-header">
-    <button class="back-btn" on:click={() => dispatch('back')}>
+    <button class="back-btn" on:click={() => dispatch("back")}>
       <Icon name="chevron-left" size={16} />
       <span>Назад</span>
     </button>
     {#if client}
       <div class="client-header-info">
-        <div class="client-avatar">{(client.name || '?')[0].toUpperCase()}</div>
+        <div class="client-avatar">{(client.name || "?")[0].toUpperCase()}</div>
         <div class="client-meta">
-          <div class="client-name-title">{client.name || 'Клиент'}</div>
-          {#if client.telegramId && client.telegramId !== 'WALKIN'}
+          <div class="client-name-title">{client.name || "Клиент"}</div>
+          {#if client.telegramId && client.telegramId !== "WALKIN"}
             <a
               class="tg-link"
               href="https://t.me/{client.telegramId}"
@@ -231,7 +306,9 @@
         <div class="stat-label">Всего</div>
       </div>
       <div class="stat">
-        <div class="stat-value">{appointments.filter(a=>a.status===1).length}</div>
+        <div class="stat-value">
+          {appointments.filter((a) => a.status === 1).length}
+        </div>
         <div class="stat-label">Выполнено</div>
       </div>
       <div class="stat">
@@ -240,11 +317,40 @@
       </div>
     </div>
 
-    {#if client?.notes}
-      <div class="notes-card">
-        <span class="notes-label">Заметки:</span> {client.notes}
+    <div class="notes-card">
+      <div class="notes-header-row">
+        <span class="notes-label">✂️ Профиль стрижки / Заметки о клиенте:</span>
+        {#if !isEditingClientNotes}
+          <button class="notes-edit-btn" on:click={startEditClientNotes}>
+            <Icon name="edit" size={13} />
+            <span>{client?.notes ? "Изменить" : "Добавить"}</span>
+          </button>
+        {/if}
       </div>
-    {/if}
+      {#if isEditingClientNotes}
+        <textarea
+          class="notes-input"
+          bind:value={clientNotesText}
+          placeholder="Насадки, пробор, форма бороды, предпочтения..."
+        ></textarea>
+        <div class="notes-actions">
+          <button
+            class="btn-save"
+            on:click={saveClientNotes}
+            disabled={savingClientNotes}
+          >
+            {savingClientNotes ? "Сохранение..." : "Сохранить"}
+          </button>
+          <button class="btn-cancel" on:click={cancelEditClientNotes}
+            >Отмена</button
+          >
+        </div>
+      {:else if client?.notes}
+        <div class="notes-content">{client.notes}</div>
+      {:else}
+        <div class="notes-placeholder">Нет заметок о предпочтениях стрижки</div>
+      {/if}
+    </div>
 
     {#if upcoming.length > 0}
       <div class="section-title">Предстоящие</div>
@@ -252,22 +358,36 @@
         <div class="appt-card-wrapper status-{appt.status}">
           <div class="appt-row">
             <div class="appt-row-left">
-              <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
-              <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
+              <div class="appt-row-date">
+                {formatDate(appt.appointmentDate)}
+              </div>
+              <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
               {#if appt.photoResultUrl}
                 <div class="photo-result-row">
                   <!-- svelte-ignore a11y-click-events-have-key-events -->
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
-                    <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
+                  <div
+                    class="photo-thumb-wrap"
+                    on:click={() => (lightboxSrc = appt.photoResultUrl)}
+                  >
+                    <SecureImage
+                      src={appt.photoResultUrl}
+                      alt="Результат"
+                      className="photo-thumb"
+                      style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
+                    />
                     <span class="photo-thumb-label">
-                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <Icon
+                        name="camera"
+                        size={14}
+                        color="var(--pastel-rose)"
+                      />
                       <span>Фото результата</span>
                     </span>
                   </div>
                   {#if appt.status === 1}
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       class="btn-change-photo"
                       on:click={(e) => triggerPhotoUpload(appt.id, e)}
                       disabled={uploadingId === appt.id}
@@ -276,7 +396,11 @@
                       {#if uploadingId === appt.id}
                         <span class="spinner-sm"></span>
                       {:else}
-                        <Icon name="refresh" size={13} color="var(--pastel-lavender)" />
+                        <Icon
+                          name="refresh"
+                          size={13}
+                          color="var(--pastel-lavender)"
+                        />
                         <span>Заменить</span>
                       {/if}
                     </button>
@@ -284,7 +408,7 @@
                 </div>
               {:else if appt.status === 1}
                 <div class="attach-photo-wrap">
-                  <button 
+                  <button
                     type="button"
                     class="btn-attach-photo"
                     on:click={(e) => triggerPhotoUpload(appt.id, e)}
@@ -294,23 +418,49 @@
                       <span class="spinner-sm"></span>
                       <span>Загрузка...</span>
                     {:else}
-                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <Icon
+                        name="camera"
+                        size={14}
+                        color="var(--pastel-rose)"
+                      />
                       <span>Прикрепить фото результата</span>
                     {/if}
                   </button>
                 </div>
               {/if}
             </div>
-            <span class="badge badge-{appt.status}">{statusLabel(appt.status)}</span>
+            <div class="appt-row-right">
+              <span class="badge badge-{appt.status}"
+                >{statusLabel(appt.status)}</span
+              >
+              {#if appt.status !== 2}
+                <button
+                  type="button"
+                  class="btn-cancel-appt"
+                  on:click={() => cancelAppointment(appt.id)}
+                >
+                  <Icon name="x" size={12} />
+                  <span>Отменить</span>
+                </button>
+              {/if}
+            </div>
           </div>
 
           <!-- Comment Section -->
           <div class="appt-comment-section">
             {#if editingCommentId === appt.id}
-              <textarea class="comment-input" bind:value={commentText} placeholder="Комментарий / Заметка..."></textarea>
+              <textarea
+                class="comment-input"
+                bind:value={commentText}
+                placeholder="Комментарий / Заметка..."
+              ></textarea>
               <div class="comment-actions">
-                <button class="btn-save" on:click={() => saveComment(appt.id)}>Сохранить</button>
-                <button class="btn-cancel" on:click={cancelCommentEdit}>Отмена</button>
+                <button class="btn-save" on:click={() => saveComment(appt.id)}
+                  >Сохранить</button
+                >
+                <button class="btn-cancel" on:click={cancelCommentEdit}
+                  >Отмена</button
+                >
               </div>
             {:else if appt.resultNote}
               <div class="comment-display">
@@ -320,11 +470,18 @@
                 </div>
                 <div class="comment-actions-sm">
                   <button on:click={() => openCommentEdit(appt)}>Ред.</button>
-                  <button class="text-danger" on:click={() => deleteComment(appt.id)}>Удал.</button>
+                  <button
+                    class="text-danger"
+                    on:click={() => deleteComment(appt.id)}>Удал.</button
+                  >
                 </div>
               </div>
             {:else}
-              <button class="btn-add-comment" on:click={() => openCommentEdit(appt)}>+ Добавить комментарий</button>
+              <button
+                class="btn-add-comment"
+                on:click={() => openCommentEdit(appt)}
+                >+ Добавить комментарий</button
+              >
             {/if}
           </div>
         </div>
@@ -337,22 +494,36 @@
         <div class="appt-card-wrapper status-{appt.status}">
           <div class="appt-row">
             <div class="appt-row-left">
-              <div class="appt-row-date">{formatDate(appt.appointmentDate)}</div>
-              <div class="appt-row-service">{appt.serviceName || 'Услуга'}</div>
+              <div class="appt-row-date">
+                {formatDate(appt.appointmentDate)}
+              </div>
+              <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
               {#if appt.photoResultUrl}
                 <div class="photo-result-row">
                   <!-- svelte-ignore a11y-click-events-have-key-events -->
                   <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <div class="photo-thumb-wrap" on:click={() => lightboxSrc = appt.photoResultUrl}>
-                    <SecureImage src={appt.photoResultUrl} alt="Результат" className="photo-thumb" style="width:56px;height:56px;object-fit:cover;border-radius:8px;" />
+                  <div
+                    class="photo-thumb-wrap"
+                    on:click={() => (lightboxSrc = appt.photoResultUrl)}
+                  >
+                    <SecureImage
+                      src={appt.photoResultUrl}
+                      alt="Результат"
+                      className="photo-thumb"
+                      style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
+                    />
                     <span class="photo-thumb-label">
-                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <Icon
+                        name="camera"
+                        size={14}
+                        color="var(--pastel-rose)"
+                      />
                       <span>Фото результата</span>
                     </span>
                   </div>
                   {#if appt.status === 1}
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       class="btn-change-photo"
                       on:click={(e) => triggerPhotoUpload(appt.id, e)}
                       disabled={uploadingId === appt.id}
@@ -361,7 +532,11 @@
                       {#if uploadingId === appt.id}
                         <span class="spinner-sm"></span>
                       {:else}
-                        <Icon name="refresh" size={13} color="var(--pastel-lavender)" />
+                        <Icon
+                          name="refresh"
+                          size={13}
+                          color="var(--pastel-lavender)"
+                        />
                         <span>Заменить</span>
                       {/if}
                     </button>
@@ -369,7 +544,7 @@
                 </div>
               {:else if appt.status === 1}
                 <div class="attach-photo-wrap">
-                  <button 
+                  <button
                     type="button"
                     class="btn-attach-photo"
                     on:click={(e) => triggerPhotoUpload(appt.id, e)}
@@ -379,23 +554,37 @@
                       <span class="spinner-sm"></span>
                       <span>Загрузка...</span>
                     {:else}
-                      <Icon name="camera" size={14} color="var(--pastel-rose)" />
+                      <Icon
+                        name="camera"
+                        size={14}
+                        color="var(--pastel-rose)"
+                      />
                       <span>Прикрепить фото результата</span>
                     {/if}
                   </button>
                 </div>
               {/if}
             </div>
-            <span class="badge badge-{appt.status}">{statusLabel(appt.status)}</span>
+            <span class="badge badge-{appt.status}"
+              >{statusLabel(appt.status)}</span
+            >
           </div>
 
           <!-- Comment Section -->
           <div class="appt-comment-section">
             {#if editingCommentId === appt.id}
-              <textarea class="comment-input" bind:value={commentText} placeholder="Комментарий / Заметка..."></textarea>
+              <textarea
+                class="comment-input"
+                bind:value={commentText}
+                placeholder="Комментарий / Заметка..."
+              ></textarea>
               <div class="comment-actions">
-                <button class="btn-save" on:click={() => saveComment(appt.id)}>Сохранить</button>
-                <button class="btn-cancel" on:click={cancelCommentEdit}>Отмена</button>
+                <button class="btn-save" on:click={() => saveComment(appt.id)}
+                  >Сохранить</button
+                >
+                <button class="btn-cancel" on:click={cancelCommentEdit}
+                  >Отмена</button
+                >
               </div>
             {:else if appt.resultNote}
               <div class="comment-display">
@@ -405,11 +594,18 @@
                 </div>
                 <div class="comment-actions-sm">
                   <button on:click={() => openCommentEdit(appt)}>Ред.</button>
-                  <button class="text-danger" on:click={() => deleteComment(appt.id)}>Удал.</button>
+                  <button
+                    class="text-danger"
+                    on:click={() => deleteComment(appt.id)}>Удал.</button
+                  >
                 </div>
               </div>
             {:else}
-              <button class="btn-add-comment" on:click={() => openCommentEdit(appt)}>+ Добавить комментарий</button>
+              <button
+                class="btn-add-comment"
+                on:click={() => openCommentEdit(appt)}
+                >+ Добавить комментарий</button
+              >
             {/if}
           </div>
         </div>
@@ -482,7 +678,11 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--pastel-rose), var(--pastel-lavender));
+    background: linear-gradient(
+      135deg,
+      var(--pastel-rose),
+      var(--pastel-lavender)
+    );
     color: var(--text-inverse);
     font-size: 22px;
     font-weight: 800;
@@ -512,7 +712,10 @@
     font-weight: 600;
     transition: color 0.2s;
   }
-  .tg-link:hover { color: var(--pastel-rose); text-decoration: underline; }
+  .tg-link:hover {
+    color: var(--pastel-rose);
+    text-decoration: underline;
+  }
 
   .tg-guest {
     font-size: 13px;
@@ -543,7 +746,9 @@
     text-align: center;
     border-right: 1px solid var(--border-subtle);
   }
-  .stat:last-child { border-right: none; }
+  .stat:last-child {
+    border-right: none;
+  }
 
   .stat-value {
     font-size: 22px;
@@ -567,12 +772,62 @@
     background: var(--pastel-rose-dim);
     border-left: 3px solid var(--pastel-rose);
     border-radius: var(--radius-md);
-    padding: 12px 16px;
+    padding: 14px 16px;
     font-size: 14px;
     color: var(--text-primary);
     line-height: 1.4;
   }
-  .notes-label { font-weight: 700; color: var(--pastel-rose); }
+  .notes-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .notes-label {
+    font-weight: 700;
+    color: var(--pastel-rose);
+  }
+  .notes-edit-btn {
+    background: rgba(224, 163, 154, 0.2);
+    border: none;
+    color: var(--pastel-rose);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .notes-input {
+    width: 100%;
+    min-height: 70px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+  }
+  .notes-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .notes-placeholder {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .notes-content {
+    white-space: pre-wrap;
+    font-size: 14px;
+  }
 
   /* Section title */
   .section-title {
@@ -603,8 +858,13 @@
   .appt-card-wrapper:hover {
     border-color: var(--border-glass);
   }
-  .appt-card-wrapper.status-1 { border-left-color: var(--pastel-sage); }
-  .appt-card-wrapper.status-2 { border-left-color: var(--pastel-coral); opacity: 0.65; }
+  .appt-card-wrapper.status-1 {
+    border-left-color: var(--pastel-sage);
+  }
+  .appt-card-wrapper.status-2 {
+    border-left-color: var(--pastel-coral);
+    opacity: 0.65;
+  }
 
   .appt-row {
     padding: 16px;
@@ -653,7 +913,9 @@
     box-shadow: 0 2px 8px var(--pastel-rose-glow);
     transition: all 0.2s var(--ease-spring);
   }
-  .btn-save:active { transform: scale(0.95); }
+  .btn-save:active {
+    transform: scale(0.95);
+  }
 
   .btn-cancel {
     background: transparent;
@@ -665,7 +927,10 @@
     cursor: pointer;
     transition: all 0.2s;
   }
-  .btn-cancel:hover { color: var(--text-primary); border-color: var(--border-glass); }
+  .btn-cancel:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass);
+  }
 
   .comment-display {
     background: var(--bg-surface-elevated);
@@ -711,9 +976,13 @@
     align-items: center;
     transition: color 0.2s;
   }
-  .btn-add-comment:hover { color: var(--pastel-rose); }
+  .btn-add-comment:hover {
+    color: var(--pastel-rose);
+  }
 
-  .appt-row-left { flex: 1; }
+  .appt-row-left {
+    flex: 1;
+  }
 
   .appt-row-date {
     font-size: 13px;
@@ -833,9 +1102,51 @@
     flex-shrink: 0;
     letter-spacing: 0.02em;
   }
-  .badge-0 { background: var(--pastel-amber-dim); color: var(--pastel-amber); border: 1px solid rgba(229, 190, 138, 0.25); }
-  .badge-1 { background: var(--pastel-sage-dim);  color: var(--pastel-sage);  border: 1px solid rgba(152, 193, 169, 0.25); }
-  .badge-2 { background: var(--pastel-coral-dim); color: var(--pastel-coral); border: 1px solid rgba(232, 130, 130, 0.25); }
+  .badge-0 {
+    background: var(--pastel-amber-dim);
+    color: var(--pastel-amber);
+    border: 1px solid rgba(229, 190, 138, 0.25);
+  }
+  .badge-1 {
+    background: var(--pastel-sage-dim);
+    color: var(--pastel-sage);
+    border: 1px solid rgba(152, 193, 169, 0.25);
+  }
+  .badge-2 {
+    background: var(--pastel-coral-dim);
+    color: var(--pastel-coral);
+    border: 1px solid rgba(232, 130, 130, 0.25);
+  }
+
+  .appt-row-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .btn-cancel-appt {
+    background: var(--pastel-coral-dim);
+    color: var(--pastel-coral);
+    border: 1px solid rgba(232, 130, 130, 0.25);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .btn-cancel-appt:hover {
+    background: rgba(232, 130, 130, 0.22);
+    border-color: var(--pastel-coral);
+  }
+  .btn-cancel-appt:active {
+    transform: scale(0.95);
+  }
 
   /* Lightbox */
   .lightbox {
@@ -857,15 +1168,15 @@
     max-height: 85vh;
     border-radius: var(--radius-lg);
     object-fit: contain;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
   }
 
   .lightbox-close {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: #fff;
     font-size: 20px;
     width: 40px;
@@ -878,7 +1189,7 @@
     transition: background 0.2s;
   }
   .lightbox-close:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
   }
 
   /* Loading / empty */

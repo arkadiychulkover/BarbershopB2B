@@ -177,7 +177,7 @@
       <div class="metric-content">
         <span class="metric-label">Общий оборот от базы</span>
         <div class="metric-value">{formatCurrency(totalClientsTurnover)}</div>
-        <div class="metric-sub">Сумма всех завершенных стрижек</div>
+        <div class="metric-sub">Сумма всех завершенных визитов</div>
       </div>
     </div>
   </div>

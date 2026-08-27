@@ -53,6 +53,7 @@ namespace Backend.DTOs
         public string? BarbershopDescription { get; set; }
         public string? BotToken { get; set; }
         public string? BotUsername { get; set; }
+        public string? NewPassword { get; set; }
     }
 
     public class AdminMasterDto
@@ -113,6 +114,13 @@ namespace Backend.DTOs
         public string Password { get; set; }
     }
 
+    public class CreateOwnerByAdminRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public int SubscriptionDays { get; set; } = 30;
+    }
+
     public class AdminDto
     {
         public Guid Id { get; set; }
@@ -120,3 +128,4 @@ namespace Backend.DTOs
         public DateTime CreatedAt { get; set; }
     }
 }
+

@@ -150,7 +150,7 @@
           </div>
           <div class="action-text">
             <h4>Настройки</h4>
-            <p>Профиль и параметры барбершопа</p>
+            <p>Профиль и параметры заведения</p>
           </div>
           <ArrowUpRight size={18} class="action-arrow" />
         </a>

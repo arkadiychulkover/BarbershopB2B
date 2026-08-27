@@ -20,6 +20,7 @@ namespace Backend.Models
         public List<Shift> Shifts { get; set; }
         public List<Appointment> Appointments { get; set; }
         public List<Review> Reviews { get; set; }
+        public List<MasterVacation> Vacations { get; set; } = new();
 
         public decimal CommissionsProfit { get; set; }
 

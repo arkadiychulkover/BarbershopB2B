@@ -61,7 +61,7 @@
     </div>
 
     <h2>Вход в кабинет</h2>
-    <p class="subtitle">Управляйте барбершопом и онлайн-записями</p>
+    <p class="subtitle">Управляйте заведением и онлайн-записями</p>
     
     {#if errorMsg}
       <div class="alert alert-danger">
@@ -80,14 +80,17 @@
             type="email" 
             class="input has-icon" 
             bind:value={email} 
-            placeholder="name@barbershop.com" 
+            placeholder="name@business.com" 
             required 
           />
         </div>
       </div>
 
       <div class="form-group">
-        <label for="password">Пароль</label>
+        <div class="label-row">
+          <label for="password">Пароль</label>
+          <a href="#/forgot-password" class="forgot-pwd-link" tabindex="-1">Забыли пароль?</a>
+        </div>
         <div class="input-icon-wrap">
           <Lock size={17} class="input-icon" />
           <input 
@@ -175,13 +178,33 @@
   .form-group {
     margin-bottom: 1.35rem;
   }
+
+  .label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.45rem;
+  }
   
   label {
     display: block;
-    margin-bottom: 0.45rem;
+    margin-bottom: 0;
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-secondary);
+  }
+
+  .forgot-pwd-link {
+    font-size: 0.8125rem;
+    color: var(--pastel-rose);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .forgot-pwd-link:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
   }
 
   .input-icon-wrap {

@@ -1,4 +1,4 @@
-﻿namespace Backend.Models
+namespace Backend.Models
 {
     public class Client
     {
@@ -8,6 +8,9 @@
         public string? Phone { get; set; }
         public string? Notes { get; set; }
         public bool IsBlacklisted { get; set; } = false;
+
+        /// <summary>Дата последнего отправленного win-back сообщения</summary>
+        public DateTime? LastWinBackSentAt { get; set; }
 
         public Guid OwnerId { get; set; }
         public BarbershopOwner Owner { get; set; }

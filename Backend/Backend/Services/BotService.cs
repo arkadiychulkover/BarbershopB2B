@@ -8,6 +8,6 @@ namespace Backend.Services
         {
             var client = new TelegramBotClient(botToken);
             await client.SendMessage(chatId, message);
-        }        
+        }
     }
 }

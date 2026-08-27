@@ -38,12 +38,12 @@ namespace Backend.Controllers
             var owner = await context.BarbershopOwners.FirstOrDefaultAsync(t => t.Id == tenantGuid);
             if (owner == null)
             {
-                return NotFound(new { message = "Барбершоп не найден." });
+                return NotFound(new { message = "Заведение не найдено." });
             }
 
             if (!owner.HasActiveSubscription())
             {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Барбершоп временно недоступен: подписка заведения не активна." });
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Заведение временно недоступно: подписка не активна." });
             }
 
             string botToken = owner.BotToken ?? string.Empty;

@@ -13,10 +13,13 @@ namespace Backend.Models
         public Guid ClientId { get; set; }
         public Client Client { get; set; }
 
+        /// <summary>Основная услуга (первичная, для обратной совместимости)</summary>
         public Guid ServiceId { get; set; }
         public Service Service { get; set; }
 
-        public Guid ReviewId { get; set; }
+        /// <summary>Дополнительные услуги в записи (комплекс)</summary>
+        public List<AppointmentService> AdditionalServices { get; set; } = new();
+
         public Review? Review { get; set; }
 
         public DateTime Created { get; set; } = DateTime.UtcNow;
@@ -25,6 +28,15 @@ namespace Backend.Models
         
         public bool ReminderSent { get; set; } = false;
         public DateTime? ReminderTime { get; set; }
+
+        /// <summary>Клиент подтвердил визит через Telegram-бота.</summary>
+        public bool IsConfirmed { get; set; } = false;
+
+        /// <summary>Сообщение с кнопкой подтверждения уже было отправлено.</summary>
+        public bool ConfirmationSent { get; set; } = false;
+
+        /// <summary>ID сообщения Telegram для редактирования после ответа клиента.</summary>
+        public int? ConfirmationMessageId { get; set; }
 
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
 
@@ -37,4 +49,4 @@ namespace Backend.Models
         public string? PhotoResultUrl { get; set; }
         public string? ResultNote { get; set; }
     }
-}
+}

@@ -1,6 +1,7 @@
 using Backend.Data;
 using Backend.DTOs;
 using Backend.Extensions;
+using Backend.Interfaces;
 using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,9 +11,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Backend.Controllers
@@ -24,11 +25,13 @@ namespace Backend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public RegestrationController(AppDbContext context, IConfiguration configuration)
+        public RegestrationController(AppDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         [HttpPost("register")]
@@ -100,6 +103,157 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Password changed successfully" });
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(new { message = "Укажите адрес электронной почты." });
+            }
+
+            var cleanEmail = request.Email.Trim().ToLowerInvariant();
+
+            // Find either an Owner or an Admin
+            var owner = await _context.BarbershopOwners.FirstOrDefaultAsync(o => o.Email.ToLower() == cleanEmail);
+            var admin = owner == null ? await _context.SaasAdmins.FirstOrDefaultAsync(a => a.Email.ToLower() == cleanEmail) : null;
+
+            if (owner == null && admin == null)
+            {
+                // Return generic success message to avoid account enumeration
+                return Ok(new { message = "Если аккаунт с указанным email существует, письмо с инструкцией отправлено." });
+            }
+
+            // Generate cryptographically secure token
+            string token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+            DateTime tokenExpiry = DateTime.UtcNow.AddHours(2);
+
+            string recipientName;
+            if (owner != null)
+            {
+                owner.PasswordResetToken = token;
+                owner.PasswordResetTokenExpires = tokenExpiry;
+                recipientName = owner.OwnerName ?? "Владелец заведения";
+            }
+            else
+            {
+                admin!.PasswordResetToken = token;
+                admin.PasswordResetTokenExpires = tokenExpiry;
+                recipientName = "Администратор";
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Determine frontend base URL
+            string frontendBase = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+            if (Request.Headers.TryGetValue("Origin", out var origin) && !string.IsNullOrWhiteSpace(origin))
+            {
+                frontendBase = origin.ToString().TrimEnd('/');
+            }
+            else if (Request.Headers.TryGetValue("Referer", out var referer) && !string.IsNullOrWhiteSpace(referer))
+            {
+                try
+                {
+                    var uri = new Uri(referer.ToString());
+                    frontendBase = $"{uri.Scheme}://{uri.Authority}";
+                }
+                catch { }
+            }
+
+            string resetLink = $"{frontendBase}/#/reset-password?token={Uri.EscapeDataString(token)}";
+
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(cleanEmail, recipientName, resetLink);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Ошибка отправки письма через почтовый сервер: " + ex.Message });
+            }
+
+            return Ok(new { message = "Письмо с инструкциями по смене пароля успешно отправлено на указанную почту." });
+        }
+
+        [HttpGet("verify-reset-token")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyResetToken([FromQuery] string? token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return BadRequest(new { valid = false, message = "Токен восстановления не указан." });
+            }
+
+            var cleanToken = token.Trim();
+            var owner = await _context.BarbershopOwners.FirstOrDefaultAsync(o => o.PasswordResetToken == cleanToken && o.PasswordResetTokenExpires > DateTime.UtcNow);
+            if (owner != null)
+            {
+                return Ok(new { valid = true, email = MaskEmail(owner.Email) });
+            }
+
+            var admin = await _context.SaasAdmins.FirstOrDefaultAsync(a => a.PasswordResetToken == cleanToken && a.PasswordResetTokenExpires > DateTime.UtcNow);
+            if (admin != null)
+            {
+                return Ok(new { valid = true, email = MaskEmail(admin.Email) });
+            }
+
+            return BadRequest(new { valid = false, message = "Ссылка для смены пароля недействительна, устарела или уже была использована." });
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Token))
+            {
+                return BadRequest(new { message = "Токен восстановления не указан." });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return BadRequest(new { message = "Пароль должен содержать минимум 6 символов." });
+            }
+
+            var cleanToken = request.Token.Trim();
+            var owner = await _context.BarbershopOwners.FirstOrDefaultAsync(o => o.PasswordResetToken == cleanToken && o.PasswordResetTokenExpires > DateTime.UtcNow);
+            if (owner != null)
+            {
+                owner.PasswordHash = PasswordSecurity.HashPassword(request.NewPassword);
+                owner.PasswordResetToken = null;
+                owner.PasswordResetTokenExpires = null;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Пароль успешно изменен. Теперь вы можете войти в систему с новым паролем." });
+            }
+
+            var admin = await _context.SaasAdmins.FirstOrDefaultAsync(a => a.PasswordResetToken == cleanToken && a.PasswordResetTokenExpires > DateTime.UtcNow);
+            if (admin != null)
+            {
+                var (salt, hash) = PasswordSecurity.CreateHashAndSalt(request.NewPassword);
+                admin.PasswordSalt = salt;
+                admin.PasswordHash = hash;
+                admin.PasswordResetToken = null;
+                admin.PasswordResetTokenExpires = null;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Пароль успешно изменен. Теперь вы можете войти в систему с новым паролем." });
+            }
+
+            return BadRequest(new { message = "Токен недействителен, устарел или уже был использован." });
+        }
+
+        private static string MaskEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) return email;
+            var parts = email.Split('@');
+            var name = parts[0];
+            var domain = parts[1];
+            if (name.Length <= 2) return $"{name[0]}*@{domain}";
+            return $"{name[0]}***{name[^1]}@{domain}";
         }
 
         [HttpPost("login")]
@@ -197,5 +351,21 @@ namespace Backend.Controllers
         public string Email { get; set; }
         [Required]
         public string Password { get; set; }
+    }
+
+    public class ForgotPasswordRequest
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+    }
+
+    public class ResetPasswordRequest
+    {
+        [Required]
+        public string Token { get; set; }
+        [Required]
+        [MinLength(6)]
+        public string NewPassword { get; set; }
     }
 }

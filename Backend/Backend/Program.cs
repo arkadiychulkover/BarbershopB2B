@@ -77,6 +77,7 @@ namespace Backend
             builder.Services.AddScoped<TonService>();
             builder.Services.AddScoped<TgValidationService>();
             builder.Services.AddSingleton<BotService>();
+            builder.Services.AddScoped<Backend.Interfaces.IEmailService, Backend.Services.EmailService>();
 
             builder.Services.AddHostedService<Backend.BackgroundServices.NotifycationBackgroundService>();
             builder.Services.AddHostedService<Backend.BackgroundServices.SubscriptionBackgroundService>();
@@ -121,7 +122,7 @@ namespace Backend
                 }));
             }
 
-            app.UseHttpsRedirection();
+            // app.UseHttpsRedirection(); // Отключено для корректной работы через Vite/ngrok прокси
             app.UseStaticFiles();
             
             app.UseCors();
@@ -137,6 +138,7 @@ namespace Backend
                 try
                 {
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.Migrate();
                     if (!db.SaasAdmins.Any())
                     {
                         var (salt, hash) = PasswordSecurity.CreateHashAndSalt("Admin12345!");

@@ -5,7 +5,8 @@ namespace Backend.DTOs
         Guid ServiceId,
         DateTime AppointmentDate,
         int? ReminderHoursBefore = null,
-        DateTime? ReminderTime = null
+        DateTime? ReminderTime = null,
+        List<Guid>? AdditionalServiceIds = null
     );
 
     public record UpdateClientPhoneRequest(string Phone);
@@ -16,6 +17,7 @@ namespace Backend.DTOs
         public string Name { get; set; }
         public string? Phone { get; set; }
         public string TelegramId { get; set; }
+        public string? Notes { get; set; }
     }
 
     public class ClientMasterDto
@@ -28,6 +30,7 @@ namespace Backend.DTOs
         public string? Description { get; set; }
         public decimal Rating { get; set; }
         public int ReviewsCount { get; set; }
+        public bool IsOnVacation { get; set; }
     }
 
     public class ClientServiceDto

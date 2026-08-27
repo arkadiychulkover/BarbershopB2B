@@ -10,9 +10,11 @@ namespace Backend.Data
         }
 
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<AppointmentService> AppointmentServices { get; set; }
         public DbSet<BarbershopOwner> BarbershopOwners { get; set; }
         public DbSet<Client> Clients { get; set; }
         public DbSet<Master> Masters { get; set; }
+        public DbSet<MasterVacation> MasterVacations { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<ServiceName> ServiceNames { get; set; }
@@ -66,10 +68,30 @@ namespace Backend.Data
                 .HasForeignKey(a => a.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // AppointmentService (мульти-услуги)
+            modelBuilder.Entity<AppointmentService>()
+                .HasOne(aps => aps.Appointment)
+                .WithMany(a => a.AdditionalServices)
+                .HasForeignKey(aps => aps.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AppointmentService>()
+                .HasOne(aps => aps.Service)
+                .WithMany()
+                .HasForeignKey(aps => aps.ServiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MasterVacation (отпуска мастеров)
+            modelBuilder.Entity<MasterVacation>()
+                .HasOne(v => v.Master)
+                .WithMany(m => m.Vacations)
+                .HasForeignKey(v => v.MasterId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Appointment)
-                .WithMany()
-                .HasForeignKey(r => r.AppointmentId)
+                .WithOne(a => a.Review)
+                .HasForeignKey<Review>(r => r.AppointmentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
@@ -89,6 +111,7 @@ namespace Backend.Data
                 .WithMany()
                 .HasForeignKey(s => s.ServiceNameId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ServiceName>()
                 .HasOne(sn => sn.Owner)
                 .WithMany()

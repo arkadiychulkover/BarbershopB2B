@@ -27,7 +27,15 @@
     Sparkles,
     CalendarCheck,
     CreditCard,
-    ArrowRight
+    ArrowRight,
+    Phone,
+    Bot,
+    Eye,
+    EyeOff,
+    Lock,
+    KeyRound,
+    Mail,
+    Percent
   } from "lucide-svelte";
   import { theme, toggleTheme, setTheme } from "../lib/theme";
 
@@ -40,23 +48,40 @@
   let renewErrorMsg = "";
 
   let settings = {
+    id: "",
+    email: "",
     barbershopName: "",
     barbershopAddress: "",
     barbershopDescription: "",
     ownerName: "",
     timeZone: "",
+    phoneNumber: "",
+    telegramId: "",
+    botToken: "",
+    botUsername: "",
     reminderHoursBefore: 24,
+    winBackDays: 0,
     walletAddress: "",
-    logoUrl: "",
-    brandColor: "#df9e8e",
-    depositEnabled: false,
-    depositPercent: 0,
     masterFee: 0,
     isSubscribed: false,
     status: "Active",
     nextPayment: null,
     lastPayment: null,
   };
+
+  let showBotToken = false;
+
+  // Password change state
+  let currentPassword = "";
+  let newPassword = "";
+  let confirmPassword = "";
+  let showCurrentPassword = false;
+  let showNewPassword = false;
+  let showConfirmPassword = false;
+  let isChangingPassword = false;
+  let isSendingResetEmail = false;
+  let passwordSuccessMsg = "";
+  let passwordErrorMsg = "";
 
   let platformWalletAddress = "";
   let subscriptionAmount = "10";
@@ -175,14 +200,94 @@
     try {
       await apiRequest("/api/Settings", {
         method: "PUT",
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          barbershopName: settings.barbershopName,
+          barbershopAddress: settings.barbershopAddress,
+          barbershopDescription: settings.barbershopDescription,
+          ownerName: settings.ownerName,
+          timeZone: settings.timeZone,
+          phoneNumber: settings.phoneNumber,
+          telegramId: settings.telegramId,
+          botToken: settings.botToken,
+          botUsername: settings.botUsername,
+          reminderHoursBefore: parseInt(settings.reminderHoursBefore, 10) || 24,
+          winBackDays: parseInt(settings.winBackDays, 10) || 0,
+          masterFee: parseFloat(settings.masterFee) || 0,
+          walletAddress: settings.walletAddress || ""
+        }),
       });
+      profileStore.update(s => ({
+        ...s,
+        ownerName: settings.ownerName,
+        botUsername: (settings.botUsername || '').replace(/^@/, '')
+      }));
       successMsg = "Настройки успешно сохранены!";
       setTimeout(() => (successMsg = ""), 3500);
     } catch (e) {
       errorMsg = e.message || "Ошибка при сохранении";
     } finally {
       isSaving = false;
+    }
+  }
+
+  async function handleChangePassword() {
+    passwordSuccessMsg = "";
+    passwordErrorMsg = "";
+
+    if (!currentPassword || !newPassword) {
+      passwordErrorMsg = "Пожалуйста, заполните текущий и новый пароль.";
+      return;
+    }
+    if (newPassword.length < 6) {
+      passwordErrorMsg = "Новый пароль должен содержать не менее 6 символов.";
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      passwordErrorMsg = "Новый пароль и подтверждение не совпадают.";
+      return;
+    }
+
+    isChangingPassword = true;
+    try {
+      const res = await apiRequest("/api/Regestration/change-password", {
+        method: "POST",
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
+      });
+      passwordSuccessMsg = res?.message || "Пароль успешно изменен!";
+      currentPassword = "";
+      newPassword = "";
+      confirmPassword = "";
+      setTimeout(() => (passwordSuccessMsg = ""), 5000);
+    } catch (e) {
+      passwordErrorMsg = e.message || "Ошибка при смене пароля.";
+    } finally {
+      isChangingPassword = false;
+    }
+  }
+
+  async function handleSendResetEmail() {
+    if (!settings.email) {
+      passwordErrorMsg = "Email не привязан к аккаунту.";
+      return;
+    }
+    isSendingResetEmail = true;
+    passwordSuccessMsg = "";
+    passwordErrorMsg = "";
+
+    try {
+      const res = await apiRequest("/api/Regestration/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: settings.email })
+      });
+      passwordSuccessMsg = res?.message || `Ссылка для сброса пароля отправлена на ${settings.email}`;
+      setTimeout(() => (passwordSuccessMsg = ""), 6000);
+    } catch (e) {
+      passwordErrorMsg = e.message || "Не удалось отправить ссылку на почту.";
+    } finally {
+      isSendingResetEmail = false;
     }
   }
 </script>
@@ -193,7 +298,7 @@
       <div class="header-left">
         <h1>Настройки заведения</h1>
         <p class="header-subtitle">
-          Управление профилем барбершопа, контактными данными, тарифом и уведомлениями
+          Управление профилем заведения, контактными данными, тарифом и уведомлениями
         </p>
       </div>
     </header>
@@ -364,7 +469,7 @@
           <Building2 size={20} class="sec-icon rose" />
           <div>
             <h3>Основная информация</h3>
-            <p>Контактные данные и адрес вашего барбершопа</p>
+            <p>Контактные данные и адрес вашего заведения</p>
           </div>
         </div>
 
@@ -384,7 +489,7 @@
           </div>
 
           <div class="form-group">
-            <label for="barbershopName">Название барбершопа</label>
+            <label for="barbershopName">Название заведения</label>
             <div class="input-icon-wrap">
               <Building2 size={16} class="input-icon" />
               <input
@@ -425,9 +530,38 @@
               />
             </div>
           </div>
+          <div class="form-group">
+            <label for="phoneNumber">Номер телефона владельца</label>
+            <div class="input-icon-wrap">
+              <Phone size={16} class="input-icon" />
+              <input
+                id="phoneNumber"
+                type="tel"
+                class="input has-icon"
+                bind:value={settings.phoneNumber}
+                placeholder="+380991234567"
+              />
+            </div>
+            <small class="hint">В международном формате (+380... / +7...)</small>
+          </div>
+
+          <div class="form-group">
+            <label for="telegramId">Личный Telegram ID</label>
+            <div class="input-icon-wrap">
+              <Send size={16} class="input-icon" />
+              <input
+                id="telegramId"
+                type="text"
+                class="input has-icon"
+                bind:value={settings.telegramId}
+                placeholder="123456789"
+              />
+            </div>
+            <small class="hint">Для оповещений (можно узнать в @userinfobot)</small>
+          </div>
         </div>
 
-        <div class="form-group full-width">
+        <div class="form-group full-width mt-3">
           <label for="description"
             >Описание для клиентов (в Telegram боте)</label
           >
@@ -438,6 +572,79 @@
             rows="3"
             required
           ></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">
+          <Bot size={20} class="sec-icon rose" />
+          <div class="flex-between-head">
+            <div>
+              <h3>Telegram-бот заведения</h3>
+              <p>Токен и юзернейм вашего бота из @BotFather для работы Mini App</p>
+            </div>
+            <a href="#/dashboard/bot-setup" class="guide-link">
+              <Sparkles size={14} />
+              <span>Инструкция по подключению</span>
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="botToken">HTTP API Token бота</label>
+            <div class="input-icon-wrap">
+              <Bot size={16} class="input-icon" />
+              <input
+                id="botToken"
+                type={showBotToken ? "text" : "password"}
+                class="input has-icon has-toggle"
+                bind:value={settings.botToken}
+                placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ..."
+              />
+              <button
+                type="button"
+                class="btn-input-toggle"
+                on:click={() => (showBotToken = !showBotToken)}
+                title={showBotToken ? "Скрыть токен" : "Показать токен"}
+              >
+                {#if showBotToken}
+                  <EyeOff size={16} />
+                {:else}
+                  <Eye size={16} />
+                {/if}
+              </button>
+            </div>
+            <small class="hint">Выдается @BotFather при создании бота через команду /newbot</small>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="botUsername">Username бота в Telegram</label>
+            <div class="input-icon-wrap">
+              <span class="input-prefix">@</span>
+              <input
+                id="botUsername"
+                type="text"
+                class="input has-prefix"
+                bind:value={settings.botUsername}
+                placeholder="my_barbershop_bot"
+              />
+              {#if settings.botUsername}
+                <a
+                  href="https://t.me/{settings.botUsername.replace(/^@/, '')}"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="btn-input-link"
+                  title="Открыть бота в Telegram"
+                >
+                  <ExternalLink size={13} />
+                  <span>Открыть</span>
+                </a>
+              {/if}
+            </div>
+            <small class="hint">Юзернейм бота без знака @ (например, my_barbershop_bot)</small>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -465,9 +672,9 @@
             </div>
           </div>
 
-          <div class="form-group full-width">
+          <div class="form-group">
             <label for="reminder"
-              >Авто-напоминание клиентам (за N часов до визита)</label
+              >Авто-напоминание клиентам (за N часов)</label
             >
             <div class="input-icon-wrap">
               <Bell size={16} class="input-icon" />
@@ -482,9 +689,47 @@
               />
             </div>
             <small class="hint"
-              >Бот автоматически отправит уведомление клиенту о предстоящей
-              записи.</small
+              >Бот отправит напоминание клиенту о предстоящей записи.</small
             >
+          </div>
+
+          <div class="form-group">
+            <label for="winBackDays"
+              >Win-back: отсутствие клиента (дней)</label
+            >
+            <div class="input-icon-wrap">
+              <Bell size={16} class="input-icon" />
+              <input
+                id="winBackDays"
+                type="number"
+                class="input has-icon"
+                bind:value={settings.winBackDays}
+                min="0"
+                max="365"
+                placeholder="0 — отключено"
+              />
+            </div>
+            <small class="hint"
+              >Если клиент не посещал салон N дней — бот отправит ему напоминание. 0 = отключено.</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="masterFee">Комиссия мастеров (%)</label>
+            <div class="input-icon-wrap">
+              <Percent size={16} class="input-icon" />
+              <input
+                id="masterFee"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                class="input has-icon"
+                bind:value={settings.masterFee}
+                placeholder="0"
+              />
+            </div>
+            <small class="hint">Базовая ставка комиссии заведения</small>
           </div>
         </div>
 
@@ -499,6 +744,144 @@
           </button>
         </div>
       </form>
+
+      <!-- Password & Security Card -->
+      <div class="card settings-card mt-4">
+        <div class="section-title">
+          <KeyRound size={20} class="sec-icon lavender" />
+          <div>
+            <h3>Безопасность и пароль</h3>
+            <p>Смена текущего пароля или запрос ссылки на восстановление</p>
+          </div>
+        </div>
+
+        {#if settings.email}
+          <div class="email-info-badge">
+            <Mail size={15} />
+            <span>Привязанный аккаунт: <strong>{settings.email}</strong></span>
+          </div>
+        {/if}
+
+        {#if passwordSuccessMsg}
+          <div class="alert alert-success mt-3">
+            <CheckCircle2 size={18} />
+            <span>{passwordSuccessMsg}</span>
+          </div>
+        {/if}
+        {#if passwordErrorMsg}
+          <div class="alert alert-danger mt-3">
+            <AlertCircle size={18} />
+            <span>{passwordErrorMsg}</span>
+          </div>
+        {/if}
+
+        <form on:submit|preventDefault={handleChangePassword} class="password-form mt-3">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="currentPassword">Текущий пароль</label>
+              <div class="input-icon-wrap">
+                <Lock size={16} class="input-icon" />
+                <input
+                  id="currentPassword"
+                  type={showCurrentPassword ? "text" : "password"}
+                  class="input has-icon has-toggle"
+                  bind:value={currentPassword}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  class="btn-input-toggle"
+                  on:click={() => (showCurrentPassword = !showCurrentPassword)}
+                  title={showCurrentPassword ? "Скрыть" : "Показать"}
+                >
+                  {#if showCurrentPassword}
+                    <EyeOff size={16} />
+                  {:else}
+                    <Eye size={16} />
+                  {/if}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="newPassword">Новый пароль</label>
+              <div class="input-icon-wrap">
+                <Lock size={16} class="input-icon" />
+                <input
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  class="input has-icon has-toggle"
+                  bind:value={newPassword}
+                  placeholder="Минимум 6 символов"
+                  required
+                />
+                <button
+                  type="button"
+                  class="btn-input-toggle"
+                  on:click={() => (showNewPassword = !showNewPassword)}
+                  title={showNewPassword ? "Скрыть" : "Показать"}
+                >
+                  {#if showNewPassword}
+                    <EyeOff size={16} />
+                  {:else}
+                    <Eye size={16} />
+                  {/if}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Повторите новый пароль</label>
+              <div class="input-icon-wrap">
+                <Lock size={16} class="input-icon" />
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  class="input has-icon has-toggle"
+                  bind:value={confirmPassword}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  class="btn-input-toggle"
+                  on:click={() => (showConfirmPassword = !showConfirmPassword)}
+                  title={showConfirmPassword ? "Скрыть" : "Показать"}
+                >
+                  {#if showConfirmPassword}
+                    <EyeOff size={16} />
+                  {:else}
+                    <Eye size={16} />
+                  {/if}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="password-actions mt-3">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={isChangingPassword}
+            >
+              <Lock size={16} />
+              <span>{isChangingPassword ? "Обновление..." : "Обновить пароль"}</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn-forgot-link"
+              disabled={isSendingResetEmail || !settings.email}
+              on:click={handleSendResetEmail}
+              title="Отправить письмо со ссылкой для сброса пароля"
+            >
+              <Mail size={15} />
+              <span>{isSendingResetEmail ? "Отправка ссылки..." : "Забыли пароль? Сбросить по почте"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
 
       <div class="card settings-card mt-4">
         <div class="card-head">
@@ -1176,5 +1559,146 @@
     color: var(--pastel-rose);
     font-size: 1.05rem;
     font-weight: 700;
+  }
+
+  /* Password & Security Styles */
+  .has-toggle {
+    padding-right: 2.8rem;
+  }
+
+  .btn-input-toggle {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    border-radius: var(--radius-sm);
+    transition: color 0.2s;
+  }
+
+  .btn-input-toggle:hover {
+    color: var(--text-primary);
+  }
+
+  .input-prefix {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--pastel-rose);
+    font-weight: 700;
+    font-size: 1.1rem;
+    pointer-events: none;
+  }
+
+  .has-prefix {
+    padding-left: 2.2rem;
+    padding-right: 6.5rem;
+  }
+
+  .btn-input-link {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.65rem;
+    background: rgba(223, 158, 142, 0.12);
+    border: 1px solid rgba(223, 158, 142, 0.25);
+    border-radius: var(--radius-pill);
+    color: var(--pastel-rose);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-input-link:hover {
+    background: rgba(223, 158, 142, 0.22);
+  }
+
+  .flex-between-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--pastel-rose);
+    font-weight: 600;
+    text-decoration: none;
+    padding: 0.35rem 0.75rem;
+    background: rgba(223, 158, 142, 0.08);
+    border: 1px solid rgba(223, 158, 142, 0.2);
+    border-radius: var(--radius-pill);
+    transition: all 0.2s;
+  }
+
+  .guide-link:hover {
+    background: rgba(223, 158, 142, 0.18);
+  }
+
+  .email-info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    margin-top: 0.5rem;
+  }
+
+  .email-info-badge strong {
+    color: var(--text-primary);
+  }
+
+  .password-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .btn-forgot-link {
+    background: transparent;
+    border: none;
+    color: var(--pastel-rose);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-forgot-link:hover {
+    text-decoration: underline;
+  }
+
+  .btn-forgot-link:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 </style>

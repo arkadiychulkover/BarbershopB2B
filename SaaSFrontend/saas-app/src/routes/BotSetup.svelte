@@ -1,6 +1,8 @@
 <script>
+  import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { profileStore } from '../lib/store';
+  import { apiRequest } from '../lib/api';
   import { 
     Bot, 
     Smartphone, 
@@ -8,12 +10,46 @@
     ExternalLink, 
     Copy, 
     Check, 
-    Sparkles,
-    HelpCircle 
+    Sparkles, 
+    HelpCircle, 
+    AlertCircle 
   } from 'lucide-svelte';
   
   let copied = false;
-  $: tmaLink = `https://t.me/barbershop_bot/app?startapp=${$profileStore.ownerId || 'ID'}`;
+  let isLoading = false;
+  let domain = typeof window !== 'undefined' ? window.location.origin : '';
+  let botUsername = '';
+
+  $: tenant = $profileStore.ownerId || '';
+  $: tmaLink = `${domain}/${tenant}/`;
+  $: effectiveBotUser = botUsername || $profileStore.botUsername || '';
+
+  onMount(async () => {
+    if (typeof window !== 'undefined') {
+      domain = window.location.origin;
+    }
+    if (!$profileStore.ownerId || !$profileStore.botUsername) {
+      isLoading = true;
+      try {
+        const settings = await apiRequest('/api/Settings');
+        if (settings) {
+          botUsername = settings.botUsername || '';
+          profileStore.update(s => ({
+            ...s,
+            ownerId: settings.id || s.ownerId,
+            botUsername: settings.botUsername || s.botUsername,
+            email: settings.email || s.email
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to load settings in BotSetup:', e);
+      } finally {
+        isLoading = false;
+      }
+    } else {
+      botUsername = $profileStore.botUsername || '';
+    }
+  });
 
   function copyLink() {
     navigator.clipboard.writeText(tmaLink);
@@ -27,13 +63,55 @@
     <header class="page-header">
       <div class="header-left">
         <h1>Настройка Telegram-бота</h1>
-        <p class="header-subtitle">Инструкция по подключению Telegram Mini App для ваших клиентов</p>
+        <p class="header-subtitle">Инструкция по подключению Telegram Mini App для онлайн-записи клиентов</p>
       </div>
       <div class="header-badge">
         <Sparkles size={15} />
         <span>3 простых шага</span>
       </div>
     </header>
+
+    <!-- Quick Copy Banner -->
+    <div class="quick-copy-card card mb-4">
+      <div class="quick-copy-body">
+        <div class="quick-copy-label">Ссылка для бота в @BotFather (/setmenubutton):</div>
+        <div class="quick-copy-url">
+          <code>{tmaLink}</code>
+        </div>
+      </div>
+      <button class="btn-copy-main" on:click={copyLink} title="Скопировать ссылку">
+        {#if copied}
+          <Check size={18} class="check-icon" />
+          <span>Скопировано!</span>
+        {:else}
+          <Copy size={18} />
+          <span>Скопировать ссылку</span>
+        {/if}
+      </button>
+    </div>
+
+    {#if !effectiveBotUser}
+      <div class="alert-box warning-box mb-4">
+        <AlertCircle size={20} class="alert-icon" />
+        <div class="alert-body">
+          <strong>Telegram-бот еще не привязан к заведению</strong>
+          <p>Укажите полученный токен и юзернейм бота в <a href="#/dashboard/settings" class="inline-link">настройках заведения</a>.</p>
+        </div>
+      </div>
+    {:else}
+      <div class="alert-box success-box mb-4">
+        <CheckCircle2 size={20} class="alert-icon" />
+        <div class="alert-body">
+          <strong>Бот подключен: @{effectiveBotUser}</strong>
+          <p>
+            Прямая ссылка: 
+            <a href="https://t.me/{effectiveBotUser}" target="_blank" rel="noreferrer" class="inline-link">
+              t.me/{effectiveBotUser} <ExternalLink size={12} />
+            </a>
+          </p>
+        </div>
+      </div>
+    {/if}
 
     <div class="steps-container">
       <!-- Step 1 -->
@@ -45,12 +123,13 @@
             <h3>Создайте бота в @BotFather</h3>
           </div>
           <p>
-            Если вы ещё не сделали этого при регистрации, перейдите в официальный бот 
+            Откройте официального бота 
             <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" class="ext-link">
               @BotFather <ExternalLink size={13} />
             </a> 
-            и отправьте команду <code>/newbot</code>. Скопируйте полученный токен в 
-            <a href="#/dashboard/settings">настройки барбершопа</a>.
+            и отправьте команду <code>/newbot</code>. Придумайте имя и юзернейм (например, <code>my_barbershop_bot</code>).
+            Скопируйте HTTP API Token и сохраните его в
+            <a href="#/dashboard/settings" class="inline-link">настройках заведения</a>.
           </p>
         </div>
       </div>
@@ -61,10 +140,10 @@
         <div class="step-content">
           <div class="step-head">
             <Smartphone size={22} class="step-icon sage" />
-            <h3>Настройте кнопку Menu (Web App)</h3>
+            <h3>Привяжите Mini App к кнопке меню</h3>
           </div>
           <p>
-            В @BotFather выполните команду <code>/setmenubutton</code>, выберите созданного бота и отправьте ссылку на ваше приложение:
+            В @BotFather отправьте команду <code>/setmenubutton</code>, выберите вашего созданного бота и отправьте эту ссылку:
           </p>
           
           <div class="code-box">
@@ -81,7 +160,7 @@
           </div>
           
           <div class="hint-card">
-            <span class="hint-title">Подсказка:</span> В качестве названия кнопки введите <strong>«Онлайн-запись»</strong> или <strong>«Записаться»</strong>.
+            <span class="hint-title">Подсказка:</span> После ссылки @BotFather попросит текст для кнопки меню. Введите <strong>«Онлайн-запись»</strong> или <strong>«Записаться»</strong>.
           </div>
         </div>
       </div>
@@ -95,7 +174,12 @@
             <h3>Проверьте запуск Mini App</h3>
           </div>
           <p>
-            Откройте вашего бота в Telegram и нажмите на синюю кнопку меню в левом нижнем углу. Откроется интерфейс онлайн-записи со списком ваших мастеров и услуг.
+            {#if effectiveBotUser}
+              Откройте вашего бота <a href="https://t.me/{effectiveBotUser}" target="_blank" rel="noreferrer" class="inline-link">@{effectiveBotUser}</a> и нажмите на кнопку меню в левом нижнем углу.
+            {:else}
+              Откройте вашего созданного бота в Telegram и нажмите на кнопку меню слева внизу.
+            {/if}
+            Откроется мобильное приложение для клиентов с онлайн-записью, списком мастеров и услуг.
           </p>
           
           <div class="support-box">
@@ -121,7 +205,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 2.25rem;
+    margin-bottom: 1.75rem;
     flex-wrap: wrap;
     gap: 1rem;
   }
@@ -149,23 +233,130 @@
     font-weight: 500;
   }
 
+  /* Quick Copy Card */
+  .quick-copy-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.75rem;
+    background: linear-gradient(135deg, rgba(223, 158, 142, 0.08) 0%, rgba(152, 193, 169, 0.06) 100%);
+    border: 1px solid rgba(223, 158, 142, 0.3);
+    border-radius: var(--radius-lg);
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    max-width: 860px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .quick-copy-body {
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .quick-copy-label {
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--pastel-rose);
+    margin-bottom: 0.35rem;
+  }
+
+  .quick-copy-url code {
+    display: inline-block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--bg-surface-elevated);
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    word-break: break-all;
+  }
+
+  .btn-copy-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.4rem;
+    background: var(--pastel-rose);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-spring);
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+    flex-shrink: 0;
+  }
+
+  .btn-copy-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--pastel-rose-glow);
+    filter: brightness(1.05);
+  }
+
+  .alert-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    max-width: 860px;
+  }
+
+  .warning-box {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+  }
+
+  .success-box {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
+  }
+
+  .alert-icon {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+  }
+
+  .alert-body p {
+    margin: 0.2rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
+
+  .inline-link {
+    color: var(--pastel-rose);
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
   .steps-container {
     display: flex;
     flex-direction: column;
-    gap: 1.75rem;
+    gap: 1.5rem;
     max-width: 860px;
   }
   
   .step-card {
     display: flex;
     gap: 1.5rem;
-    padding: 2rem 2.25rem;
+    padding: 1.75rem 2rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
   }
 
   @media (max-width: 640px) {
     .step-card {
       flex-direction: column;
-      padding: 1.5rem;
+      padding: 1.25rem;
       gap: 1rem;
     }
   }
@@ -235,6 +426,7 @@
     align-items: center;
     gap: 0.25rem;
     font-weight: 600;
+    color: var(--pastel-rose);
   }
 
   code {
@@ -266,7 +458,8 @@
     border: none;
     color: var(--pastel-rose);
     word-break: break-all;
-    font-size: 0.92rem;
+    font-size: 0.98rem;
+    font-weight: 600;
   }
 
   .copy-btn {
@@ -281,6 +474,7 @@
     font-size: 0.85rem;
     font-weight: 600;
     transition: all 0.2s var(--ease-spring);
+    cursor: pointer;
     flex-shrink: 0;
   }
 
@@ -331,5 +525,9 @@
     gap: 0.35rem;
     color: var(--pastel-rose);
     font-weight: 600;
+  }
+
+  .mb-4 {
+    margin-bottom: 1.5rem;
   }
 </style>

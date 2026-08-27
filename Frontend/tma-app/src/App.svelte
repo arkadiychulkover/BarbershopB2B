@@ -17,11 +17,15 @@
       setAuthStatus('error');
       return;
     }
+    const urlParams = new URLSearchParams(window.location.search);
+    const startParam = urlParams.get('startapp') 
+                    || urlParams.get('tgWebAppStartParam')
+                    || (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param;
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
-    tenant = pathSegments[0] || '';
+    tenant = pathSegments[0] || startParam || '';
 
     if (!tenant) {
-      console.error('Tenant ID not found in URL');
+      console.error('Tenant ID not found in URL or start_param');
       setAuthStatus('error');
       return;
     }

@@ -19,6 +19,9 @@
 
   let selectedMaster = null;
   let selectedService = null;
+  let selectedServices = [];
+  $: totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
+  $: totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
   let selectedDate = '';
   let selectedTime = '';
 
@@ -242,7 +245,32 @@
     }
   }
 
+  function toggleService(service) {
+    const idx = selectedServices.findIndex(s => s.id === service.id);
+    if (idx >= 0) {
+      selectedServices.splice(idx, 1);
+      selectedServices = [...selectedServices];
+    } else {
+      selectedServices = [...selectedServices, service];
+    }
+    if (selectedServices.length > 0) {
+      selectedService = selectedServices[0];
+    } else {
+      selectedService = null;
+    }
+  }
+
+  function proceedToDateTime() {
+    if (!selectedServices || selectedServices.length === 0) return;
+    selectedService = selectedServices[0];
+    step = 3;
+    const today = new Date();
+    selectedDate = today.toISOString().split('T')[0];
+    fetchAvailableSlots();
+  }
+
   function selectService(service) {
+    selectedServices = [service];
     selectedService = service;
     step = 3;
     // Set default date to today
@@ -252,17 +280,22 @@
   }
 
   async function fetchAvailableSlots() {
-    if (!selectedDate) return;
+    if (!selectedDate || !selectedService) return;
     loading = true;
     error = '';
     availableSlots = [];
     selectedTime = '';
     try {
-      const query = new URLSearchParams({
+      const additionalIds = selectedServices.slice(1).map(s => s.id).join(',');
+      const params: Record<string, string> = {
         masterId: selectedMaster.id,
         serviceId: selectedService.id,
         date: selectedDate
-      }).toString();
+      };
+      if (additionalIds) {
+        params.additionalServiceIds = additionalIds;
+      }
+      const query = new URLSearchParams(params).toString();
       availableSlots = await apiFetch(`/api/Clients/AvailableTimeSlots?${query}`);
     } catch (err) {
       error = err.message || 'Ошибка загрузки расписания';
@@ -331,12 +364,14 @@
       // Combine date and time to ISO string
       const dateTimeString = `${selectedDate}T${selectedTime}:00Z`;
       const hoursBefore = getEffectiveReminderHours();
+      const additionalServiceIds = selectedServices.slice(1).map(s => s.id);
       
       await apiFetch('/api/Clients/Zapisatsa', {
         method: 'POST',
         body: {
           masterId: selectedMaster.id,
           serviceId: selectedService.id,
+          additionalServiceIds: additionalServiceIds,
           appointmentDate: dateTimeString,
           reminderHoursBefore: hoursBefore
         }
@@ -404,6 +439,7 @@
     step = 1;
     selectedMaster = null;
     selectedService = null;
+    selectedServices = [];
     selectedDate = '';
     selectedTime = '';
     selectedReminderHours = 2;
@@ -657,13 +693,17 @@
 
       <div class="step-subheading">
         <Icon name="scissors" size={16} color="var(--pastel-lavender)" />
-        <h3>Выберете услугу</h3>
+        <h3>Выберите услуги (можно несколько)</h3>
       </div>
         <div class="list">
           {#each services as service}
+            {@const isSelected = selectedServices.some(s => s.id === service.id)}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="card" on:click={() => selectService(service)}>
+            <div class="card service-card {isSelected ? 'selected' : ''}" on:click={() => toggleService(service)}>
+              <div class="service-check-circle {isSelected ? 'checked' : ''}">
+                {#if isSelected}✓{/if}
+              </div>
               <div class="info">
                 <h3>{service.name}</h3>
                 <p>{service.duration} мин • {service.price} ₴</p>
@@ -676,17 +716,31 @@
             <p class="empty">У этого мастера нет доступных услуг</p>
           {/each}
         </div>
+
+        {#if selectedServices.length > 0}
+          <div class="multi-service-bottom-bar">
+            <div class="multi-service-summary">
+              <span class="multi-service-count">{selectedServices.length} {selectedServices.length === 1 ? 'услуга выбрана' : 'услуги выбрано'}</span>
+              <span class="multi-service-meta">{totalDuration} мин • {totalPrice} ₴</span>
+            </div>
+            <button type="button" class="primary-btn" on:click={proceedToDateTime}>
+              Выбрать время →
+            </button>
+          </div>
+        {/if}
     {/if}
 
     {#if step === 3}
       <div class="datetime-picker">
         <div class="booking-service-preview">
           <div class="service-preview-left">
-            <span class="preview-service-name">{selectedService.name}</span>
+            <span class="preview-service-name">
+              {selectedServices.length > 0 ? selectedServices.map(s => s.name).join(' + ') : selectedService?.name}
+            </span>
             <span class="preview-service-details">
-              <span>{selectedService.duration} мин</span>
+              <span>{totalDuration || selectedService?.duration} мин</span>
               <span class="dot">•</span>
-              <span class="preview-service-price">{selectedService.price} ₴</span>
+              <span class="preview-service-price">{totalPrice || selectedService?.price} ₴</span>
             </span>
           </div>
         </div>
@@ -745,7 +799,7 @@
           </div>
         </div>
 
-        <label for="date">Доступное время (длительность: {selectedService.duration} мин):</label>
+        <label for="date">Доступное время (длительность: {totalDuration || selectedService?.duration} мин):</label>
         <div class="slots">
           {#each availableSlots as slot}
             <button 
@@ -753,17 +807,17 @@
               on:click={() => selectedTime = slot}
             >
               <span class="slot-time-main">{slot}</span>
-              <span class="slot-time-sub">{slot}–{calculateSlotEndTime(slot, selectedService.duration)}</span>
+              <span class="slot-time-sub">{slot}–{calculateSlotEndTime(slot, totalDuration || selectedService?.duration)}</span>
             </button>
           {:else}
-            <p class="empty-slots">Нет свободного времени на эту дату для услуги длительностью {selectedService.duration} мин</p>
+            <p class="empty-slots">Нет свободного времени на эту дату для услуг длительностью {totalDuration || selectedService?.duration} мин</p>
           {/each}
         </div>
 
         {#if selectedTime}
           <div class="selected-slot-banner">
             <Icon name="check" size={16} color="var(--pastel-sage)" />
-            <span>Время записи: <strong>{selectedTime} — {calculateSlotEndTime(selectedTime, selectedService.duration)}</strong> ({selectedService.duration} мин)</span>
+            <span>Время записи: <strong>{selectedTime} — {calculateSlotEndTime(selectedTime, totalDuration || selectedService?.duration)}</strong> ({totalDuration || selectedService?.duration} мин)</span>
           </div>
         {/if}
 
@@ -790,7 +844,7 @@
           disabled={!selectedTime} 
           on:click={confirmBooking}
         >
-          Записаться на {selectedTime ? `${selectedTime} (${selectedService.duration} мин)` : 'выбранное время'}
+          Записаться на {selectedTime ? `${selectedTime} (${totalDuration || selectedService?.duration} мин)` : 'выбранное время'}
         </button>
       </div>
     {/if}
@@ -818,8 +872,11 @@
             {/if}
           </div>
           <div class="success-detail-row">
-            <span class="success-label">Услуга:</span>
-            <span class="success-val">{selectedService.name}</span>
+            <span class="success-label">Услуги:</span>
+            <span class="success-val">
+              {selectedServices.length > 0 ? selectedServices.map(s => s.name).join(' + ') : selectedService?.name} 
+              ({totalPrice || selectedService?.price} ₴)
+            </span>
           </div>
           <div class="success-detail-row">
             <span class="success-label">Дата и время:</span>
@@ -856,7 +913,7 @@
         <div class="review-target-box">
           <div class="review-target-row">
             <span class="target-label">Мастер:</span>
-            <span class="target-value">{reviewingAppt.masterName || 'Барбер'}</span>
+            <span class="target-value">{reviewingAppt.masterName || 'Мастер'}</span>
           </div>
           <div class="review-target-row">
             <span class="target-label">Услуга:</span>
@@ -1043,7 +1100,7 @@
               <p>Цена: {appt.price ? appt.price + ' ₴' : 'Не указана'}</p>
               {#if appt.photoResultUrl}
                 <div class="client-result-photo-box">
-                  <SecureImage src={appt.photoResultUrl} alt="Результат стрижки" className="client-result-photo" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin-top:8px;background:rgba(0,0,0,0.2);" />
+                  <SecureImage src={appt.photoResultUrl} alt="Результат работы" className="client-result-photo" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin-top:8px;background:rgba(0,0,0,0.2);" />
                 </div>
               {/if}
               {#if appt.resultNote}
@@ -2686,5 +2743,66 @@
 
   .review-comment-text {
     line-height: 1.4;
+  }
+
+  .service-card.selected {
+    border-color: var(--pastel-rose, #e0a39a) !important;
+    background: rgba(224, 163, 154, 0.1) !important;
+  }
+
+  .service-check-circle {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-right: 12px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .service-check-circle.checked {
+    background: var(--pastel-rose, #e0a39a);
+    border-color: var(--pastel-rose, #e0a39a);
+  }
+
+  .multi-service-bottom-bar {
+    position: sticky;
+    bottom: 12px;
+    background: var(--bg-surface, #1e1d24);
+    border: 1px solid var(--pastel-rose, #e0a39a);
+    border-radius: var(--radius-lg, 16px);
+    padding: 14px 18px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    z-index: 20;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .multi-service-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .multi-service-count {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .multi-service-meta {
+    font-size: 13px;
+    color: var(--pastel-rose, #e0a39a);
+    font-weight: 600;
   }
 </style>

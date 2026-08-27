@@ -21,18 +21,29 @@ namespace Backend.BackgroundServices
         {
             _logger.LogInformation("SubscriptionBackgroundService started.");
 
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                try
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    await CheckSubscriptionsAsync(stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error occurred while checking owner subscriptions.");
-                }
+                    try
+                    {
+                        await CheckSubscriptionsAsync(stoppingToken);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error occurred while checking owner subscriptions.");
+                    }
 
-                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
+                    await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Graceful shutdown
             }
         }
 

@@ -4,6 +4,7 @@ using Backend.Extensions;
 using Backend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace Backend.Controllers
 {
@@ -34,16 +35,19 @@ namespace Backend.Controllers
 
             var response = new SettingsResponse
             {
+                Id = owner.Id,
+                Email = owner.Email,
                 BarbershopName = owner.BarbershopName,
                 BarbershopAddress = owner.BarbershopAddress,
                 BarbershopDescription = owner.BarbershopDescription,
                 OwnerName = owner.OwnerName,
                 TimeZone = owner.TimeZone,
-                LogoUrl = owner.LogoUrl,
-                BrandColor = owner.BrandColor,
+                PhoneNumber = owner.PhoneNumber,
+                TelegramId = owner.TelegramId,
+                BotToken = owner.BotToken,
+                BotUsername = owner.BotUsername,
                 ReminderHoursBefore = owner.ReminderHoursBefore,
-                DepositEnabled = owner.DepositEnabled,
-                DepositPercent = owner.DepositPercent,
+                WinBackDays = owner.WinBackDays,
                 MasterFee = owner.MasterFee,
                 WalletAddress = owner.WalletAddress,
                 IsSubscribed = owner.HasActiveSubscription(),
@@ -67,18 +71,56 @@ namespace Backend.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Изменение настроек заблокировано." });
             }
 
-            owner.BarbershopName = request.BarbershopName;
-            owner.BarbershopAddress = request.BarbershopAddress;
-            owner.BarbershopDescription = request.BarbershopDescription;
-            owner.OwnerName = request.OwnerName;
-            owner.TimeZone = request.TimeZone;
-            owner.LogoUrl = request.LogoUrl;
-            owner.BrandColor = request.BrandColor;
-            owner.ReminderHoursBefore = request.ReminderHoursBefore;
-            owner.DepositEnabled = request.DepositEnabled;
-            owner.DepositPercent = request.DepositPercent;
-            owner.MasterFee = request.MasterFee;
-            owner.WalletAddress = request.WalletAddress;
+            if (!string.IsNullOrWhiteSpace(request.BarbershopName))
+                owner.BarbershopName = request.BarbershopName.Trim();
+
+            if (request.BarbershopAddress != null)
+                owner.BarbershopAddress = request.BarbershopAddress.Trim();
+
+            if (request.BarbershopDescription != null)
+                owner.BarbershopDescription = request.BarbershopDescription.Trim();
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerName))
+                owner.OwnerName = request.OwnerName.Trim();
+
+            if (!string.IsNullOrWhiteSpace(request.TimeZone))
+                owner.TimeZone = request.TimeZone.Trim();
+
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                var cleanedPhone = Regex.Replace(request.PhoneNumber.Trim(), @"[\s\-\(\)]", "");
+                var phoneRegex = new Regex(@"^\+[0-9]{1,3}[0-9]{9}$");
+                if (!phoneRegex.IsMatch(cleanedPhone))
+                {
+                    return BadRequest(new { message = "Некорректный номер телефона. Номер должен начинаться с \"+\", содержать код страны (1-3 цифры) и 9 цифр номера (например, +380991234567 или +79991234567)." });
+                }
+                owner.PhoneNumber = cleanedPhone;
+            }
+            else if (request.PhoneNumber != null)
+            {
+                owner.PhoneNumber = "";
+            }
+
+            if (request.TelegramId != null)
+                owner.TelegramId = request.TelegramId.Trim();
+
+            if (request.BotToken != null)
+                owner.BotToken = request.BotToken.Trim();
+
+            if (request.BotUsername != null)
+                owner.BotUsername = request.BotUsername.Trim().TrimStart('@');
+
+            if (request.ReminderHoursBefore > 0)
+                owner.ReminderHoursBefore = request.ReminderHoursBefore;
+
+            if (request.WinBackDays >= 0)
+                owner.WinBackDays = request.WinBackDays;
+
+            if (request.MasterFee >= 0)
+                owner.MasterFee = request.MasterFee;
+
+            if (request.WalletAddress != null)
+                owner.WalletAddress = request.WalletAddress.Trim();
 
             await _context.SaveChangesAsync();
 

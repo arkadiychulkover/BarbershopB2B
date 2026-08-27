@@ -11,6 +11,8 @@ namespace Backend.Models
         public string BotUsername { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpires { get; set; }
 
         public string WalletAddress { get; set; }
 
@@ -24,6 +26,9 @@ namespace Backend.Models
         public string? BrandColor { get; set; }
 
         public int ReminderHoursBefore { get; set; } = 2;
+
+        /// <summary>Через сколько дней без визита слать win-back сообщение клиенту. 0 = отключено.</summary>
+        public int WinBackDays { get; set; } = 0;
         public bool DepositEnabled { get; set; } = false;
         public decimal? DepositPercent { get; set; }
 

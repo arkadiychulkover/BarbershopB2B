@@ -147,7 +147,7 @@
     <header class="page-header">
       <div class="header-left">
         <h1>Команда мастеров</h1>
-        <p class="header-subtitle">Управляйте барберами, их Telegram юзернеймами и профилями</p>
+        <p class="header-subtitle">Управляйте мастерами, их Telegram юзернеймами и профилями</p>
       </div>
       <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
         {#if showAddForm}
@@ -164,7 +164,7 @@
       <div class="card add-card mb-4">
         <div class="card-head">
           <h3>Новый мастер</h3>
-          <p>Введите данные мастера, цифровой Telegram ID и юзернейм (@username) для прямой связи клиентов с барбером</p>
+          <p>Введите данные мастера, цифровой Telegram ID и юзернейм (@username) для прямой связи клиентов со специалистом</p>
         </div>
 
         <form on:submit|preventDefault={addMaster}>
@@ -181,7 +181,7 @@
               <label for="masterDesc">Квалификация / Должность</label>
               <div class="input-icon-wrap">
                 <Briefcase size={16} class="input-icon" />
-                <input id="masterDesc" type="text" class="input has-icon" bind:value={newMaster.description} placeholder="Top Barber / Fade Master" />
+                <input id="masterDesc" type="text" class="input has-icon" bind:value={newMaster.description} placeholder="Ведущий специалист / Мастер" />
               </div>
             </div>
 
@@ -198,7 +198,7 @@
               <label for="masterTgUsername">Telegram Username (@username)</label>
               <div class="input-icon-wrap">
                 <AtSign size={16} class="input-icon" />
-                <input id="masterTgUsername" type="text" class="input has-icon" bind:value={newMaster.telegramUsername} placeholder="barber_username (без @)" />
+                <input id="masterTgUsername" type="text" class="input has-icon" bind:value={newMaster.telegramUsername} placeholder="master_username (без @)" />
               </div>
               <span class="field-hint">Клиенты смогут сразу открыть чат через «Написать мастеру»</span>
             </div>
@@ -240,7 +240,7 @@
               <label for="editDesc">Квалификация / Должность</label>
               <div class="input-icon-wrap">
                 <Briefcase size={16} class="input-icon" />
-                <input id="editDesc" type="text" class="input has-icon" bind:value={editingMaster.description} placeholder="Top Barber" />
+                <input id="editDesc" type="text" class="input has-icon" bind:value={editingMaster.description} placeholder="Специалист" />
               </div>
             </div>
 
@@ -313,7 +313,7 @@
               </div>
               <div class="master-details">
                 <h3>{master.name}</h3>
-                <span class="master-role">{master.description || 'Барбер'}</span>
+                <span class="master-role">{master.description || 'Мастер'}</span>
               </div>
               <span class="status-badge" class:active={master.isActive}>
                 {master.isActive ? 'Активен' : 'Неактивен'}

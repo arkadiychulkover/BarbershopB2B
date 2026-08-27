@@ -25,8 +25,14 @@
   let thumbWidthPercent = 35;
   let showScrollIndicator = false;
 
+  let vacations = [];
+  let loadingVacations = false;
+  let showAddVacationModal = false;
+  let newVacation = { startDate: '', endDate: '', reason: 'Отпуск' };
+  let savingVacation = false;
+
   onMount(async () => {
-    await loadShifts();
+    await Promise.all([loadShifts(), loadVacations()]);
     updateScrollIndicator();
     window.addEventListener('resize', updateScrollIndicator);
     return () => {
@@ -97,6 +103,50 @@
   function handleCancelForm() {
     view = 'list';
     editingShift = null;
+  }
+
+  async function loadVacations() {
+    loadingVacations = true;
+    try {
+      vacations = await apiFetch('/api/Barber/vacations');
+    } catch(e) {
+      console.error(e);
+    } finally {
+      loadingVacations = false;
+    }
+  }
+
+  async function addVacation() {
+    if (!newVacation.startDate || !newVacation.endDate) {
+      showAlert('Укажите даты начала и окончания');
+      return;
+    }
+    savingVacation = true;
+    try {
+      await apiFetch('/api/Barber/vacations/add', {
+        method: 'POST',
+        body: newVacation
+      });
+      showAddVacationModal = false;
+      newVacation = { startDate: '', endDate: '', reason: 'Отпуск' };
+      await loadVacations();
+      hapticSuccess();
+    } catch(e: any) {
+      showAlert(e.message || 'Ошибка добавления отпуска');
+    } finally {
+      savingVacation = false;
+    }
+  }
+
+  async function deleteVacation(id: string) {
+    if (!confirm('Удалить этот отпуск?')) return;
+    try {
+      await apiFetch(`/api/Barber/vacations/delete/${id}`, { method: 'DELETE' });
+      vacations = vacations.filter(v => v.id !== id);
+      hapticSuccess();
+    } catch(e) {
+      showAlert('Ошибка удаления');
+    }
   }
 
   async function handleSaveForm(event) {
@@ -256,6 +306,37 @@
                 </div>
               {/each}
             </div>
+
+            <!-- Секция отпусков и больничных -->
+            <div class="vacations-section">
+              <div class="vacations-header">
+                <div class="vacations-title">
+                  <Icon name="calendar" size={16} color="var(--pastel-rose)" />
+                  <span>Отпуска и больничные</span>
+                </div>
+                <button type="button" class="btn-add-vacation" on:click={() => showAddVacationModal = true}>
+                  + Добавить
+                </button>
+              </div>
+
+              {#if vacations.length > 0}
+                <div class="vacations-list">
+                  {#each vacations as vac}
+                    <div class="vacation-item">
+                      <div class="vacation-dates">
+                        <span class="vacation-badge-pill">{vac.reason || 'Отпуск'}</span>
+                        <span class="vacation-period">{new Date(vac.startDate).toLocaleDateString('ru-RU')} — {new Date(vac.endDate).toLocaleDateString('ru-RU')}</span>
+                      </div>
+                      <button type="button" class="vacation-del-btn" on:click={() => deleteVacation(vac.id)}>
+                        <Icon name="trash" size={14} />
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+              {:else}
+                <p class="vacations-empty">Нет запланированных отпусков</p>
+              {/if}
+            </div>
           {/if}
         {:else}
           <ShiftForm 
@@ -290,6 +371,38 @@
       clientId={clientHistoryId}
       on:back={() => clientHistoryId = null}
     />
+  </div>
+{/if}
+
+{#if showAddVacationModal}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="modal-backdrop" on:click={() => showAddVacationModal = false}>
+    <div class="modal-card" on:click|stopPropagation>
+      <h3>Добавить отпуск / больничный</h3>
+      <div class="form-group">
+        <label for="vacation-start">Дата начала</label>
+        <input type="date" id="vacation-start" bind:value={newVacation.startDate} />
+      </div>
+      <div class="form-group">
+        <label for="vacation-end">Дата окончания (включительно)</label>
+        <input type="date" id="vacation-end" bind:value={newVacation.endDate} />
+      </div>
+      <div class="form-group">
+        <label for="vacation-reason">Причина / тип</label>
+        <select id="vacation-reason" bind:value={newVacation.reason}>
+          <option value="Отпуск">Отпуск</option>
+          <option value="Больничный">Больничный</option>
+          <option value="Выходной">Выходной</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="primary-btn flex-1" on:click={addVacation} disabled={savingVacation}>
+          {savingVacation ? 'Сохранение...' : 'Сохранить'}
+        </button>
+        <button class="btn-cancel flex-1" on:click={() => showAddVacationModal = false}>Отмена</button>
+      </div>
+    </div>
   </div>
 {/if}
 
@@ -567,5 +680,167 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin: 0 0 12px 4px;
+  }
+
+  /* Vacations Section */
+  .vacations-section {
+    margin-top: 32px;
+    padding: 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .vacations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .vacations-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .btn-add-vacation {
+    background: rgba(224, 163, 154, 0.15);
+    color: var(--pastel-rose);
+    border: 1px solid rgba(224, 163, 154, 0.3);
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .vacations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vacation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-surface-elevated);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .vacation-dates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .vacation-badge-pill {
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .vacation-period {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .vacation-del-btn {
+    background: none;
+    border: none;
+    color: var(--pastel-coral);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+  }
+
+  .vacations-empty {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 0;
+  }
+
+  /* Modal Backdrop & Card */
+  .modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .modal-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
+
+  .modal-card h3 {
+    margin: 0 0 18px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .modal-card .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .modal-card label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .modal-card input, .modal-card select {
+    background: var(--bg-surface-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .modal-card .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-cancel {
+    background: var(--bg-surface-elevated);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
   }
 </style>

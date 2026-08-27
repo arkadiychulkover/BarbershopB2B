@@ -263,6 +263,22 @@
   },
   {
     "ContainingType": "Backend.Controllers.AdminController",
+    "Method": "CreateOwner",
+    "RelativePath": "api/Admin/owners",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.DTOs.CreateOwnerByAdminRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.AdminController",
     "Method": "GetOwnerDetails",
     "RelativePath": "api/Admin/owners/{id}",
     "HttpMethod": "GET",
@@ -437,6 +453,22 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "CancelAdminAppointment",
+    "RelativePath": "api/Barber/admin-appointments/cancel/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "DeleteAdminAppointment",
     "RelativePath": "api/Barber/admin-appointments/delete/{id}",
     "HttpMethod": "DELETE",
@@ -590,6 +622,27 @@
   },
   {
     "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "UpdateClientNotes",
+    "RelativePath": "api/Barber/client-notes/{clientId}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "clientId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BClientNotesRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
     "Method": "DeleteBarber",
     "RelativePath": "api/Barber/delete",
     "HttpMethod": "DELETE",
@@ -705,6 +758,22 @@
       {
         "Name": "request",
         "Type": "Backend.Controllers.BarberController\u002BBarberAppointmentRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "CancelMyAppointment",
+    "RelativePath": "api/Barber/my-appointments/cancel/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
         "IsRequired": true
       }
     ],
@@ -1041,6 +1110,85 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetMyVacations",
+    "RelativePath": "api/Barber/vacations",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "GetMasterVacations",
+    "RelativePath": "api/Barber/vacations/{masterId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "masterId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "AddVacation",
+    "RelativePath": "api/Barber/vacations/add",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BVacationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "AddMasterVacation",
+    "RelativePath": "api/Barber/vacations/add/{masterId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "masterId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.BarberController\u002BVacationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.BarberController",
+    "Method": "DeleteVacation",
+    "RelativePath": "api/Barber/vacations/delete/{vacationId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "vacationId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Backend.Controllers.ClientsController",
     "Method": "GetAvailableTimeSlots",
     "RelativePath": "api/Clients/AvailableTimeSlots",
@@ -1061,6 +1209,11 @@
       {
         "Name": "date",
         "Type": "System.DateTime",
+        "IsRequired": false
+      },
+      {
+        "Name": "additionalServiceIds",
+        "Type": "System.String",
         "IsRequired": false
       }
     ],
@@ -1268,6 +1421,22 @@
   },
   {
     "ContainingType": "Backend.Controllers.RegestrationController",
+    "Method": "ForgotPassword",
+    "RelativePath": "api/Regestration/forgot-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.ForgotPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.RegestrationController",
     "Method": "Login",
     "RelativePath": "api/Regestration/login",
     "HttpMethod": "POST",
@@ -1294,6 +1463,38 @@
         "Name": "request",
         "Type": "Backend.DTOs.RegistrationRequest",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.RegestrationController",
+    "Method": "ResetPassword",
+    "RelativePath": "api/Regestration/reset-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Backend.Controllers.ResetPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Backend.Controllers.RegestrationController",
+    "Method": "VerifyResetToken",
+    "RelativePath": "api/Regestration/verify-reset-token",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

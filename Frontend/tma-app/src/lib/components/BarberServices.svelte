@@ -61,7 +61,7 @@
     <div class="loader">Загрузка...</div>
   {:else if services.length === 0}
     <div class="empty-state">
-      <p>В салоне пока нет добавленных услуг. Обратитесь к владельцу.</p>
+      <p>В заведении пока нет добавленных услуг. Обратитесь к владельцу.</p>
     </div>
   {:else}
     <div class="services-list">
@@ -78,7 +78,7 @@
           {#if service.isActive}
             <div class="service-details">
               <div class="form-group">
-                <label>Цена (₽)</label>
+                <label>Цена (₴)</label>
                 <input type="number" bind:value={service.price} min="0" />
               </div>
               <div class="form-group">

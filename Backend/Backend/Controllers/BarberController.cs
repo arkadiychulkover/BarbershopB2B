@@ -3,6 +3,7 @@ using Backend.DTOs;
 using Backend.Extensions;
 using Backend.Models;
 using Backend.Models.Enums;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +17,17 @@ namespace Backend.Controllers
     public class BarberController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly BotService _botService;
 
         private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".jpg", ".jpeg", ".png", ".webp"
         };
 
-        public BarberController(AppDbContext context)
+        public BarberController(AppDbContext context, BotService botService)
         {
             _context = context;
+            _botService = botService;
         }
 
         private async Task<Guid> GetOrCreateDummyClientAsync(Guid ownerId)
@@ -182,7 +185,8 @@ namespace Backend.Controllers
                 MasterId = barber.Id,
                 DayOfWeek = request.DayOfWeek,
                 StartTime = request.StartTime,
-                EndTime = request.EndTime
+                EndTime = request.EndTime,
+                BreakDurationMinutes = request.BreakDurationMinutes
             };
             _context.Shifts.Add(shift);
             await _context.SaveChangesAsync();
@@ -233,6 +237,7 @@ namespace Backend.Controllers
             shift.DayOfWeek = request.DayOfWeek;
             shift.StartTime = request.StartTime;
             shift.EndTime = request.EndTime;
+            shift.BreakDurationMinutes = request.BreakDurationMinutes;
             await _context.SaveChangesAsync();
             return Ok(new { message = "Shift updated successfully" });
         }
@@ -267,6 +272,18 @@ namespace Backend.Controllers
             if (master?.Owner == null || !master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна. Действие заблокировано." });
 
+            // Валидация перерыва
+            if (request.BreakStartTime.HasValue != request.BreakEndTime.HasValue)
+                return BadRequest(new { message = "Укажите и начало, и конец перерыва." });
+
+            if (request.BreakStartTime.HasValue && request.BreakEndTime.HasValue)
+            {
+                if (request.BreakStartTime.Value >= request.BreakEndTime.Value)
+                    return BadRequest(new { message = "Начало перерыва должно быть раньше конца." });
+                if (request.BreakStartTime.Value <= request.StartTime || request.BreakEndTime.Value >= request.EndTime)
+                    return BadRequest(new { message = "Перерыв должен быть внутри смены." });
+            }
+
             bool overlap = await _context.Shifts.AnyAsync(s =>
                 s.MasterId == masterId &&
                 s.DayOfWeek == request.DayOfWeek &&
@@ -281,7 +298,10 @@ namespace Backend.Controllers
                 MasterId = masterId,
                 DayOfWeek = request.DayOfWeek,
                 StartTime = request.StartTime,
-                EndTime = request.EndTime
+                EndTime = request.EndTime,
+                BreakDurationMinutes = request.BreakDurationMinutes,
+                BreakStartTime = request.BreakStartTime,
+                BreakEndTime = request.BreakEndTime
             };
             _context.Shifts.Add(shift);
             await _context.SaveChangesAsync();
@@ -314,6 +334,18 @@ namespace Backend.Controllers
             if (shift == null)
                 return NotFound(new { message = "Shift not found" });
 
+            // Валидация перерыва
+            if (request.BreakStartTime.HasValue != request.BreakEndTime.HasValue)
+                return BadRequest(new { message = "Укажите и начало, и конец перерыва." });
+
+            if (request.BreakStartTime.HasValue && request.BreakEndTime.HasValue)
+            {
+                if (request.BreakStartTime.Value >= request.BreakEndTime.Value)
+                    return BadRequest(new { message = "Начало перерыва должно быть раньше конца." });
+                if (request.BreakStartTime.Value <= request.StartTime || request.BreakEndTime.Value >= request.EndTime)
+                    return BadRequest(new { message = "Перерыв должен быть внутри смены." });
+            }
+
             bool overlap = await _context.Shifts.AnyAsync(s =>
                 s.Id != shiftId &&
                 s.MasterId == masterId &&
@@ -326,6 +358,9 @@ namespace Backend.Controllers
             shift.DayOfWeek = request.DayOfWeek;
             shift.StartTime = request.StartTime;
             shift.EndTime = request.EndTime;
+            shift.BreakDurationMinutes = request.BreakDurationMinutes;
+            shift.BreakStartTime = request.BreakStartTime;
+            shift.BreakEndTime = request.BreakEndTime;
             await _context.SaveChangesAsync();
             return Ok(new { message = "Shift updated successfully" });
         }
@@ -584,7 +619,7 @@ namespace Backend.Controllers
 
             return Ok(new 
             { 
-                message = "Фото барбера успешно загружено", 
+                message = "Фото мастера успешно загружено", 
                 photoUrl = master.PhotoUrl,
                 barberId = master.Id 
             });
@@ -596,7 +631,7 @@ namespace Backend.Controllers
         {
             var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == barberId);
             if (master == null || string.IsNullOrWhiteSpace(master.PhotoUrl))
-                return NotFound(new { message = "Фото барбера не найдено" });
+                return NotFound(new { message = "Фото мастера не найдено" });
 
             var relativePath = master.PhotoUrl.TrimStart('/');
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath.Replace('/', Path.DirectorySeparatorChar));
@@ -623,7 +658,7 @@ namespace Backend.Controllers
         {
             var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == barberId);
             if (master == null || string.IsNullOrWhiteSpace(master.PhotoUrl))
-                return NotFound(new { message = "Фото барбера не найдено" });
+                return NotFound(new { message = "Фото мастера не найдено" });
 
             return Ok(new { photoUrl = master.PhotoUrl, barberId = master.Id });
         }
@@ -1061,6 +1096,55 @@ namespace Backend.Controllers
             return Ok(new { message = "Appointment deleted successfully" });
         }
 
+        [HttpPut("my-appointments/cancel/{id}")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> CancelMyAppointment(Guid id)
+        {
+            var masterId = User.GetUserId();
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                    .ThenInclude(m => m.Owner)
+                .Include(a => a.Client)
+                .Include(a => a.Service)
+                    .ThenInclude(s => s.ServiceName)
+                .FirstOrDefaultAsync(a => a.Id == id && a.MasterId == masterId);
+
+            if (appointment == null) return NotFound(new { message = "Запись не найдена" });
+
+            if (appointment.Master?.Owner == null || !appointment.Master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            if (appointment.Status == AppointmentStatus.Cancelled)
+                return BadRequest(new { message = "Запись уже отменена." });
+
+            appointment.Status = AppointmentStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            // Оповещение клиента в Telegram (если онлайн-клиент)
+            if (appointment.Master.Owner != null 
+                && !string.IsNullOrEmpty(appointment.Master.Owner.BotToken) 
+                && appointment.Client != null 
+                && !string.IsNullOrEmpty(appointment.Client.TelegramId) 
+                && appointment.Client.TelegramId != "WALKIN")
+            {
+                try
+                {
+                    if (long.TryParse(appointment.Client.TelegramId, out long clientChatId))
+                    {
+                        var dateStr = appointment.AppointmentDate.ToString("dd.MM в HH:mm");
+                        var serviceName = appointment.Service?.ServiceName?.Name ?? "услугу";
+                        await _botService.SendMessageAsync(
+                            appointment.Master.Owner.BotToken,
+                            clientChatId,
+                            $"Мастер отменил вашу запись на «{serviceName}» ({dateStr}). Приносим извинения за неудобства.");
+                    }
+                }
+                catch { }
+            }
+
+            return Ok(new { message = "Appointment cancelled successfully" });
+        }
+
         [HttpGet("admin-appointments/all")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetAdminAppointments()
@@ -1071,11 +1155,14 @@ namespace Backend.Controllers
                 .AsNoTracking()
                 .Include(a => a.Client)
                 .Include(a => a.Master)
+                .Include(a => a.Service).ThenInclude(s => s.ServiceName)
                 .Where(a => a.Master.OwnerId == ownerId)
                 .Select(a => new AppointmentDto
                 {
                     Id = a.Id,
                     ClientId = a.ClientId,
+                    ClientName = a.Client != null ? a.Client.Name : null,
+                    ClientTelegramId = a.Client != null ? a.Client.TelegramId : null,
                     MasterId = a.MasterId,
                     AppointmentDate = a.AppointmentDate,
                     AppointmentEndDate = a.AppointmentEndDate,
@@ -1083,6 +1170,7 @@ namespace Backend.Controllers
                     ReminderSent = a.ReminderSent,
                     ReminderTime = a.ReminderTime,
                     ServiceId = a.ServiceId,
+                    ServiceName = a.Service != null && a.Service.ServiceName != null ? a.Service.ServiceName.Name : null,
                     PhotoResultUrl = a.PhotoResultUrl,
                     ResultNote = a.ResultNote
                 })
@@ -1146,6 +1234,56 @@ namespace Backend.Controllers
             _context.Appointments.Remove(appointment);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Appointment deleted successfully" });
+        }
+
+        [HttpPut("admin-appointments/cancel/{id}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> CancelAdminAppointment(Guid id)
+        {
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound(new { message = "Owner not found" });
+
+            if (!owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Master)
+                .Include(a => a.Client)
+                .Include(a => a.Service)
+                    .ThenInclude(s => s.ServiceName)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null || appointment.Master?.OwnerId != ownerId)
+                return NotFound(new { message = "Appointment not found" });
+
+            if (appointment.Status == AppointmentStatus.Cancelled)
+                return BadRequest(new { message = "Запись уже отменена." });
+
+            appointment.Status = AppointmentStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrEmpty(owner.BotToken)
+                && appointment.Client != null
+                && !string.IsNullOrEmpty(appointment.Client.TelegramId)
+                && appointment.Client.TelegramId != "WALKIN")
+            {
+                try
+                {
+                    if (long.TryParse(appointment.Client.TelegramId, out long clientChatId))
+                    {
+                        var dateStr = appointment.AppointmentDate.ToString("dd.MM в HH:mm");
+                        var serviceName = appointment.Service?.ServiceName?.Name ?? "услугу";
+                        await _botService.SendMessageAsync(
+                            owner.BotToken,
+                            clientChatId,
+                            $"Заведение отменило вашу запись на «{serviceName}» ({dateStr}). Приносим извинения за неудобства.");
+                    }
+                }
+                catch { }
+            }
+
+            return Ok(new { message = "Appointment cancelled successfully" });
         }
 
         [HttpGet("admin-services/{masterId}")]
@@ -1401,12 +1539,148 @@ namespace Backend.Controllers
             return Ok(new { message = "Comment deleted successfully" });
         }
 
+        // ========================== ОТПУСКА / БОЛЬНИЧНЫЕ ==========================
+
+        [HttpGet("vacations")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> GetMyVacations()
+        {
+            var masterId = User.GetUserId();
+            var vacations = await _context.MasterVacations
+                .AsNoTracking()
+                .Where(v => v.MasterId == masterId)
+                .OrderBy(v => v.StartDate)
+                .Select(v => new { v.Id, v.StartDate, v.EndDate, v.Reason })
+                .ToListAsync();
+            return Ok(vacations);
+        }
+
+        [HttpGet("vacations/{masterId:guid}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> GetMasterVacations(Guid masterId)
+        {
+            var ownerId = User.GetUserId();
+            var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterId && m.OwnerId == ownerId);
+            if (master == null) return NotFound(new { message = "Мастер не найден или не принадлежит вашему заведению." });
+
+            var vacations = await _context.MasterVacations
+                .AsNoTracking()
+                .Where(v => v.MasterId == masterId)
+                .OrderBy(v => v.StartDate)
+                .Select(v => new { v.Id, v.StartDate, v.EndDate, v.Reason })
+                .ToListAsync();
+            return Ok(vacations);
+        }
+
+        [HttpPost("vacations/add")]
+        [Authorize(Roles = "Master")]
+        public async Task<IActionResult> AddVacation([FromBody] VacationRequest request)
+        {
+            var masterId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId);
+            if (master?.Owner == null || !master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            if (request.StartDate >= request.EndDate)
+                return BadRequest(new { message = "Дата начала должна быть раньше даты окончания." });
+
+            var vacation = new MasterVacation
+            {
+                Id = Guid.NewGuid(),
+                MasterId = masterId,
+                StartDate = DateTime.SpecifyKind(request.StartDate.Date, DateTimeKind.Utc),
+                EndDate = DateTime.SpecifyKind(request.EndDate.Date, DateTimeKind.Utc),
+                Reason = request.Reason?.Trim()
+            };
+            _context.MasterVacations.Add(vacation);
+            await _context.SaveChangesAsync();
+            return Ok(new { vacation.Id, vacation.StartDate, vacation.EndDate, vacation.Reason });
+        }
+
+        [HttpPost("vacations/add/{masterId:guid}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> AddMasterVacation(Guid masterId, [FromBody] VacationRequest request)
+        {
+            var ownerId = User.GetUserId();
+            var master = await _context.Masters.Include(m => m.Owner).FirstOrDefaultAsync(m => m.Id == masterId && m.OwnerId == ownerId);
+            if (master == null) return NotFound(new { message = "Мастер не найден или не принадлежит вашему заведению." });
+            if (!master.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
+
+            if (request.StartDate >= request.EndDate)
+                return BadRequest(new { message = "Дата начала должна быть раньше даты окончания." });
+
+            var vacation = new MasterVacation
+            {
+                Id = Guid.NewGuid(),
+                MasterId = masterId,
+                StartDate = DateTime.SpecifyKind(request.StartDate.Date, DateTimeKind.Utc),
+                EndDate = DateTime.SpecifyKind(request.EndDate.Date, DateTimeKind.Utc),
+                Reason = request.Reason?.Trim()
+            };
+            _context.MasterVacations.Add(vacation);
+            await _context.SaveChangesAsync();
+            return Ok(new { vacation.Id, vacation.StartDate, vacation.EndDate, vacation.Reason });
+        }
+
+        [HttpDelete("vacations/delete/{vacationId:guid}")]
+        [Authorize(Roles = "Master,Owner")]
+        public async Task<IActionResult> DeleteVacation(Guid vacationId)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var vacation = await _context.MasterVacations
+                .Include(v => v.Master)
+                .FirstOrDefaultAsync(v => v.Id == vacationId);
+            if (vacation == null) return NotFound(new { message = "Запись не найдена." });
+
+            if (isOwner && vacation.Master.OwnerId != userId) return Unauthorized();
+            if (!isOwner && vacation.MasterId != userId) return Unauthorized();
+
+            _context.MasterVacations.Remove(vacation);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Удалено." });
+        }
+
+        // ========================== ЗАМЕТКИ О КЛИЕНТЕ ==========================
+
+        [HttpPatch("client-notes/{clientId:guid}")]
+        [Authorize(Roles = "Owner,Master")]
+        public async Task<IActionResult> UpdateClientNotes(Guid clientId, [FromBody] ClientNotesRequest request)
+        {
+            var userId = User.GetUserId();
+            var isOwner = User.IsInRole("Owner");
+
+            var client = await _context.Clients.Include(c => c.Owner).FirstOrDefaultAsync(c => c.Id == clientId);
+            if (client == null) return NotFound(new { message = "Клиент не найден." });
+
+            if (isOwner)
+            {
+                if (client.OwnerId != userId) return Unauthorized();
+            }
+            else
+            {
+                // Мастер может редактировать заметку только о клиенте своего заведения
+                var master = await _context.Masters.AsNoTracking().FirstOrDefaultAsync(m => m.Id == userId);
+                if (master == null || master.OwnerId != client.OwnerId) return Unauthorized();
+            }
+
+            if (!client.Owner.HasActiveSubscription())
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна." });
+
+            client.Notes = request.Notes?.Trim();
+            await _context.SaveChangesAsync();
+            return Ok(new { clientId = client.Id, notes = client.Notes });
+        }
+
         public class AddShiftRequest
         {
             public Guid MasterId { get; set; }
             public DayOfWeek DayOfWeek { get; set; }
             public TimeOnly StartTime { get; set; }
             public TimeOnly EndTime { get; set; }
+            public int BreakDurationMinutes { get; set; } = 0;
         }
 
         public class MyShiftRequest
@@ -1414,6 +1688,13 @@ namespace Backend.Controllers
             public DayOfWeek DayOfWeek { get; set; }
             public TimeOnly StartTime { get; set; }
             public TimeOnly EndTime { get; set; }
+            public int BreakDurationMinutes { get; set; } = 0;
+
+            /// <summary>Начало перерыва. Null — перерыва нет.</summary>
+            public TimeOnly? BreakStartTime { get; set; }
+
+            /// <summary>Конец перерыва. Null — перерыва нет.</summary>
+            public TimeOnly? BreakEndTime { get; set; }
         }
 
         public class AddReviewRequest
@@ -1441,6 +1722,18 @@ namespace Backend.Controllers
         public class AppointmentCommentRequest
         {
             public string? Comment { get; set; }
+        }
+
+        public class VacationRequest
+        {
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public string? Reason { get; set; }
+        }
+
+        public class ClientNotesRequest
+        {
+            public string? Notes { get; set; }
         }
     }
 }

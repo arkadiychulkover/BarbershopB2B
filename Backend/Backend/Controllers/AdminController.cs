@@ -191,6 +191,87 @@ namespace Backend.Controllers
             return Ok(dto);
         }
 
+        [HttpPost("owners")]
+        public async Task<IActionResult> CreateOwner([FromBody] CreateOwnerByAdminRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Email и пароль обязательны" });
+
+            var cleanEmail = request.Email.Trim().ToLowerInvariant();
+            var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+            if (!emailRegex.IsMatch(cleanEmail))
+                return BadRequest(new { message = "Некорректный формат email" });
+
+            if (request.Password.Length < 6)
+                return BadRequest(new { message = "Пароль должен содержать минимум 6 символов" });
+
+            bool emailExists = await _context.BarbershopOwners.AnyAsync(o => o.Email.ToLower() == cleanEmail);
+            if (emailExists)
+                return BadRequest(new { message = "Заведение с таким email уже существует" });
+
+            bool adminExists = await _context.SaasAdmins.AnyAsync(a => a.Email.ToLower() == cleanEmail);
+            if (adminExists)
+                return BadRequest(new { message = "Пользователь с таким email уже зарегистрирован как администратор" });
+
+            var days = request.SubscriptionDays > 0 ? request.SubscriptionDays : 30;
+            var now = DateTime.UtcNow;
+            var defaultName = cleanEmail.Split('@')[0];
+
+            var owner = new BarbershopOwner
+            {
+                Id = Guid.NewGuid(),
+                Email = cleanEmail,
+                PasswordHash = PasswordSecurity.HashPassword(request.Password),
+                OwnerName = defaultName,
+                BarbershopName = $"Барбершоп ({defaultName})",
+                BarbershopAddress = "",
+                BarbershopDescription = "",
+                PhoneNumber = "",
+                TelegramId = "",
+                BotToken = "",
+                BotUsername = "",
+                WalletAddress = "",
+                TimeZone = "Europe/Kyiv",
+                ReminderHoursBefore = 2,
+                DepositEnabled = false,
+                Status = OwnerStatus.Active,
+                IsBlocked = false,
+                CreatedAt = now,
+                PayedAt = now,
+                LastPayment = now,
+                NextPayment = now.AddDays(days),
+                MasterFee = 0m
+            };
+
+            _context.BarbershopOwners.Add(owner);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Заведение успешно создано",
+                owner = new AdminOwnerDto
+                {
+                    Id = owner.Id,
+                    OwnerName = owner.OwnerName,
+                    Email = owner.Email,
+                    PhoneNumber = owner.PhoneNumber,
+                    BarbershopName = owner.BarbershopName,
+                    BarbershopAddress = owner.BarbershopAddress,
+                    BarbershopDescription = owner.BarbershopDescription,
+                    BotToken = owner.BotToken,
+                    BotUsername = owner.BotUsername,
+                    Status = owner.Status.ToString(),
+                    IsBlocked = owner.IsBlocked,
+                    NextPayment = owner.NextPayment,
+                    CreatedAt = owner.CreatedAt,
+                    MastersCount = 0,
+                    ClientsCount = 0,
+                    AppointmentsCount = 0,
+                    Turnover = 0m
+                }
+            });
+        }
+
         [HttpPut("owners/{id}/subscription")]
         public async Task<IActionResult> UpdateOwnerSubscription(Guid id, [FromBody] UpdateOwnerSubscriptionRequest request)
         {
@@ -272,6 +353,14 @@ namespace Backend.Controllers
             if (request.BarbershopDescription != null) owner.BarbershopDescription = request.BarbershopDescription.Trim();
             if (request.BotToken != null) owner.BotToken = request.BotToken.Trim();
             if (request.BotUsername != null) owner.BotUsername = request.BotUsername.Trim().TrimStart('@');
+            if (!string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                if (request.NewPassword.Trim().Length < 6)
+                {
+                    return BadRequest(new { message = "Новый пароль должен содержать не менее 6 символов." });
+                }
+                owner.PasswordHash = PasswordSecurity.HashPassword(request.NewPassword.Trim());
+            }
 
             await _context.SaveChangesAsync();
 
@@ -288,7 +377,7 @@ namespace Backend.Controllers
             _context.BarbershopOwners.Remove(owner);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Барбершоп и все связанные данные успешно удалены" });
+            return Ok(new { message = "Заведение и все связанные данные успешно удалены" });
         }
 
         [HttpGet("masters")]

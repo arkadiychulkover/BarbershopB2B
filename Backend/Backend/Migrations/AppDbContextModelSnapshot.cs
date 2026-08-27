@@ -38,6 +38,12 @@ namespace Backend.Migrations
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("ConfirmationMessageId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("ConfirmationSent")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("Created")
                         .HasColumnType("timestamp with time zone");
 
@@ -45,6 +51,9 @@ namespace Backend.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<bool>("DepositPaid")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsConfirmed")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("MasterId")
@@ -68,12 +77,6 @@ namespace Backend.Migrations
                     b.Property<string>("ResultNote")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("ReviewId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ReviewId1")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 
@@ -86,11 +89,36 @@ namespace Backend.Migrations
 
                     b.HasIndex("MasterId");
 
-                    b.HasIndex("ReviewId1");
-
                     b.HasIndex("ServiceId");
 
                     b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("Backend.Models.AppointmentService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("AppointmentServices");
                 });
 
             modelBuilder.Entity("Backend.Models.BarbershopOwner", b =>
@@ -158,6 +186,12 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpires")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("PayedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -183,6 +217,9 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("WinBackDays")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("BarbershopOwners");
@@ -196,6 +233,9 @@ namespace Backend.Migrations
 
                     b.Property<bool>("IsBlacklisted")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastWinBackSentAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -278,6 +318,31 @@ namespace Backend.Migrations
                     b.ToTable("Masters");
                 });
 
+            modelBuilder.Entity("Backend.Models.MasterVacation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MasterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MasterId");
+
+                    b.ToTable("MasterVacations");
+                });
+
             modelBuilder.Entity("Backend.Models.Review", b =>
                 {
                     b.Property<Guid>("Id")
@@ -304,7 +369,8 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentId");
+                    b.HasIndex("AppointmentId")
+                        .IsUnique();
 
                     b.HasIndex("ClientId");
 
@@ -329,6 +395,12 @@ namespace Backend.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpires")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordSalt")
                         .IsRequired()
@@ -398,6 +470,15 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("BreakDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeOnly?>("BreakEndTime")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<TimeOnly?>("BreakStartTime")
+                        .HasColumnType("time without time zone");
+
                     b.Property<int>("DayOfWeek")
                         .HasColumnType("integer");
 
@@ -457,10 +538,6 @@ namespace Backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Backend.Models.Review", "Review")
-                        .WithMany()
-                        .HasForeignKey("ReviewId1");
-
                     b.HasOne("Backend.Models.Service", "Service")
                         .WithMany()
                         .HasForeignKey("ServiceId")
@@ -471,7 +548,24 @@ namespace Backend.Migrations
 
                     b.Navigation("Master");
 
-                    b.Navigation("Review");
+                    b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("Backend.Models.AppointmentService", b =>
+                {
+                    b.HasOne("Backend.Models.Appointment", "Appointment")
+                        .WithMany("AdditionalServices")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Models.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
 
                     b.Navigation("Service");
                 });
@@ -498,11 +592,22 @@ namespace Backend.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("Backend.Models.MasterVacation", b =>
+                {
+                    b.HasOne("Backend.Models.Master", "Master")
+                        .WithMany("Vacations")
+                        .HasForeignKey("MasterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Master");
+                });
+
             modelBuilder.Entity("Backend.Models.Review", b =>
                 {
                     b.HasOne("Backend.Models.Appointment", "Appointment")
-                        .WithMany()
-                        .HasForeignKey("AppointmentId")
+                        .WithOne("Review")
+                        .HasForeignKey("Backend.Models.Review", "AppointmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -577,6 +682,13 @@ namespace Backend.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("Backend.Models.Appointment", b =>
+                {
+                    b.Navigation("AdditionalServices");
+
+                    b.Navigation("Review");
+                });
+
             modelBuilder.Entity("Backend.Models.BarbershopOwner", b =>
                 {
                     b.Navigation("Clients");
@@ -600,6 +712,8 @@ namespace Backend.Migrations
                     b.Navigation("Services");
 
                     b.Navigation("Shifts");
+
+                    b.Navigation("Vacations");
                 });
 #pragma warning restore 612, 618
         }

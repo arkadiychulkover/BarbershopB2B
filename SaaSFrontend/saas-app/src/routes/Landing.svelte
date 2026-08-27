@@ -115,11 +115,11 @@
     <div class="container hero-container">
       <div class="hero-badge">
         <Sparkles size={14} />
-        <span>Telegram Mini App & Cloud CRM для барбершопов</span>
+        <span>Telegram Mini App & Cloud CRM для сферы услуг и заведений</span>
       </div>
 
       <h1 class="hero-title">
-        Управляйте своим барбершопом <span class="gradient-text">как профессионал</span>
+        Управляйте своим заведением <span class="gradient-text">как профессионал</span>
       </h1>
 
       <p class="subtitle">
@@ -217,7 +217,7 @@
             <ShieldCheck size={16} />
             <span>Быстрый старт за 2 минуты</span>
           </div>
-          <h2>Готовы вывести барбершоп на новый уровень?</h2>
+          <h2>Готовы вывести свой бизнес на новый уровень?</h2>
           <p>Подключите вашего бота и принимайте первые онлайн-записи уже сегодня.</p>
           <a href="#/register" class="btn btn-primary btn-lg">
             <span>{price !== null ? `Купить подписку (${price} TON/мес)` : 'Создать аккаунт'}</span>

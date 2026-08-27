@@ -114,6 +114,11 @@
   let newAdminEmail = '';
   let newAdminPassword = '';
 
+  let showCreateOwnerModal = false;
+  let newOwnerEmail = '';
+  let newOwnerPassword = '';
+  let newOwnerDurationDays = 30;
+
   onMount(async () => {
     await fetchStats();
     await fetchOwners();
@@ -174,7 +179,7 @@
       if (ownerStatusFilter) url += `status=${encodeURIComponent(ownerStatusFilter)}&`;
       owners = await apiRequest(url);
     } catch (e) {
-      showError('Ошибка загрузки барбершопов: ' + e.message);
+      showError('Ошибка загрузки заведений: ' + e.message);
     } finally {
       isOwnersLoading = false;
     }
@@ -347,7 +352,8 @@
           barbershopAddress: editingOwner.barbershopAddress,
           barbershopDescription: editingOwner.barbershopDescription,
           botToken: editingOwner.botToken,
-          botUsername: editingOwner.botUsername
+          botUsername: editingOwner.botUsername,
+          newPassword: editingOwner.newPassword?.trim() ? editingOwner.newPassword.trim() : undefined
         })
       });
       showSuccess('Данные заведения успешно обновлены');
@@ -360,14 +366,30 @@
     }
   }
 
+  async function sendOwnerResetPasswordEmail(email) {
+    if (!email) return;
+    actionLoading = true;
+    try {
+      await apiRequest('/api/Regestration/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() })
+      });
+      showSuccess(`Ссылка для сброса пароля отправлена на ${email}`);
+    } catch (e) {
+      showError('Ошибка отправки: ' + e.message);
+    } finally {
+      actionLoading = false;
+    }
+  }
+
   async function deleteOwner(owner) {
-    if (!confirm(`Вы действительно хотите удалить барбершоп "${owner.barbershopName}" и ВСЕ связанные данные (мастеров, записи, клиентов)? Это действие необратимо!`)) {
+    if (!confirm(`Вы действительно хотите удалить заведение "${owner.barbershopName}" и ВСЕ связанные данные (мастеров, записи, клиентов)? Это действие необратимо!`)) {
       return;
     }
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/owners/${owner.id}`, { method: 'DELETE' });
-      showSuccess(`Барбершоп "${owner.barbershopName}" удален`);
+      showSuccess(`Заведение "${owner.barbershopName}" удалено`);
       await fetchOwners();
       await fetchStats();
     } catch (e) {
@@ -500,6 +522,43 @@
     }
   }
 
+  // ─── Owner Creation ────────────────────────────────────────────────────────
+
+  async function submitCreateOwner() {
+    if (!newOwnerEmail || !newOwnerPassword) {
+      showError('Заполните Gmail/Email и пароль');
+      return;
+    }
+    const days = parseInt(newOwnerDurationDays, 10);
+    if (isNaN(days) || days < 1) {
+      showError('Укажите корректное количество дней подписки (минимум 1)');
+      return;
+    }
+
+    actionLoading = true;
+    try {
+      await apiRequest('/api/Admin/owners', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: newOwnerEmail.trim(),
+          password: newOwnerPassword,
+          subscriptionDays: days
+        })
+      });
+      showSuccess(`Заведение ${newOwnerEmail} успешно создано`);
+      newOwnerEmail = '';
+      newOwnerPassword = '';
+      newOwnerDurationDays = 30;
+      showCreateOwnerModal = false;
+      await fetchOwners();
+      await fetchStats();
+    } catch (e) {
+      showError('Ошибка создания заведения: ' + e.message);
+    } finally {
+      actionLoading = false;
+    }
+  }
+
   // ─── Chart SVG Math ────────────────────────────────────────────────────────
   const svgWidth = 860;
   const svgHeight = 240;
@@ -610,7 +669,7 @@
     <div>
       <h1>
         {#if activeSection === 'overview'}Панель управления платформой{/if}
-        {#if activeSection === 'owners'}Управление барбершопами{/if}
+        {#if activeSection === 'owners'}Управление заведениями{/if}
         {#if activeSection === 'masters'}Мастера платформы{/if}
         {#if activeSection === 'clients'}База клиентов{/if}
         {#if activeSection === 'appointments'}Все записи системы{/if}
@@ -633,17 +692,21 @@
         <span>{isExporting ? 'Формирование...' : 'Выгрузить клиентов в Excel'}</span>
       </button>
 
-      {#if activeSection === 'admins'}
+      {#if activeSection === 'owners'}
+        <button class="btn btn-primary" on:click={() => showCreateOwnerModal = true}>
+          <Plus size={16} />
+          <span>Создать заведение</span>
+        </button>
+      {:else if activeSection === 'admins'}
         <button class="btn btn-primary" on:click={() => showCreateAdminModal = true}>
           <Plus size={16} />
           <span>Добавить админа</span>
         </button>
-      {:else}
-        <button class="btn btn-secondary" on:click={() => handleSectionChange(activeSection)} title="Обновить данные">
-          <RefreshCw size={16} />
-          <span>Обновить</span>
-        </button>
       {/if}
+      <button class="btn btn-secondary" on:click={() => handleSectionChange(activeSection)} title="Обновить данные">
+        <RefreshCw size={16} />
+        <span>Обновить</span>
+      </button>
     </div>
   </div>
 
@@ -657,7 +720,7 @@
           <Building2 size={22} />
         </div>
         <div class="metric-content">
-          <span class="metric-label">Всего барбершопов</span>
+          <span class="metric-label">Всего заведений</span>
           <div class="metric-value">{stats.totalOwners}</div>
           <div class="metric-sub">
             <span class="active-pill">{stats.activeOwners} активных</span>
@@ -720,7 +783,7 @@
         <div class="filter-select-wrap chart-select">
           <Building2 size={15} />
           <select bind:value={chartOwnerFilter} on:change={fetchAdminChartData}>
-            <option value="">Все барбершопы платформы</option>
+            <option value="">Все заведения платформы</option>
             {#each owners as o}
               <option value={o.id}>{o.barbershopName} ({o.ownerName})</option>
             {/each}
@@ -930,10 +993,10 @@
       <div class="section-header">
         <div class="section-title-wrap">
           <Building2 size={20} />
-          <h2>Недавно подключенные барбершопы</h2>
+          <h2>Недавно подключенные заведения</h2>
         </div>
         <button class="btn btn-sm btn-secondary" on:click={() => handleSectionChange('owners')}>
-          Все барбершопы ({owners.length})
+          Все заведения ({owners.length})
         </button>
       </div>
 
@@ -941,7 +1004,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Барбершоп</th>
+              <th>Заведение</th>
               <th>Владелец</th>
               <th>Подписка до</th>
               <th>Статус</th>
@@ -984,7 +1047,7 @@
               </tr>
             {:else}
               <tr>
-                <td colspan="7" class="text-center py-4 text-muted">Нет подключенных барбершопов</td>
+                <td colspan="7" class="text-center py-4 text-muted">Нет подключенных заведений</td>
               </tr>
             {/each}
           </tbody>
@@ -1017,6 +1080,11 @@
           <option value="Pending">Ожидающие</option>
         </select>
       </div>
+
+      <button class="btn btn-primary" on:click={() => showCreateOwnerModal = true}>
+        <Plus size={16} />
+        <span>Создать заведение</span>
+      </button>
     </div>
 
     <div class="section-card">
@@ -1097,7 +1165,7 @@
             {:else}
               <tr>
                 <td colspan="6" class="text-center py-5 text-muted">
-                  {#if isOwnersLoading}Загрузка барбершопов...{:else}Барбершопы не найдены{/if}
+                  {#if isOwnersLoading}Загрузка заведений...{:else}Заведения не найдены{/if}
                 </td>
               </tr>
             {/each}
@@ -1116,7 +1184,7 @@
         <Search size={17} class="search-icon" />
         <input 
           type="text" 
-          placeholder="Поиск по имени мастера, барбершопу или @username..." 
+          placeholder="Поиск по имени мастера, заведению или @username..." 
           bind:value={masterSearch}
           on:input={() => fetchMasters()}
         />
@@ -1129,7 +1197,7 @@
           <thead>
             <tr>
               <th>Мастер</th>
-              <th>Барбершоп</th>
+              <th>Заведение</th>
               <th>Telegram Связь</th>
               <th>Рейтинг & Отзывы</th>
               <th>Записей</th>
@@ -1240,7 +1308,7 @@
           <thead>
             <tr>
               <th>Клиент</th>
-              <th>Барбершоп</th>
+              <th>Заведение</th>
               <th>Телефон</th>
               <th>Telegram ID</th>
               <th>Всего записей</th>
@@ -1298,7 +1366,7 @@
           <thead>
             <tr>
               <th>Дата и Время</th>
-              <th>Барбершоп</th>
+              <th>Заведение</th>
               <th>Мастер</th>
               <th>Клиент</th>
               <th>Услуга & Цена</th>
@@ -1416,7 +1484,7 @@
         </div>
         <div class="modal-body">
           <p class="modal-info-text">
-            Барбершоп: <strong>{selectedOwnerForSub.barbershopName}</strong> ({selectedOwnerForSub.ownerName})
+            Заведение: <strong>{selectedOwnerForSub.barbershopName}</strong> ({selectedOwnerForSub.ownerName})
           </p>
           <p class="modal-info-text">
             Текущее окончание: <strong>{formatDate(selectedOwnerForSub.nextPayment)}</strong>
@@ -1457,7 +1525,7 @@
     <div class="modal-backdrop" on:click={() => showEditOwnerModal = false}>
       <div class="modal-card modal-lg" on:click|stopPropagation>
         <div class="modal-header">
-          <h3>Редактировать барбершоп</h3>
+          <h3>Редактировать заведение</h3>
           <button class="modal-close" on:click={() => showEditOwnerModal = false}>&times;</button>
         </div>
         <form on:submit|preventDefault={submitEditOwner}>
@@ -1473,13 +1541,13 @@
             </div>
 
             <div class="form-group">
-              <label for="eoShopName">Название барбершопа</label>
+              <label for="eoShopName">Название заведения</label>
               <input id="eoShopName" type="text" class="input" bind:value={editingOwner.barbershopName} required />
             </div>
 
             <div class="form-group">
               <label for="eoBotUsername">Telegram Bot Username (без @)</label>
-              <input id="eoBotUsername" type="text" class="input" bind:value={editingOwner.botUsername} placeholder="my_barber_bot" />
+              <input id="eoBotUsername" type="text" class="input" bind:value={editingOwner.botUsername} placeholder="my_booking_bot" />
             </div>
 
             <div class="form-group full-width">
@@ -1493,11 +1561,27 @@
             </div>
 
             <div class="form-group full-width">
+              <label for="eoNewPassword">Новый пароль (оставьте пустым, если не нужно менять)</label>
+              <input id="eoNewPassword" type="password" class="input" bind:value={editingOwner.newPassword} placeholder="•••••••• (минимум 6 символов)" minlength="6" />
+            </div>
+
+            <div class="form-group full-width">
               <label for="eoDesc">Описание заведения</label>
               <textarea id="eoDesc" class="input textarea" bind:value={editingOwner.barbershopDescription} rows="3"></textarea>
             </div>
           </div>
           <div class="modal-footer">
+            {#if editingOwner.email}
+              <button 
+                type="button" 
+                class="btn btn-secondary mr-auto" 
+                disabled={actionLoading}
+                on:click={() => sendOwnerResetPasswordEmail(editingOwner.email)}
+                title="Отправить ссылку для восстановления пароля на почту владельца"
+              >
+                Сбросить пароль по Email
+              </button>
+            {/if}
             <button type="button" class="btn btn-secondary" on:click={() => showEditOwnerModal = false}>Отмена</button>
             <button type="submit" class="btn btn-primary" disabled={actionLoading}>
               <span>{actionLoading ? 'Сохранение...' : 'Сохранить изменения'}</span>
@@ -1584,6 +1668,72 @@
             <button type="button" class="btn btn-secondary" on:click={() => showCreateAdminModal = false}>Отмена</button>
             <button type="submit" class="btn btn-primary" disabled={actionLoading}>
               <span>{actionLoading ? 'Создание...' : 'Создать администратора'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
+  <!-- Modal: Create Owner -->
+  {#if showCreateOwnerModal}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="modal-backdrop" on:click={() => showCreateOwnerModal = false}>
+      <div class="modal-card" on:click|stopPropagation>
+        <div class="modal-header">
+          <h3>Создать заведение</h3>
+          <button class="modal-close" on:click={() => showCreateOwnerModal = false}>&times;</button>
+        </div>
+        <form on:submit|preventDefault={submitCreateOwner}>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="noEmail">Gmail / Email заведения</label>
+              <input 
+                id="noEmail" 
+                type="email" 
+                class="input" 
+                bind:value={newOwnerEmail} 
+                placeholder="barbershop@gmail.com" 
+                required 
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="noPassword">Пароль</label>
+              <input 
+                id="noPassword" 
+                type="password" 
+                class="input" 
+                bind:value={newOwnerPassword} 
+                placeholder="Минимум 6 символов" 
+                minlength="6"
+                required 
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="noDuration">Длительность подписки (дней)</label>
+              <div class="quick-days-presets">
+                <button type="button" class="btn btn-xs {newOwnerDurationDays === 30 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 30}>1 мес (30 дн.)</button>
+                <button type="button" class="btn btn-xs {newOwnerDurationDays === 90 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 90}>3 мес (90 дн.)</button>
+                <button type="button" class="btn btn-xs {newOwnerDurationDays === 180 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 180}>6 мес (180 дн.)</button>
+                <button type="button" class="btn btn-xs {newOwnerDurationDays === 365 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 365}>1 год (365 дн.)</button>
+              </div>
+              <input 
+                id="noDuration" 
+                type="number" 
+                class="input mt-2" 
+                bind:value={newOwnerDurationDays} 
+                min="1" 
+                max="3650" 
+                required 
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" on:click={() => showCreateOwnerModal = false}>Отмена</button>
+            <button type="submit" class="btn btn-primary" disabled={actionLoading}>
+              <span>{actionLoading ? 'Создание...' : 'Создать заведение'}</span>
             </button>
           </div>
         </form>

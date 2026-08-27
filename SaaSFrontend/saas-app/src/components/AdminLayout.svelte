@@ -125,7 +125,7 @@
           on:click={() => selectTab('owners')}
         >
           <Building2 size={18} />
-          <span>Барбершопы</span>
+          <span>Заведения</span>
         </button>
 
         <button 

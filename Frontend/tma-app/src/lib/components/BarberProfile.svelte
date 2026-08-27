@@ -318,7 +318,7 @@
           id="master-desc"
           type="text"
           bind:value={formDescription}
-          placeholder="Top Barber / Fade & Beard Master"
+          placeholder="Ведущий специалист / Мастер"
         />
       </div>
 

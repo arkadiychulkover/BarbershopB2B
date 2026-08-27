@@ -11,6 +11,7 @@
   let dayOfWeek = 1;
   let startTime = '09:00';
   let endTime = '18:00';
+  let breakDurationMinutes = 0;
 
   const daysOfWeekOptions = [
     { value: 1, label: 'Понедельник' },
@@ -22,6 +23,15 @@
     { value: 0, label: 'Воскресенье' }
   ];
 
+  const breakOptions = [
+    { value: 0, label: 'Без перерыва' },
+    { value: 5, label: '5 минут' },
+    { value: 10, label: '10 минут' },
+    { value: 15, label: '15 минут' },
+    { value: 20, label: '20 минут' },
+    { value: 30, label: '30 минут' }
+  ];
+
   onMount(() => {
     // Hide Telegram bottom MainButton
     hideMainButton();
@@ -30,10 +40,12 @@
       dayOfWeek = Number(initialData.dayOfWeek);
       startTime = initialData.startTime ? initialData.startTime.substring(0, 5) : '09:00';
       endTime = initialData.endTime ? initialData.endTime.substring(0, 5) : '18:00';
+      breakDurationMinutes = initialData.breakDurationMinutes !== undefined ? Number(initialData.breakDurationMinutes) : 0;
     } else {
       dayOfWeek = 1;
       startTime = '09:00';
       endTime = '18:00';
+      breakDurationMinutes = 0;
     }
     
     showBackButton(onCancel);
@@ -52,7 +64,8 @@
     const formData = {
       dayOfWeek: Number(dayOfWeek),
       startTime: `${startTime}:00`,
-      endTime: `${endTime}:00`
+      endTime: `${endTime}:00`,
+      breakDurationMinutes: Number(breakDurationMinutes) || 0
     };
     
     dispatch('save', formData);
@@ -90,6 +103,15 @@
       <label for="endTime">Конец</label>
       <input type="time" id="endTime" bind:value={endTime} />
     </div>
+  </div>
+  
+  <div class="form-group">
+    <label for="breakDuration">Перерыв после каждой записи</label>
+    <select id="breakDuration" bind:value={breakDurationMinutes}>
+      {#each breakOptions as opt}
+        <option value={opt.value}>{opt.label}</option>
+      {/each}
+    </select>
   </div>
   
   {#if startTime && endTime && startTime >= endTime}

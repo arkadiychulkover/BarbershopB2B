@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  export let shift: { id: string, dayOfWeek: number, startTime: string, endTime: string };
+  export let shift: { id: string, dayOfWeek: number, startTime: string, endTime: string, breakDurationMinutes?: number };
 
   const dispatch = createEventDispatcher();
   function formatTime(timeStr: string) {
@@ -16,10 +16,15 @@
   on:click={() => dispatch('edit', shift)}
   on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') dispatch('edit', shift); }}
 >
-  <div class="time-range">
-    <span class="time">{formatTime(shift.startTime)}</span>
-    <span class="separator">—</span>
-    <span class="time">{formatTime(shift.endTime)}</span>
+  <div class="time-info">
+    <div class="time-range">
+      <span class="time">{formatTime(shift.startTime)}</span>
+      <span class="separator">—</span>
+      <span class="time">{formatTime(shift.endTime)}</span>
+    </div>
+    {#if shift.breakDurationMinutes && shift.breakDurationMinutes > 0}
+      <span class="break-tag">+{shift.breakDurationMinutes} мин перерыв</span>
+    {/if}
   </div>
   
   <button class="delete-btn" on:click|stopPropagation={() => dispatch('delete', shift)}>
@@ -55,6 +60,12 @@
     transform: scale(0.98);
   }
 
+  .time-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .time-range {
     display: flex;
     align-items: center;
@@ -63,6 +74,16 @@
     font-weight: 700;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
+  }
+
+  .break-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pastel-rose, #e0a39a);
+    background: rgba(224, 163, 154, 0.12);
+    border-radius: 4px;
+    padding: 2px 6px;
+    align-self: flex-start;
   }
 
   .separator {
