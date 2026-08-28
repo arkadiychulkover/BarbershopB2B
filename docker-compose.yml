@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: barbershop-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: BarbershopDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - db-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d BarbershopDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: barbershop-backend
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5111
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=BarbershopDB;Username=postgres;Password=postgres
+    ports:
+      - "5111:5111"
+    volumes:
+      - ./Backend/Backend/wwwroot/barbers_photo:/app/wwwroot/barbers_photo
+      - ./Backend/Backend/wwwroot/results:/app/wwwroot/results
+    networks:
+      - db-internal
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  db-internal:
+    internal: true
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

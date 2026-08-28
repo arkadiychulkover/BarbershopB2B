@@ -68,6 +68,13 @@ namespace Backend.Controllers
 
             if (!owner.HasActiveSubscription())
             {
+                if (!string.IsNullOrWhiteSpace(request.WalletAddress))
+                {
+                    owner.WalletAddress = request.WalletAddress.Trim();
+                    await _context.SaveChangesAsync();
+                    return Ok(new { message = "Settings updated successfully." });
+                }
+
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка не активна. Изменение настроек заблокировано." });
             }
 
@@ -125,6 +132,24 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Settings updated successfully." });
+        }
+
+        [HttpPut("wallet")]
+        public async Task<IActionResult> UpdateWalletAddress([FromBody] UpdateWalletRequest request)
+        {
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null) return NotFound("Owner not found.");
+
+            if (string.IsNullOrWhiteSpace(request.WalletAddress))
+            {
+                return BadRequest(new { message = "Адрес кошелька не может быть пустым." });
+            }
+
+            owner.WalletAddress = request.WalletAddress.Trim();
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Кошелек успешно сохранен.", walletAddress = owner.WalletAddress });
         }
     }
 }

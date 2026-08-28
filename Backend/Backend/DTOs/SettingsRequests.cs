@@ -41,4 +41,9 @@ namespace Backend.DTOs
         public DateTime NextPayment { get; set; }
         public DateTime LastPayment { get; set; }
     }
+
+    public class UpdateWalletRequest
+    {
+        public string WalletAddress { get; set; } = string.Empty;
+    }
 }

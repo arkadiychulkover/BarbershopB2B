@@ -31,7 +31,9 @@
         try {
           const settings = await apiRequest('/api/Settings');
           profileStore.set({
-            ownerId: settings.ownerName,
+            ownerId: settings.id,
+            ownerName: settings.ownerName,
+            barbershopName: settings.barbershopName,
             status: settings.status,
             email: email
           });

@@ -6,17 +6,17 @@ export default defineConfig({
     allowedHosts: ['goldmine-unloved-capsule.ngrok-free.dev'],
     proxy: {
       '/api': {
-        target: 'http://localhost:5111',
+        target: 'https://barbershop-backend-production-f891.up.railway.app',
         changeOrigin: true,
         secure: false,
       },
       '/results': {
-        target: 'http://localhost:5111',
+        target: 'https://barbershop-backend-production-f891.up.railway.app',
         changeOrigin: true,
         secure: false,
       },
       '/barbers_photo': {
-        target: 'http://localhost:5111',
+        target: 'https://barbershop-backend-production-f891.up.railway.app',
         changeOrigin: true,
         secure: false,
       }

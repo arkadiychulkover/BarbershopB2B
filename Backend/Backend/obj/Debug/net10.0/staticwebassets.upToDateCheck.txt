@@ -1,7 +1,0 @@
-wwwroot\barbers_photo\1a7a3b59-e1e1-4e20-84f8-b8d1a2b822a8.jpg
-wwwroot\barbers_photo\959ebcc7-b3fc-41d3-92b1-8300f0bf25bd.png
-wwwroot\results\2cb301b9-2a28-46ad-88e6-f3ea292b69e7.png
-wwwroot\results\36dc4f32-9d02-4f38-921b-2a55c48cb7ed.png
-wwwroot\results\6cfdca02-81ff-4ec3-80c4-e51bd641473d.png
-wwwroot\results\82112ce7-9356-4784-b260-51a882b29972.png
-wwwroot\results\9faa5114-8ffd-46ac-b214-bc470edb5490.png

@@ -137,4 +137,3 @@ D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\ExcelNumberFormat.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\RBush.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\SixLabors.Fonts.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\System.IO.Packaging.dll
-D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

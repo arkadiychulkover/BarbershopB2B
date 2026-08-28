@@ -41,7 +41,7 @@
       <div class="header-left">
         <h1>Панель управления</h1>
         <p class="header-subtitle">
-          Добро пожаловать в рабочее пространство, <span class="highlight">{$profileStore.ownerId || 'Владелец'}</span>!
+          Добро пожаловать в рабочее пространство, <span class="highlight">{$profileStore.ownerName || $profileStore.barbershopName || 'Владелец'}</span>!
         </p>
       </div>
       <div class="header-badge">
@@ -95,7 +95,7 @@
           </span>
         </div>
         <div class="stat-footer">
-          <a href="#/payment" class="stat-link">
+          <a href="#/dashboard/settings" class="stat-link">
             <span>Управление тарифом</span>
             <ArrowUpRight size={14} />
           </a>

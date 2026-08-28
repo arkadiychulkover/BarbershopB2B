@@ -24,7 +24,10 @@ namespace Backend
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins(
+                              "https://saas-app-lovat-zeta.vercel.app",
+                              "https://tma-app-rho.vercel.app",
+                              "http://localhost:5173")
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -112,15 +115,7 @@ namespace Backend
                 ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
             });
 
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler(handler => handler.Run(async context =>
-                {
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync("{\"error\":\"Internal Server Error\"}");
-                }));
-            }
+            app.UseMiddleware<Backend.Middlewares.GlobalExceptionMiddleware>();
 
             // app.UseHttpsRedirection(); // Отключено для корректной работы через Vite/ngrok прокси
             app.UseStaticFiles();

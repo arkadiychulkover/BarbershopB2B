@@ -17,17 +17,14 @@
   
   let copied = false;
   let isLoading = false;
-  let domain = typeof window !== 'undefined' ? window.location.origin : '';
+  const tmaBaseUrl = (import.meta.env.VITE_TMA_URL || 'https://tma-app-rho.vercel.app').replace(/\/+$/, '');
   let botUsername = '';
 
   $: tenant = $profileStore.ownerId || '';
-  $: tmaLink = `${domain}/${tenant}/`;
+  $: tmaLink = `${tmaBaseUrl}/${tenant}/`;
   $: effectiveBotUser = botUsername || $profileStore.botUsername || '';
 
   onMount(async () => {
-    if (typeof window !== 'undefined') {
-      domain = window.location.origin;
-    }
     if (!$profileStore.ownerId || !$profileStore.botUsername) {
       isLoading = true;
       try {

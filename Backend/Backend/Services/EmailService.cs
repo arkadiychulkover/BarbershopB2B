@@ -138,5 +138,83 @@ namespace Backend.Services
                 throw new Exception($"Не удалось отправить email через SMTP: {ex.Message}", ex);
             }
         }
+
+        public async Task SendSubscriptionExpirationWarningAsync(string toEmail, string ownerName, string barbershopName, DateTime nextPayment)
+        {
+            var smtpSection = _configuration.GetSection("SmtpSettings");
+            string host = smtpSection.GetValue<string>("Host") ?? "smtp.gmail.com";
+            int port = smtpSection.GetValue<int>("Port");
+            if (port == 0) port = 587;
+            bool enableSsl = smtpSection.GetValue<bool>("EnableSsl");
+            string senderEmail = smtpSection.GetValue<string>("SenderEmail") ?? "arakdiychulkov11@gmail.com";
+            string senderName = smtpSection.GetValue<string>("SenderName") ?? "BarbershopB2B Platform";
+            string username = smtpSection.GetValue<string>("Username") ?? senderEmail;
+            string password = smtpSection.GetValue<string>("Password") ?? string.Empty;
+
+            string safeName = string.IsNullOrWhiteSpace(ownerName) ? "Владелец" : ownerName.Trim();
+            string safeShop = string.IsNullOrWhiteSpace(barbershopName) ? "вашего заведения" : $"заведения \"{barbershopName.Trim()}\"";
+            string dateStr = nextPayment.ToString("dd.MM.yyyy HH:mm");
+
+            string htmlBody = $@"
+<!DOCTYPE html>
+<html lang=""ru"">
+<head>
+    <meta charset=""UTF-8"">
+    <title>Истечение срока подписки</title>
+</head>
+<body style=""margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f1f5f9;"">
+    <table width=""100%"" border=""0"" cellspacing=""0"" cellpadding=""0"" style=""background-color: #0f172a; padding: 40px 15px;"">
+        <tr>
+            <td align=""center"">
+                <table width=""100%"" border=""0"" cellspacing=""0"" cellpadding=""0"" style=""max-width: 580px; background-color: #1e293b; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;"">
+                    <tr>
+                        <td align=""center"" style=""padding: 30px; background: rgba(223,158,142,0.15);"">
+                            <h1 style=""margin: 0; font-size: 22px; color: #ffffff;"">Истечение срока подписки</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style=""padding: 30px;"">
+                            <p style=""font-size: 16px; color: #e2e8f0;"">Здравствуйте, <strong>{WebUtility.HtmlEncode(safeName)}</strong>!</p>
+                            <p style=""font-size: 15px; color: #94a3b8; line-height: 1.6;"">
+                                Напоминаем, что срок действия подписки для {WebUtility.HtmlEncode(safeShop)} истекает через 48 часов: <strong>{dateStr} (UTC)</strong>.
+                            </p>
+                            <p style=""font-size: 15px; color: #94a3b8; line-height: 1.6;"">
+                                Чтобы онлайн-запись клиентов и Telegram-бот продолжали функционировать без перебоев, пожалуйста, продлите подписку в панели управления.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
+            try
+            {
+                using var message = new MailMessage();
+                message.From = new MailAddress(senderEmail, senderName);
+                message.To.Add(new MailAddress(toEmail));
+                message.Subject = $"Напоминание: подписка BarbershopB2B истекает через 48 часов";
+                message.Body = htmlBody;
+                message.IsBodyHtml = true;
+
+                using var smtpClient = new SmtpClient(host, port)
+                {
+                    EnableSsl = enableSsl,
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(username, password),
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Timeout = 15000
+                };
+
+                await smtpClient.SendMailAsync(message);
+                _logger.LogInformation("Subscription warning email sent to {Email}", toEmail);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send subscription warning email to {Email}", toEmail);
+            }
+        }
     }
 }

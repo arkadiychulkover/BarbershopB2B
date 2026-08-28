@@ -83,10 +83,9 @@
     errorMsg = '';
     successMsg = '';
     try {
-      const updatedSettings = { ...settings, walletAddress: userWalletAddress };
-      await apiRequest('/api/Settings', {
+      await apiRequest('/api/Settings/wallet', {
         method: 'PUT',
-        body: JSON.stringify(updatedSettings)
+        body: JSON.stringify({ walletAddress: userWalletAddress })
       });
       settings.walletAddress = userWalletAddress;
       successMsg = 'Кошелек сохранен. Теперь вы можете оплатить подписку.';

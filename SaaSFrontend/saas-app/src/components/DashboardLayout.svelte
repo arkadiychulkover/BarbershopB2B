@@ -21,8 +21,7 @@
     Moon,
     HelpCircle,
     Send,
-    ExternalLink,
-    TableProperties
+    ExternalLink
   } from 'lucide-svelte';
   
   let isLoading = true;
@@ -39,6 +38,7 @@
       profileStore.set({
         ownerId: settings.id,
         ownerName: settings.ownerName,
+        barbershopName: settings.barbershopName,
         status: settings.status,
         email: settings.email || $profileStore.email || '',
         botUsername: settings.botUsername || ''
@@ -136,10 +136,6 @@
           <Bot size={19} />
           <span>Telegram Бот</span>
         </a>
-        <a href="#/dashboard/timeline" class="nav-item" class:active={$currentLocation.includes('/timeline')} on:click={closeMobile}>
-          <TableProperties size={19} />
-          <span>Шахматка</span>
-        </a>
         <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.includes('/settings')} on:click={closeMobile}>
           <Settings size={19} />
           <span>Настройки</span>
@@ -147,7 +143,6 @@
       </nav>
 
       <div class="sidebar-footer">
-        <!-- Theme & Support quick actions -->
         <div class="sidebar-actions-row">
           <button class="theme-toggle-btn" on:click={toggleTheme} title="Переключить тему (Светлая / Темная)">
             {#if $theme === 'dark'}
@@ -167,10 +162,10 @@
 
         <div class="user-pill">
           <div class="user-avatar">
-            {($profileStore.ownerId || $profileStore.email || 'B')[0].toUpperCase()}
+            {($profileStore.ownerName || $profileStore.barbershopName || $profileStore.email || 'B')[0].toUpperCase()}
           </div>
           <div class="user-info">
-            <span class="user-name">{$profileStore.ownerId || 'Владелец'}</span>
+            <span class="user-name">{$profileStore.ownerName || $profileStore.barbershopName || 'Владелец'}</span>
             <span class="user-email">{$profileStore.email || 'master@shop.com'}</span>
           </div>
         </div>
