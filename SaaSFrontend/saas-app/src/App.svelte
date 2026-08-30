@@ -18,6 +18,7 @@
   import Timeline from './routes/Timeline.svelte';
   import Admin from './routes/Admin.svelte';
 
+  // Application route definitions for ARCH SYSTEM
   const routes = {
     '/': Landing,
     '/register': Register,

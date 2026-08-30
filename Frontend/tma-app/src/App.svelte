@@ -10,6 +10,7 @@
   let tenant = '';
   let initData = '';
 
+  // Initialize Telegram WebApp context and resolve tenant
   onMount(async () => {
     initTelegram();
     initData = getInitData();
