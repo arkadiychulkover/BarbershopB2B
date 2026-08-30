@@ -73,7 +73,7 @@
         <div class="admin-shield-icon">
           <Shield size={16} />
         </div>
-        <span class="brand-name">BarbershopB2B <span class="badge-admin">Admin</span></span>
+        <span class="brand-name">ARCH SYSTEM <span class="badge-admin">Admin</span></span>
       </div>
       <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Меню">
         {#if isMobileOpen}
@@ -99,7 +99,7 @@
             <Shield size={18} />
           </div>
           <div>
-            <h2>BarbershopB2B</h2>
+            <h2>ARCH SYSTEM</h2>
             <span class="sub-brand">Панель управления</span>
           </div>
         </div>

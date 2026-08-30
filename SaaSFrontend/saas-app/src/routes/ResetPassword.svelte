@@ -106,7 +106,7 @@
   <div class="card auth-card">
     <div class="brand-header">
       <span class="brand-dot"></span>
-      <span class="brand-name">BarbershopB2B</span>
+      <span class="brand-name">ARCH SYSTEM</span>
     </div>
 
     <!-- 1. VERIFYING STATE -->

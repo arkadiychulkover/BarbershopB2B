@@ -76,7 +76,7 @@
     <header class="mobile-header">
       <div class="mobile-brand">
         <span class="brand-dot"></span>
-        <span class="brand-name">BarbershopB2B</span>
+        <span class="brand-name">ARCH SYSTEM</span>
       </div>
       <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Меню">
         {#if isMobileOpen}
@@ -99,7 +99,7 @@
       <div class="logo">
         <div class="brand-wrapper">
           <span class="brand-dot"></span>
-          <h2>BarbershopB2B</h2>
+          <h2>ARCH SYSTEM</h2>
         </div>
         <span class="badge" class:active={$profileStore.status === 'Active'}>
           <ShieldCheck size={12} />

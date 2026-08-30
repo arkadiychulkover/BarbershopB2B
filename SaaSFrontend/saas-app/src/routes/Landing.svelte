@@ -85,7 +85,7 @@
     <div class="container nav-container">
       <div class="brand">
         <span class="brand-dot"></span>
-        <span class="brand-title">BarbershopB2B</span>
+        <span class="brand-title">ARCH SYSTEM</span>
       </div>
       <div class="nav-actions">
         <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title="Переключить тему">
@@ -233,7 +233,7 @@
     <div class="container footer-container">
       <div class="footer-brand">
         <span class="brand-dot"></span>
-        <span class="brand-title">BarbershopB2B</span>
+        <span class="brand-title">ARCH SYSTEM</span>
         <span class="footer-copy">© 2026 Все права защищены</span>
       </div>
 

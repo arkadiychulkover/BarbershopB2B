@@ -130,7 +130,7 @@
   <div class="card payment-card">
     <div class="brand-header">
       <span class="brand-dot"></span>
-      <span class="brand-name">BarbershopB2B</span>
+      <span class="brand-name">ARCH SYSTEM</span>
     </div>
 
     <div class="header-center">

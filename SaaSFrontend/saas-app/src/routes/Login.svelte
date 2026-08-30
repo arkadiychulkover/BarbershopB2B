@@ -59,7 +59,7 @@
   <div class="card auth-card">
     <div class="brand-header">
       <span class="brand-dot"></span>
-      <span class="brand-name">BarbershopB2B</span>
+      <span class="brand-name">ARCH SYSTEM</span>
     </div>
 
     <h2>Вход в кабинет</h2>

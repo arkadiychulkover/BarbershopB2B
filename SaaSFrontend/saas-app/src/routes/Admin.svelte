@@ -1,24 +1,24 @@
 <script>
-  import { onMount } from 'svelte';
-  import AdminLayout from '../components/AdminLayout.svelte';
-  import { apiRequest } from '../lib/api';
-  import { authStore } from '../lib/store';
-  import { 
-    Building2, 
-    Users, 
-    UserCheck, 
-    Calendar, 
-    DollarSign, 
-    Search, 
-    Plus, 
-    Edit2, 
-    Trash2, 
-    CheckCircle2, 
-    XCircle, 
-    Clock, 
-    Shield, 
-    ExternalLink, 
-    RefreshCw, 
+  import { onMount } from "svelte";
+  import AdminLayout from "../components/AdminLayout.svelte";
+  import { apiRequest } from "../lib/api";
+  import { authStore } from "../lib/store";
+  import {
+    Building2,
+    Users,
+    UserCheck,
+    Calendar,
+    DollarSign,
+    Search,
+    Plus,
+    Edit2,
+    Trash2,
+    CheckCircle2,
+    XCircle,
+    Clock,
+    Shield,
+    ExternalLink,
+    RefreshCw,
     Filter,
     ChevronRight,
     TrendingUp,
@@ -29,17 +29,17 @@
     Download,
     BarChart3,
     Sparkles,
-    CalendarRange
-  } from 'lucide-svelte';
+    CalendarRange,
+  } from "lucide-svelte";
 
   function formatDateInput(d) {
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
-  let activeSection = 'overview';
+  let activeSection = "overview";
 
   // Platform Metrics
   let stats = {
@@ -51,7 +51,7 @@
     totalClients: 0,
     totalAppointments: 0,
     completedAppointments: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
   };
 
   // Admin Chart Analytics
@@ -61,13 +61,15 @@
     totalRevenue: 0,
     averageDailyVisits: 0,
     averageDailyRevenue: 0,
-    peakDate: '—',
-    peakRevenue: 0
+    peakDate: "—",
+    peakRevenue: 0,
   };
-  let chartPeriod = '30d'; // '7d' | '30d' | '90d' | 'year' | 'custom'
-  let adminCustomStartDate = formatDateInput(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+  let chartPeriod = "30d"; // '7d' | '30d' | '90d' | 'year' | 'custom'
+  let adminCustomStartDate = formatDateInput(
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+  );
   let adminCustomEndDate = formatDateInput(new Date());
-  let chartOwnerFilter = '';
+  let chartOwnerFilter = "";
   let isChartLoading = false;
   let hoveredChartPoint = null;
 
@@ -79,11 +81,11 @@
   let admins = [];
 
   // Search & Filters
-  let ownerSearch = '';
-  let ownerStatusFilter = '';
-  let masterSearch = '';
-  let clientSearch = '';
-  let appointmentStatusFilter = '';
+  let ownerSearch = "";
+  let ownerStatusFilter = "";
+  let masterSearch = "";
+  let clientSearch = "";
+  let appointmentStatusFilter = "";
 
   // Loading states
   let isStatsLoading = true;
@@ -96,8 +98,8 @@
   let actionLoading = false;
 
   // Alerts / Notifications
-  let successMsg = '';
-  let errorMsg = '';
+  let successMsg = "";
+  let errorMsg = "";
 
   // Modals state
   let showExtendModal = false;
@@ -111,12 +113,12 @@
   let editingMaster = null;
 
   let showCreateAdminModal = false;
-  let newAdminEmail = '';
-  let newAdminPassword = '';
+  let newAdminEmail = "";
+  let newAdminPassword = "";
 
   let showCreateOwnerModal = false;
-  let newOwnerEmail = '';
-  let newOwnerPassword = '';
+  let newOwnerEmail = "";
+  let newOwnerPassword = "";
   let newOwnerDurationDays = 30;
 
   onMount(async () => {
@@ -127,22 +129,26 @@
 
   function showSuccess(msg) {
     successMsg = msg;
-    errorMsg = '';
-    setTimeout(() => { successMsg = ''; }, 4000);
+    errorMsg = "";
+    setTimeout(() => {
+      successMsg = "";
+    }, 4000);
   }
 
   function showError(msg) {
     errorMsg = msg;
-    successMsg = '';
-    setTimeout(() => { errorMsg = ''; }, 5000);
+    successMsg = "";
+    setTimeout(() => {
+      errorMsg = "";
+    }, 5000);
   }
 
-  // ─── Data Fetching ──────────────────────────────────────────────────────────
+  // ─── Data Fetching ──────────────────────────────────────────────────────────-
 
   async function fetchStats() {
     isStatsLoading = true;
     try {
-      stats = await apiRequest('/api/Admin/stats');
+      stats = await apiRequest("/api/Admin/stats");
     } catch (e) {
       console.error(e);
     } finally {
@@ -154,13 +160,13 @@
     isChartLoading = true;
     try {
       let url = `/api/Admin/chart-analytics?period=${chartPeriod}`;
-      if (chartPeriod === 'custom') {
+      if (chartPeriod === "custom") {
         url += `&startDate=${adminCustomStartDate}&endDate=${adminCustomEndDate}`;
       }
       if (chartOwnerFilter) url += `&ownerId=${chartOwnerFilter}`;
       adminChartData = await apiRequest(url);
     } catch (e) {
-      console.error('Failed to load admin chart data:', e);
+      console.error("Failed to load admin chart data:", e);
     } finally {
       isChartLoading = false;
     }
@@ -174,12 +180,13 @@
   async function fetchOwners() {
     isOwnersLoading = true;
     try {
-      let url = '/api/Admin/owners?';
+      let url = "/api/Admin/owners?";
       if (ownerSearch) url += `search=${encodeURIComponent(ownerSearch)}&`;
-      if (ownerStatusFilter) url += `status=${encodeURIComponent(ownerStatusFilter)}&`;
+      if (ownerStatusFilter)
+        url += `status=${encodeURIComponent(ownerStatusFilter)}&`;
       owners = await apiRequest(url);
     } catch (e) {
-      showError('Ошибка загрузки заведений: ' + e.message);
+      showError("Ошибка загрузки заведений: " + e.message);
     } finally {
       isOwnersLoading = false;
     }
@@ -188,11 +195,11 @@
   async function fetchMasters() {
     isMastersLoading = true;
     try {
-      let url = '/api/Admin/masters?';
+      let url = "/api/Admin/masters?";
       if (masterSearch) url += `search=${encodeURIComponent(masterSearch)}&`;
       masters = await apiRequest(url);
     } catch (e) {
-      showError('Ошибка загрузки мастеров: ' + e.message);
+      showError("Ошибка загрузки мастеров: " + e.message);
     } finally {
       isMastersLoading = false;
     }
@@ -201,11 +208,11 @@
   async function fetchClients() {
     isClientsLoading = true;
     try {
-      let url = '/api/Admin/clients?';
+      let url = "/api/Admin/clients?";
       if (clientSearch) url += `search=${encodeURIComponent(clientSearch)}&`;
       clients = await apiRequest(url);
     } catch (e) {
-      showError('Ошибка загрузки клиентов: ' + e.message);
+      showError("Ошибка загрузки клиентов: " + e.message);
     } finally {
       isClientsLoading = false;
     }
@@ -214,11 +221,12 @@
   async function fetchAppointments() {
     isAppointmentsLoading = true;
     try {
-      let url = '/api/Admin/appointments?limit=150&';
-      if (appointmentStatusFilter !== '') url += `status=${encodeURIComponent(appointmentStatusFilter)}&`;
+      let url = "/api/Admin/appointments?limit=150&";
+      if (appointmentStatusFilter !== "")
+        url += `status=${encodeURIComponent(appointmentStatusFilter)}&`;
       appointments = await apiRequest(url);
     } catch (e) {
-      showError('Ошибка загрузки записей: ' + e.message);
+      showError("Ошибка загрузки записей: " + e.message);
     } finally {
       isAppointmentsLoading = false;
     }
@@ -227,9 +235,9 @@
   async function fetchAdmins() {
     isAdminsLoading = true;
     try {
-      admins = await apiRequest('/api/Admin/admins');
+      admins = await apiRequest("/api/Admin/admins");
     } catch (e) {
-      showError('Ошибка загрузки администраторов: ' + e.message);
+      showError("Ошибка загрузки администраторов: " + e.message);
     } finally {
       isAdminsLoading = false;
     }
@@ -237,12 +245,15 @@
 
   function handleSectionChange(section) {
     activeSection = section;
-    if (section === 'overview') { fetchStats(); fetchOwners(); fetchAdminChartData(); }
-    else if (section === 'owners') fetchOwners();
-    else if (section === 'masters') fetchMasters();
-    else if (section === 'clients') fetchClients();
-    else if (section === 'appointments') fetchAppointments();
-    else if (section === 'admins') fetchAdmins();
+    if (section === "overview") {
+      fetchStats();
+      fetchOwners();
+      fetchAdminChartData();
+    } else if (section === "owners") fetchOwners();
+    else if (section === "masters") fetchMasters();
+    else if (section === "clients") fetchClients();
+    else if (section === "appointments") fetchAppointments();
+    else if (section === "admins") fetchAdmins();
   }
 
   // ─── Excel Export ───────────────────────────────────────────────────────────
@@ -251,28 +262,28 @@
     isExporting = true;
     try {
       const token = $authStore.token;
-      let url = '/api/Admin/export/clients';
+      let url = "/api/Admin/export/clients";
       if (ownerId) url += `?ownerId=${ownerId}`;
 
       const res = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) throw new Error('Ошибка генерации Excel файла');
+      if (!res.ok) throw new Error("Ошибка генерации Excel файла");
 
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = blobUrl;
-      a.download = `platform_clients_${new Date().toISOString().slice(0,10)}.xlsx`;
+      a.download = `platform_clients_${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
 
-      showSuccess('База клиентов успешно выгружена в Excel!');
+      showSuccess("База клиентов успешно выгружена в Excel!");
     } catch (e) {
-      showError(e.message || 'Ошибка выгрузки Excel');
+      showError(e.message || "Ошибка выгрузки Excel");
     } finally {
       isExporting = false;
     }
@@ -283,16 +294,21 @@
   async function toggleOwnerSubscription(owner) {
     actionLoading = true;
     try {
-      const isCurrentlyActive = owner.status === 'Active' && !owner.isBlocked && new Date(owner.nextPayment) > new Date();
+      const isCurrentlyActive =
+        owner.status === "Active" &&
+        !owner.isBlocked &&
+        new Date(owner.nextPayment) > new Date();
       await apiRequest(`/api/Admin/owners/${owner.id}/subscription`, {
-        method: 'PUT',
-        body: JSON.stringify({ isActive: !isCurrentlyActive })
+        method: "PUT",
+        body: JSON.stringify({ isActive: !isCurrentlyActive }),
       });
-      showSuccess(`Подписка "${owner.barbershopName}" ${!isCurrentlyActive ? 'активирована' : 'заморожена'}`);
+      showSuccess(
+        `Подписка "${owner.barbershopName}" ${!isCurrentlyActive ? "активирована" : "заморожена"}`,
+      );
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка изменения подписки: ' + e.message);
+      showError("Ошибка изменения подписки: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -308,16 +324,19 @@
     if (!selectedOwnerForSub) return;
     actionLoading = true;
     try {
-      await apiRequest(`/api/Admin/owners/${selectedOwnerForSub.id}/subscription`, {
-        method: 'PUT',
-        body: JSON.stringify({ extendDays: parseInt(extendDaysInput, 10) })
-      });
+      await apiRequest(
+        `/api/Admin/owners/${selectedOwnerForSub.id}/subscription`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ extendDays: parseInt(extendDaysInput, 10) }),
+        },
+      );
       showSuccess(`Подписка продлена на ${extendDaysInput} дн.`);
       showExtendModal = false;
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка продления: ' + e.message);
+      showError("Ошибка продления: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -332,10 +351,14 @@
     if (!editingOwner) return;
 
     if (editingOwner.phoneNumber) {
-      const cleaned = editingOwner.phoneNumber.trim().replace(/[\s\-\(\)]/g, '');
+      const cleaned = editingOwner.phoneNumber
+        .trim()
+        .replace(/[\s\-\(\)]/g, "");
       const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
       if (!phoneRegex.test(cleaned)) {
-        showError('Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, 1-3 цифры кода, 9 цифр номера)');
+        showError(
+          "Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, 1-3 цифры кода, 9 цифр номера)",
+        );
         return;
       }
       editingOwner.phoneNumber = cleaned;
@@ -344,7 +367,7 @@
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/owners/${editingOwner.id}`, {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify({
           ownerName: editingOwner.ownerName,
           phoneNumber: editingOwner.phoneNumber,
@@ -353,14 +376,16 @@
           barbershopDescription: editingOwner.barbershopDescription,
           botToken: editingOwner.botToken,
           botUsername: editingOwner.botUsername,
-          newPassword: editingOwner.newPassword?.trim() ? editingOwner.newPassword.trim() : undefined
-        })
+          newPassword: editingOwner.newPassword?.trim()
+            ? editingOwner.newPassword.trim()
+            : undefined,
+        }),
       });
-      showSuccess('Данные заведения успешно обновлены');
+      showSuccess("Данные заведения успешно обновлены");
       showEditOwnerModal = false;
       await fetchOwners();
     } catch (e) {
-      showError('Ошибка обновления: ' + e.message);
+      showError("Ошибка обновления: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -370,30 +395,34 @@
     if (!email) return;
     actionLoading = true;
     try {
-      await apiRequest('/api/Regestration/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email: email.trim() })
+      await apiRequest("/api/Regestration/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim() }),
       });
       showSuccess(`Ссылка для сброса пароля отправлена на ${email}`);
     } catch (e) {
-      showError('Ошибка отправки: ' + e.message);
+      showError("Ошибка отправки: " + e.message);
     } finally {
       actionLoading = false;
     }
   }
 
   async function deleteOwner(owner) {
-    if (!confirm(`Вы действительно хотите удалить заведение "${owner.barbershopName}" и ВСЕ связанные данные (мастеров, записи, клиентов)? Это действие необратимо!`)) {
+    if (
+      !confirm(
+        `Вы действительно хотите удалить заведение "${owner.barbershopName}" и ВСЕ связанные данные (мастеров, записи, клиентов)? Это действие необратимо!`,
+      )
+    ) {
       return;
     }
     actionLoading = true;
     try {
-      await apiRequest(`/api/Admin/owners/${owner.id}`, { method: 'DELETE' });
+      await apiRequest(`/api/Admin/owners/${owner.id}`, { method: "DELETE" });
       showSuccess(`Заведение "${owner.barbershopName}" удалено`);
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка удаления: ' + e.message);
+      showError("Ошибка удаления: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -411,21 +440,21 @@
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/masters/${editingMaster.id}`, {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify({
           name: editingMaster.name,
           description: editingMaster.description,
           telegramId: editingMaster.telegramId,
           telegramUsername: editingMaster.telegramUsername,
-          isActive: editingMaster.isActive
-        })
+          isActive: editingMaster.isActive,
+        }),
       });
-      showSuccess('Данные мастера успешно обновлены');
+      showSuccess("Данные мастера успешно обновлены");
       showEditMasterModal = false;
       await fetchMasters();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка обновления мастера: ' + e.message);
+      showError("Ошибка обновления мастера: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -435,14 +464,14 @@
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/masters/${master.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ isActive: !master.isActive })
+        method: "PUT",
+        body: JSON.stringify({ isActive: !master.isActive }),
       });
       showSuccess(`Статус мастера "${master.name}" изменен`);
       await fetchMasters();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка изменения статуса: ' + e.message);
+      showError("Ошибка изменения статуса: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -452,12 +481,12 @@
     if (!confirm(`Удалить мастера "${master.name}"?`)) return;
     actionLoading = true;
     try {
-      await apiRequest(`/api/Admin/masters/${master.id}`, { method: 'DELETE' });
+      await apiRequest(`/api/Admin/masters/${master.id}`, { method: "DELETE" });
       showSuccess(`Мастер "${master.name}" удален`);
       await fetchMasters();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка удаления: ' + e.message);
+      showError("Ошибка удаления: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -469,12 +498,12 @@
     if (!confirm(`Удалить клиента "${client.name}"?`)) return;
     actionLoading = true;
     try {
-      await apiRequest(`/api/Admin/clients/${client.id}`, { method: 'DELETE' });
+      await apiRequest(`/api/Admin/clients/${client.id}`, { method: "DELETE" });
       showSuccess(`Клиент "${client.name}" удален`);
       await fetchClients();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка удаления: ' + e.message);
+      showError("Ошибка удаления: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -483,15 +512,22 @@
   // ─── Appointment Actions ───────────────────────────────────────────────────
 
   async function deleteAppointment(appt) {
-    if (!confirm(`Удалить запись клиента "${appt.clientName}" к "${appt.masterName}"?`)) return;
+    if (
+      !confirm(
+        `Удалить запись клиента "${appt.clientName}" к "${appt.masterName}"?`,
+      )
+    )
+      return;
     actionLoading = true;
     try {
-      await apiRequest(`/api/Admin/appointments/${appt.id}`, { method: 'DELETE' });
-      showSuccess('Запись успешно удалена');
+      await apiRequest(`/api/Admin/appointments/${appt.id}`, {
+        method: "DELETE",
+      });
+      showSuccess("Запись успешно удалена");
       await fetchAppointments();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка удаления записи: ' + e.message);
+      showError("Ошибка удаления записи: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -501,22 +537,25 @@
 
   async function submitCreateAdmin() {
     if (!newAdminEmail || !newAdminPassword) {
-      showError('Заполните email и пароль');
+      showError("Заполните email и пароль");
       return;
     }
     actionLoading = true;
     try {
-      await apiRequest('/api/Admin/admins', {
-        method: 'POST',
-        body: JSON.stringify({ email: newAdminEmail, password: newAdminPassword })
+      await apiRequest("/api/Admin/admins", {
+        method: "POST",
+        body: JSON.stringify({
+          email: newAdminEmail,
+          password: newAdminPassword,
+        }),
       });
-      showSuccess('Новый администратор успешно зарегистрирован');
-      newAdminEmail = '';
-      newAdminPassword = '';
+      showSuccess("Новый администратор успешно зарегистрирован");
+      newAdminEmail = "";
+      newAdminPassword = "";
       showCreateAdminModal = false;
       await fetchAdmins();
     } catch (e) {
-      showError('Ошибка создания администратора: ' + e.message);
+      showError("Ошибка создания администратора: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -526,34 +565,34 @@
 
   async function submitCreateOwner() {
     if (!newOwnerEmail || !newOwnerPassword) {
-      showError('Заполните Gmail/Email и пароль');
+      showError("Заполните Gmail/Email и пароль");
       return;
     }
     const days = parseInt(newOwnerDurationDays, 10);
     if (isNaN(days) || days < 1) {
-      showError('Укажите корректное количество дней подписки (минимум 1)');
+      showError("Укажите корректное количество дней подписки (минимум 1)");
       return;
     }
 
     actionLoading = true;
     try {
-      await apiRequest('/api/Admin/owners', {
-        method: 'POST',
+      await apiRequest("/api/Admin/owners", {
+        method: "POST",
         body: JSON.stringify({
           email: newOwnerEmail.trim(),
           password: newOwnerPassword,
-          subscriptionDays: days
-        })
+          subscriptionDays: days,
+        }),
       });
       showSuccess(`Заведение ${newOwnerEmail} успешно создано`);
-      newOwnerEmail = '';
-      newOwnerPassword = '';
+      newOwnerEmail = "";
+      newOwnerPassword = "";
       newOwnerDurationDays = 30;
       showCreateOwnerModal = false;
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError('Ошибка создания заведения: ' + e.message);
+      showError("Ошибка создания заведения: " + e.message);
     } finally {
       actionLoading = false;
     }
@@ -567,23 +606,33 @@
   $: chartWidth = svgWidth - padding.left - padding.right;
   $: chartHeight = svgHeight - padding.top - padding.bottom;
 
-  $: maxRev = Math.max(...(adminChartData.points || []).map(p => p.revenue), 100);
-  $: maxVis = Math.max(...(adminChartData.points || []).map(p => p.visits), 5);
+  $: maxRev = Math.max(
+    ...(adminChartData.points || []).map((p) => p.revenue),
+    100,
+  );
+  $: maxVis = Math.max(
+    ...(adminChartData.points || []).map((p) => p.visits),
+    5,
+  );
 
   $: adminRevPoints = (adminChartData.points || []).map((p, i) => {
-    const x = padding.left + (i / Math.max(adminChartData.points.length - 1, 1)) * chartWidth;
+    const x =
+      padding.left +
+      (i / Math.max(adminChartData.points.length - 1, 1)) * chartWidth;
     const y = padding.top + chartHeight - (p.revenue / maxRev) * chartHeight;
     return { ...p, x, y };
   });
 
   $: adminVisPoints = (adminChartData.points || []).map((p, i) => {
-    const x = padding.left + (i / Math.max(adminChartData.points.length - 1, 1)) * chartWidth;
+    const x =
+      padding.left +
+      (i / Math.max(adminChartData.points.length - 1, 1)) * chartWidth;
     const y = padding.top + chartHeight - (p.visits / maxVis) * chartHeight;
     return { ...p, x, y };
   });
 
   function makeLinePath(points) {
-    if (!points || points.length === 0) return '';
+    if (!points || points.length === 0) return "";
     return points.reduce((acc, p, i) => {
       if (i === 0) return `M ${p.x} ${p.y}`;
       const prev = points[i - 1];
@@ -592,11 +641,11 @@
       const cx2 = prev.x + (p.x - prev.x) / 2;
       const cy2 = p.y;
       return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p.x} ${p.y}`;
-    }, '');
+    }, "");
   }
 
   function makeAreaPath(points) {
-    if (!points || points.length === 0) return '';
+    if (!points || points.length === 0) return "";
     const line = makeLinePath(points);
     const lastX = points[points.length - 1].x;
     const firstX = points[0].x;
@@ -613,38 +662,52 @@
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   function formatDate(d) {
-    if (!d) return '—';
+    if (!d) return "—";
     try {
       const date = new Date(d);
-      return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      return date.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
     } catch {
-      return '—';
+      return "—";
     }
   }
 
   function formatDateTime(d) {
-    if (!d) return '—';
+    if (!d) return "—";
     try {
       const date = new Date(d);
-      return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } catch {
-      return '—';
+      return "—";
     }
   }
 
   function formatCurrency(num) {
-    return (num || 0).toLocaleString('ru-RU') + ' ₴';
+    return (num || 0).toLocaleString("ru-RU") + " ₴";
   }
 
   function isOwnerSubActive(owner) {
-    return owner.status === 'Active' && !owner.isBlocked && new Date(owner.nextPayment) > new Date();
+    return (
+      owner.status === "Active" &&
+      !owner.isBlocked &&
+      new Date(owner.nextPayment) > new Date()
+    );
   }
 
   function getStatusLabel(status) {
-    if (status === 0) return 'Ожидает';
-    if (status === 1) return 'Завершено';
-    if (status === 2) return 'Отменено';
-    return 'Неизвестно';
+    if (status === 0) return "Ожидает";
+    if (status === 1) return "Завершено";
+    if (status === 2) return "Отменено";
+    return "Неизвестно";
   }
 </script>
 
@@ -668,42 +731,67 @@
   <div class="page-header">
     <div>
       <h1>
-        {#if activeSection === 'overview'}Панель управления платформой{/if}
-        {#if activeSection === 'owners'}Управление заведениями{/if}
-        {#if activeSection === 'masters'}Мастера платформы{/if}
-        {#if activeSection === 'clients'}База клиентов{/if}
-        {#if activeSection === 'appointments'}Все записи системы{/if}
-        {#if activeSection === 'admins'}Администраторы системы{/if}
+        {#if activeSection === "overview"}Панель управления платформой{/if}
+        {#if activeSection === "owners"}Управление заведениями{/if}
+        {#if activeSection === "masters"}Мастера платформы{/if}
+        {#if activeSection === "clients"}База клиентов{/if}
+        {#if activeSection === "appointments"}Все записи системы{/if}
+        {#if activeSection === "admins"}Администраторы системы{/if}
       </h1>
       <p class="subtitle">
-        {#if activeSection === 'overview'}Глобальная статистика, интерактивные графики и состояние экосистемы BarbershopB2B{/if}
-        {#if activeSection === 'owners'}Управление филиалами, подписками и интеграциями Telegram-ботов{/if}
-        {#if activeSection === 'masters'}Мониторинг специалистов, рейтингов и Telegram-контактов{/if}
-        {#if activeSection === 'clients'}Клиентская база во всех подключенных салонах с выгрузкой в Excel{/if}
-        {#if activeSection === 'appointments'}Журнал всех бронирований и финансовых операций в реальном времени{/if}
-        {#if activeSection === 'admins'}Управление учетными записями с правами доступа Superadmin{/if}
+        {#if activeSection === "overview"}Глобальная статистика, интерактивные
+          графики и состояние экосистемы ARCH SYSTEM{/if}
+        {#if activeSection === "owners"}Управление филиалами, подписками и
+          интеграциями Telegram-ботов{/if}
+        {#if activeSection === "masters"}Мониторинг специалистов, рейтингов и
+          Telegram-контактов{/if}
+        {#if activeSection === "clients"}Клиентская база во всех подключенных
+          салонах с выгрузкой в Excel{/if}
+        {#if activeSection === "appointments"}Журнал всех бронирований и
+          финансовых операций в реальном времени{/if}
+        {#if activeSection === "admins"}Управление учетными записями с правами
+          доступа Superadmin{/if}
       </p>
     </div>
 
     <div class="header-actions">
       <!-- Excel Export Button for Admin -->
-      <button class="btn btn-secondary" on:click={() => exportAllClientsToExcel()} disabled={isExporting} title="Выгрузить всех клиентов платформы в Excel">
+      <button
+        class="btn btn-secondary"
+        on:click={() => exportAllClientsToExcel()}
+        disabled={isExporting}
+        title="Выгрузить всех клиентов платформы в Excel"
+      >
         <FileSpreadsheet size={16} class="text-rose" />
-        <span>{isExporting ? 'Формирование...' : 'Выгрузить клиентов в Excel'}</span>
+        <span
+          >{isExporting
+            ? "Формирование..."
+            : "Выгрузить клиентов в Excel"}</span
+        >
       </button>
 
-      {#if activeSection === 'owners'}
-        <button class="btn btn-primary" on:click={() => showCreateOwnerModal = true}>
+      {#if activeSection === "owners"}
+        <button
+          class="btn btn-primary"
+          on:click={() => (showCreateOwnerModal = true)}
+        >
           <Plus size={16} />
           <span>Создать заведение</span>
         </button>
-      {:else if activeSection === 'admins'}
-        <button class="btn btn-primary" on:click={() => showCreateAdminModal = true}>
+      {:else if activeSection === "admins"}
+        <button
+          class="btn btn-primary"
+          on:click={() => (showCreateAdminModal = true)}
+        >
           <Plus size={16} />
           <span>Добавить админа</span>
         </button>
       {/if}
-      <button class="btn btn-secondary" on:click={() => handleSectionChange(activeSection)} title="Обновить данные">
+      <button
+        class="btn btn-secondary"
+        on:click={() => handleSectionChange(activeSection)}
+        title="Обновить данные"
+      >
         <RefreshCw size={16} />
         <span>Обновить</span>
       </button>
@@ -713,7 +801,7 @@
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
   <!-- 1. OVERVIEW & METRICS                                                     -->
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
-  {#if activeSection === 'overview'}
+  {#if activeSection === "overview"}
     <div class="metrics-grid">
       <div class="metric-card glow-rose">
         <div class="metric-icon-wrap rose">
@@ -793,19 +881,39 @@
 
       <!-- Period Tabs -->
       <div class="period-tabs">
-        <button class="period-tab" class:active={chartPeriod === '7d'} on:click={() => setChartPeriod('7d')}>
+        <button
+          class="period-tab"
+          class:active={chartPeriod === "7d"}
+          on:click={() => setChartPeriod("7d")}
+        >
           <span>7 дней</span>
         </button>
-        <button class="period-tab" class:active={chartPeriod === '30d'} on:click={() => setChartPeriod('30d')}>
+        <button
+          class="period-tab"
+          class:active={chartPeriod === "30d"}
+          on:click={() => setChartPeriod("30d")}
+        >
           <span>30 дней</span>
         </button>
-        <button class="period-tab" class:active={chartPeriod === '90d'} on:click={() => setChartPeriod('90d')}>
+        <button
+          class="period-tab"
+          class:active={chartPeriod === "90d"}
+          on:click={() => setChartPeriod("90d")}
+        >
           <span>3 месяца</span>
         </button>
-        <button class="period-tab" class:active={chartPeriod === 'year'} on:click={() => setChartPeriod('year')}>
+        <button
+          class="period-tab"
+          class:active={chartPeriod === "year"}
+          on:click={() => setChartPeriod("year")}
+        >
           <span>12 месяцев</span>
         </button>
-        <button class="period-tab" class:active={chartPeriod === 'custom'} on:click={() => setChartPeriod('custom')}>
+        <button
+          class="period-tab"
+          class:active={chartPeriod === "custom"}
+          on:click={() => setChartPeriod("custom")}
+        >
           <CalendarRange size={13} />
           <span>Свой период</span>
         </button>
@@ -813,7 +921,7 @@
     </div>
 
     <!-- Custom Date Range Bar for Admin -->
-    {#if chartPeriod === 'custom'}
+    {#if chartPeriod === "custom"}
       <div class="custom-range-card card mb-4">
         <div class="custom-range-inner">
           <div class="custom-range-title">
@@ -824,26 +932,30 @@
           <div class="custom-range-inputs">
             <div class="date-input-group">
               <label for="adminCustomStart">От:</label>
-              <input 
-                id="adminCustomStart" 
-                type="date" 
-                class="input date-field" 
-                bind:value={adminCustomStartDate} 
+              <input
+                id="adminCustomStart"
+                type="date"
+                class="input date-field"
+                bind:value={adminCustomStartDate}
               />
             </div>
 
             <div class="date-input-group">
               <label for="adminCustomEnd">До:</label>
-              <input 
-                id="adminCustomEnd" 
-                type="date" 
-                class="input date-field" 
-                bind:value={adminCustomEndDate} 
+              <input
+                id="adminCustomEnd"
+                type="date"
+                class="input date-field"
+                bind:value={adminCustomEndDate}
               />
             </div>
 
-            <button class="btn btn-primary btn-sm" on:click={fetchAdminChartData} disabled={isChartLoading}>
-              <span>{isChartLoading ? 'Загрузка...' : 'Применить'}</span>
+            <button
+              class="btn btn-primary btn-sm"
+              on:click={fetchAdminChartData}
+              disabled={isChartLoading}
+            >
+              <span>{isChartLoading ? "Загрузка..." : "Применить"}</span>
             </button>
           </div>
         </div>
@@ -857,7 +969,9 @@
           <TrendingUp size={20} class="text-rose" />
           <div>
             <h2>График денежного оборота платформы</h2>
-            <p class="section-desc">Сумма всех завершенных заказов по выбранным филиалам</p>
+            <p class="section-desc">
+              Сумма всех завершенных заказов по выбранным филиалам
+            </p>
           </div>
         </div>
         <div class="chart-badge-tag rose">
@@ -868,7 +982,13 @@
       <div class="svg-chart-container">
         <svg viewBox="0 0 {svgWidth} {svgHeight}" class="chart-svg">
           <defs>
-            <linearGradient id="adminRoseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient
+              id="adminRoseGrad"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%"
+            >
               <stop offset="0%" stop-color="#DF9E8E" stop-opacity="0.35" />
               <stop offset="100%" stop-color="#DF9E8E" stop-opacity="0.0" />
             </linearGradient>
@@ -876,8 +996,20 @@
 
           {#each [0, 0.25, 0.5, 0.75, 1] as fraction}
             {@const yPos = padding.top + chartHeight * (1 - fraction)}
-            <line x1={padding.left} y1={yPos} x2={svgWidth - padding.right} y2={yPos} stroke="rgba(255, 255, 255, 0.05)" stroke-dasharray="4 4" />
-            <text x={padding.left - 10} y={yPos + 4} class="axis-text" text-anchor="end">
+            <line
+              x1={padding.left}
+              y1={yPos}
+              x2={svgWidth - padding.right}
+              y2={yPos}
+              stroke="rgba(255, 255, 255, 0.05)"
+              stroke-dasharray="4 4"
+            />
+            <text
+              x={padding.left - 10}
+              y={yPos + 4}
+              class="axis-text"
+              text-anchor="end"
+            >
               {Math.round(maxRev * fraction)} ₴
             </text>
           {/each}
@@ -887,32 +1019,74 @@
           {/if}
 
           {#if adminRevLine}
-            <path d={adminRevLine} fill="none" stroke="var(--pastel-rose)" stroke-width="3" stroke-linecap="round" />
+            <path
+              d={adminRevLine}
+              fill="none"
+              stroke="var(--pastel-rose)"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
           {/if}
 
           {#each adminRevPoints as pt, i}
             {#if adminChartData.points.length <= 15 || i % Math.ceil(adminChartData.points.length / 10) === 0 || i === adminChartData.points.length - 1}
-              <text x={pt.x} y={svgHeight - 12} class="axis-text" text-anchor="middle">{pt.label}</text>
+              <text
+                x={pt.x}
+                y={svgHeight - 12}
+                class="axis-text"
+                text-anchor="middle">{pt.label}</text
+              >
             {/if}
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <circle 
-              cx={pt.x} 
-              cy={pt.y} 
-              r={hoveredChartPoint?.fullDate === pt.fullDate && hoveredChartPoint?.type === 'revenue' ? 6 : 4} 
-              fill="var(--bg-surface)" 
-              stroke="var(--pastel-rose)" 
+            <circle
+              cx={pt.x}
+              cy={pt.y}
+              r={hoveredChartPoint?.fullDate === pt.fullDate &&
+              hoveredChartPoint?.type === "revenue"
+                ? 6
+                : 4}
+              fill="var(--bg-surface)"
+              stroke="var(--pastel-rose)"
               stroke-width="2.5"
               class="chart-point"
-              on:mouseenter={() => hoveredChartPoint = { ...pt, type: 'revenue' }}
-              on:mouseleave={() => hoveredChartPoint = null}
+              on:mouseenter={() =>
+                (hoveredChartPoint = { ...pt, type: "revenue" })}
+              on:mouseleave={() => (hoveredChartPoint = null)}
             />
           {/each}
 
-          {#if hoveredChartPoint && hoveredChartPoint.type === 'revenue'}
-            <g transform="translate({hoveredChartPoint.x}, {hoveredChartPoint.y - 12})">
-              <rect x="-65" y="-42" width="130" height="38" rx="6" fill="#1E293B" stroke="rgba(223, 158, 142, 0.4)" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))" />
-              <text x="0" y="-24" text-anchor="middle" fill="#94A3B8" font-size="10" font-weight="600">{hoveredChartPoint.label}</text>
-              <text x="0" y="-10" text-anchor="middle" fill="#DF9E8E" font-size="12" font-weight="700">{formatCurrency(hoveredChartPoint.revenue)}</text>
+          {#if hoveredChartPoint && hoveredChartPoint.type === "revenue"}
+            <g
+              transform="translate({hoveredChartPoint.x}, {hoveredChartPoint.y -
+                12})"
+            >
+              <rect
+                x="-65"
+                y="-42"
+                width="130"
+                height="38"
+                rx="6"
+                fill="#1E293B"
+                stroke="rgba(223, 158, 142, 0.4)"
+                filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))"
+              />
+              <text
+                x="0"
+                y="-24"
+                text-anchor="middle"
+                fill="#94A3B8"
+                font-size="10"
+                font-weight="600">{hoveredChartPoint.label}</text
+              >
+              <text
+                x="0"
+                y="-10"
+                text-anchor="middle"
+                fill="#DF9E8E"
+                font-size="12"
+                font-weight="700"
+                >{formatCurrency(hoveredChartPoint.revenue)}</text
+              >
             </g>
           {/if}
         </svg>
@@ -926,7 +1100,9 @@
           <Users size={20} class="text-sage" />
           <div>
             <h2>График посещений клиентов</h2>
-            <p class="section-desc">Количество клиентов и бронирований за период</p>
+            <p class="section-desc">
+              Количество клиентов и бронирований за период
+            </p>
           </div>
         </div>
         <div class="chart-badge-tag sage">
@@ -937,7 +1113,13 @@
       <div class="svg-chart-container">
         <svg viewBox="0 0 {svgWidth} {svgHeight}" class="chart-svg">
           <defs>
-            <linearGradient id="adminSageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient
+              id="adminSageGrad"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%"
+            >
               <stop offset="0%" stop-color="#A8C69B" stop-opacity="0.35" />
               <stop offset="100%" stop-color="#A8C69B" stop-opacity="0.0" />
             </linearGradient>
@@ -945,8 +1127,20 @@
 
           {#each [0, 0.25, 0.5, 0.75, 1] as fraction}
             {@const yPos = padding.top + chartHeight * (1 - fraction)}
-            <line x1={padding.left} y1={yPos} x2={svgWidth - padding.right} y2={yPos} stroke="rgba(255, 255, 255, 0.05)" stroke-dasharray="4 4" />
-            <text x={padding.left - 10} y={yPos + 4} class="axis-text" text-anchor="end">
+            <line
+              x1={padding.left}
+              y1={yPos}
+              x2={svgWidth - padding.right}
+              y2={yPos}
+              stroke="rgba(255, 255, 255, 0.05)"
+              stroke-dasharray="4 4"
+            />
+            <text
+              x={padding.left - 10}
+              y={yPos + 4}
+              class="axis-text"
+              text-anchor="end"
+            >
               {Math.round(maxVis * fraction)}
             </text>
           {/each}
@@ -956,32 +1150,73 @@
           {/if}
 
           {#if adminVisLine}
-            <path d={adminVisLine} fill="none" stroke="var(--pastel-sage)" stroke-width="3" stroke-linecap="round" />
+            <path
+              d={adminVisLine}
+              fill="none"
+              stroke="var(--pastel-sage)"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
           {/if}
 
           {#each adminVisPoints as pt, i}
             {#if adminChartData.points.length <= 15 || i % Math.ceil(adminChartData.points.length / 10) === 0 || i === adminChartData.points.length - 1}
-              <text x={pt.x} y={svgHeight - 12} class="axis-text" text-anchor="middle">{pt.label}</text>
+              <text
+                x={pt.x}
+                y={svgHeight - 12}
+                class="axis-text"
+                text-anchor="middle">{pt.label}</text
+              >
             {/if}
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <circle 
-              cx={pt.x} 
-              cy={pt.y} 
-              r={hoveredChartPoint?.fullDate === pt.fullDate && hoveredChartPoint?.type === 'visits' ? 6 : 4} 
-              fill="var(--bg-surface)" 
-              stroke="var(--pastel-sage)" 
+            <circle
+              cx={pt.x}
+              cy={pt.y}
+              r={hoveredChartPoint?.fullDate === pt.fullDate &&
+              hoveredChartPoint?.type === "visits"
+                ? 6
+                : 4}
+              fill="var(--bg-surface)"
+              stroke="var(--pastel-sage)"
               stroke-width="2.5"
               class="chart-point"
-              on:mouseenter={() => hoveredChartPoint = { ...pt, type: 'visits' }}
-              on:mouseleave={() => hoveredChartPoint = null}
+              on:mouseenter={() =>
+                (hoveredChartPoint = { ...pt, type: "visits" })}
+              on:mouseleave={() => (hoveredChartPoint = null)}
             />
           {/each}
 
-          {#if hoveredChartPoint && hoveredChartPoint.type === 'visits'}
-            <g transform="translate({hoveredChartPoint.x}, {hoveredChartPoint.y - 12})">
-              <rect x="-60" y="-42" width="120" height="38" rx="6" fill="#1E293B" stroke="rgba(168, 198, 155, 0.4)" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))" />
-              <text x="0" y="-24" text-anchor="middle" fill="#94A3B8" font-size="10" font-weight="600">{hoveredChartPoint.label}</text>
-              <text x="0" y="-10" text-anchor="middle" fill="#A8C69B" font-size="12" font-weight="700">{hoveredChartPoint.visits} визитов</text>
+          {#if hoveredChartPoint && hoveredChartPoint.type === "visits"}
+            <g
+              transform="translate({hoveredChartPoint.x}, {hoveredChartPoint.y -
+                12})"
+            >
+              <rect
+                x="-60"
+                y="-42"
+                width="120"
+                height="38"
+                rx="6"
+                fill="#1E293B"
+                stroke="rgba(168, 198, 155, 0.4)"
+                filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))"
+              />
+              <text
+                x="0"
+                y="-24"
+                text-anchor="middle"
+                fill="#94A3B8"
+                font-size="10"
+                font-weight="600">{hoveredChartPoint.label}</text
+              >
+              <text
+                x="0"
+                y="-10"
+                text-anchor="middle"
+                fill="#A8C69B"
+                font-size="12"
+                font-weight="700">{hoveredChartPoint.visits} визитов</text
+              >
             </g>
           {/if}
         </svg>
@@ -995,7 +1230,10 @@
           <Building2 size={20} />
           <h2>Недавно подключенные заведения</h2>
         </div>
-        <button class="btn btn-sm btn-secondary" on:click={() => handleSectionChange('owners')}>
+        <button
+          class="btn btn-sm btn-secondary"
+          on:click={() => handleSectionChange("owners")}
+        >
           Все заведения ({owners.length})
         </button>
       </div>
@@ -1018,7 +1256,9 @@
               <tr>
                 <td>
                   <div class="table-cell-bold">{owner.barbershopName}</div>
-                  <div class="table-cell-sub">@{owner.botUsername || 'бот не указан'}</div>
+                  <div class="table-cell-sub">
+                    @{owner.botUsername || "бот не указан"}
+                  </div>
                 </td>
                 <td>
                   <div>{owner.ownerName}</div>
@@ -1037,17 +1277,27 @@
                 <td>{owner.mastersCount}</td>
                 <td>{formatCurrency(owner.turnover)}</td>
                 <td>
-                  <button class="btn-icon" on:click={() => openExtendModal(owner)} title="Продлить подписку">
+                  <button
+                    class="btn-icon"
+                    on:click={() => openExtendModal(owner)}
+                    title="Продлить подписку"
+                  >
                     <Clock size={15} />
                   </button>
-                  <button class="btn-icon" on:click={() => openEditOwnerModal(owner)} title="Редактировать">
+                  <button
+                    class="btn-icon"
+                    on:click={() => openEditOwnerModal(owner)}
+                    title="Редактировать"
+                  >
                     <Edit2 size={15} />
                   </button>
                 </td>
               </tr>
             {:else}
               <tr>
-                <td colspan="7" class="text-center py-4 text-muted">Нет подключенных заведений</td>
+                <td colspan="7" class="text-center py-4 text-muted"
+                  >Нет подключенных заведений</td
+                >
               </tr>
             {/each}
           </tbody>
@@ -1059,13 +1309,13 @@
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
   <!-- 2. OWNERS / SALONS MANAGEMENT                                             -->
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
-  {#if activeSection === 'owners'}
+  {#if activeSection === "owners"}
     <div class="filter-bar">
       <div class="search-input-wrap">
         <Search size={17} class="search-icon" />
-        <input 
-          type="text" 
-          placeholder="Поиск по названию, владельцу, email или боту..." 
+        <input
+          type="text"
+          placeholder="Поиск по названию, владельцу, email или боту..."
           bind:value={ownerSearch}
           on:input={() => fetchOwners()}
         />
@@ -1081,7 +1331,10 @@
         </select>
       </div>
 
-      <button class="btn btn-primary" on:click={() => showCreateOwnerModal = true}>
+      <button
+        class="btn btn-primary"
+        on:click={() => (showCreateOwnerModal = true)}
+      >
         <Plus size={16} />
         <span>Создать заведение</span>
       </button>
@@ -1105,9 +1358,16 @@
               <tr>
                 <td>
                   <div class="table-cell-bold">{owner.barbershopName}</div>
-                  <div class="table-cell-sub">{owner.barbershopAddress || 'Адрес не указан'}</div>
+                  <div class="table-cell-sub">
+                    {owner.barbershopAddress || "Адрес не указан"}
+                  </div>
                   {#if owner.botUsername}
-                    <a href="https://t.me/{owner.botUsername}" target="_blank" rel="noopener noreferrer" class="bot-link">
+                    <a
+                      href="https://t.me/{owner.botUsername}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="bot-link"
+                    >
                       <Send size={11} />
                       <span>@{owner.botUsername}</span>
                     </a>
@@ -1116,12 +1376,16 @@
                 <td>
                   <div class="table-cell-bold">{owner.ownerName}</div>
                   <div class="table-cell-sub">{owner.email}</div>
-                  <div class="table-cell-sub">{owner.phoneNumber || '—'}</div>
+                  <div class="table-cell-sub">{owner.phoneNumber || "—"}</div>
                 </td>
                 <td>
                   <div class="sub-date-wrap">
-                    <span class="date-val">{formatDate(owner.nextPayment)}</span>
-                    <button class="btn btn-xs btn-outline" on:click={() => openExtendModal(owner)}>
+                    <span class="date-val">{formatDate(owner.nextPayment)}</span
+                    >
+                    <button
+                      class="btn btn-xs btn-outline"
+                      on:click={() => openExtendModal(owner)}
+                    >
                       Продлить
                     </button>
                   </div>
@@ -1130,14 +1394,19 @@
                   <div class="stats-mini-grid">
                     <span>Мастера: <strong>{owner.mastersCount}</strong></span>
                     <span>Клиенты: <strong>{owner.clientsCount}</strong></span>
-                    <span>Записи: <strong>{owner.appointmentsCount}</strong></span>
-                    <span>Оборот: <strong>{formatCurrency(owner.turnover)}</strong></span>
+                    <span
+                      >Записи: <strong>{owner.appointmentsCount}</strong></span
+                    >
+                    <span
+                      >Оборот: <strong>{formatCurrency(owner.turnover)}</strong
+                      ></span
+                    >
                   </div>
                 </td>
                 <td>
-                  <button 
-                    class="status-toggle-btn" 
-                    class:active={isOwnerSubActive(owner)} 
+                  <button
+                    class="status-toggle-btn"
+                    class:active={isOwnerSubActive(owner)}
                     on:click={() => toggleOwnerSubscription(owner)}
                     disabled={actionLoading}
                     title="Нажмите для переключения подписки"
@@ -1153,10 +1422,18 @@
                 </td>
                 <td class="text-right">
                   <div class="action-buttons-wrap">
-                    <button class="btn-icon" on:click={() => openEditOwnerModal(owner)} title="Редактировать">
+                    <button
+                      class="btn-icon"
+                      on:click={() => openEditOwnerModal(owner)}
+                      title="Редактировать"
+                    >
                       <Edit2 size={16} />
                     </button>
-                    <button class="btn-icon danger" on:click={() => deleteOwner(owner)} title="Удалить заведение">
+                    <button
+                      class="btn-icon danger"
+                      on:click={() => deleteOwner(owner)}
+                      title="Удалить заведение"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -1165,7 +1442,8 @@
             {:else}
               <tr>
                 <td colspan="6" class="text-center py-5 text-muted">
-                  {#if isOwnersLoading}Загрузка заведений...{:else}Заведения не найдены{/if}
+                  {#if isOwnersLoading}Загрузка заведений...{:else}Заведения не
+                    найдены{/if}
                 </td>
               </tr>
             {/each}
@@ -1178,13 +1456,13 @@
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
   <!-- 3. MASTERS GLOBAL MANAGEMENT                                              -->
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
-  {#if activeSection === 'masters'}
+  {#if activeSection === "masters"}
     <div class="filter-bar">
       <div class="search-input-wrap">
         <Search size={17} class="search-icon" />
-        <input 
-          type="text" 
-          placeholder="Поиск по имени мастера, заведению или @username..." 
+        <input
+          type="text"
+          placeholder="Поиск по имени мастера, заведению или @username..."
           bind:value={masterSearch}
           on:input={() => fetchMasters()}
         />
@@ -1211,11 +1489,13 @@
                 <td>
                   <div class="master-cell">
                     <div class="master-avatar-circle">
-                      {(master.name || 'M')[0].toUpperCase()}
+                      {(master.name || "M")[0].toUpperCase()}
                     </div>
                     <div>
                       <div class="table-cell-bold">{master.name}</div>
-                      <div class="table-cell-sub">{master.description || 'Без описания'}</div>
+                      <div class="table-cell-sub">
+                        {master.description || "Без описания"}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -1225,9 +1505,17 @@
                 </td>
                 <td>
                   {#if master.telegramUsername}
-                    <a href="https://t.me/{master.telegramUsername.replace(/^@/, '')}" target="_blank" rel="noopener noreferrer" class="tg-username-badge">
+                    <a
+                      href="https://t.me/{master.telegramUsername.replace(
+                        /^@/,
+                        '',
+                      )}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tg-username-badge"
+                    >
                       <Send size={12} />
-                      <span>@{master.telegramUsername.replace(/^@/, '')}</span>
+                      <span>@{master.telegramUsername.replace(/^@/, "")}</span>
                     </a>
                   {:else}
                     <span class="text-muted text-xs">Юзернейм не указан</span>
@@ -1238,15 +1526,15 @@
                 </td>
                 <td>
                   <div class="rating-badge">
-                    ★ {master.rating > 0 ? master.rating.toFixed(1) : '5.0'}
+                    ★ {master.rating > 0 ? master.rating.toFixed(1) : "5.0"}
                     <span class="reviews-count">({master.reviewsCount})</span>
                   </div>
                 </td>
                 <td><strong>{master.appointmentsCount}</strong></td>
                 <td>
-                  <button 
-                    class="status-toggle-btn sm" 
-                    class:active={master.isActive} 
+                  <button
+                    class="status-toggle-btn sm"
+                    class:active={master.isActive}
                     on:click={() => toggleMasterActive(master)}
                     title="Переключить активность"
                   >
@@ -1259,10 +1547,18 @@
                 </td>
                 <td class="text-right">
                   <div class="action-buttons-wrap">
-                    <button class="btn-icon" on:click={() => openEditMasterModal(master)} title="Редактировать">
+                    <button
+                      class="btn-icon"
+                      on:click={() => openEditMasterModal(master)}
+                      title="Редактировать"
+                    >
                       <Edit2 size={16} />
                     </button>
-                    <button class="btn-icon danger" on:click={() => deleteMaster(master)} title="Удалить мастера">
+                    <button
+                      class="btn-icon danger"
+                      on:click={() => deleteMaster(master)}
+                      title="Удалить мастера"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -1271,7 +1567,8 @@
             {:else}
               <tr>
                 <td colspan="7" class="text-center py-5 text-muted">
-                  {#if isMastersLoading}Загрузка мастеров...{:else}Мастера не найдены{/if}
+                  {#if isMastersLoading}Загрузка мастеров...{:else}Мастера не
+                    найдены{/if}
                 </td>
               </tr>
             {/each}
@@ -1284,21 +1581,25 @@
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
   <!-- 4. CLIENTS MANAGEMENT                                                     -->
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
-  {#if activeSection === 'clients'}
+  {#if activeSection === "clients"}
     <div class="filter-bar">
       <div class="search-input-wrap">
         <Search size={17} class="search-icon" />
-        <input 
-          type="text" 
-          placeholder="Поиск по имени клиента, телефону, Telegram ID или салону..." 
+        <input
+          type="text"
+          placeholder="Поиск по имени клиента, телефону, Telegram ID или салону..."
           bind:value={clientSearch}
           on:input={() => fetchClients()}
         />
       </div>
 
-      <button class="btn btn-primary" on:click={() => exportAllClientsToExcel()} disabled={isExporting}>
+      <button
+        class="btn btn-primary"
+        on:click={() => exportAllClientsToExcel()}
+        disabled={isExporting}
+      >
         <FileSpreadsheet size={16} />
-        <span>{isExporting ? 'Экспорт...' : 'Выгрузить в Excel'}</span>
+        <span>{isExporting ? "Экспорт..." : "Выгрузить в Excel"}</span>
       </button>
     </div>
 
@@ -1319,14 +1620,18 @@
             {#each clients as client}
               <tr>
                 <td>
-                  <div class="table-cell-bold">{client.name || 'Гость'}</div>
+                  <div class="table-cell-bold">{client.name || "Гость"}</div>
                 </td>
                 <td>{client.barbershopName}</td>
-                <td>{client.phone || 'Не указан'}</td>
+                <td>{client.phone || "Не указан"}</td>
                 <td><code>{client.telegramId}</code></td>
                 <td><strong>{client.appointmentsCount}</strong></td>
                 <td class="text-right">
-                  <button class="btn-icon danger" on:click={() => deleteClient(client)} title="Удалить клиента">
+                  <button
+                    class="btn-icon danger"
+                    on:click={() => deleteClient(client)}
+                    title="Удалить клиента"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -1334,7 +1639,8 @@
             {:else}
               <tr>
                 <td colspan="6" class="text-center py-5 text-muted">
-                  {#if isClientsLoading}Загрузка клиентов...{:else}Клиенты не найдены{/if}
+                  {#if isClientsLoading}Загрузка клиентов...{:else}Клиенты не
+                    найдены{/if}
                 </td>
               </tr>
             {/each}
@@ -1347,11 +1653,14 @@
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
   <!-- 5. GLOBAL APPOINTMENTS AUDIT                                              -->
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
-  {#if activeSection === 'appointments'}
+  {#if activeSection === "appointments"}
     <div class="filter-bar">
       <div class="filter-select-wrap">
         <Filter size={16} />
-        <select bind:value={appointmentStatusFilter} on:change={() => fetchAppointments()}>
+        <select
+          bind:value={appointmentStatusFilter}
+          on:change={() => fetchAppointments()}
+        >
           <option value="">Все статусы записей</option>
           <option value="0">Ожидающие (Pending)</option>
           <option value="1">Завершенные (Completed)</option>
@@ -1378,17 +1687,22 @@
             {#each appointments as appt}
               <tr>
                 <td>
-                  <div class="table-cell-bold">{formatDateTime(appt.appointmentDate)}</div>
+                  <div class="table-cell-bold">
+                    {formatDateTime(appt.appointmentDate)}
+                  </div>
                 </td>
                 <td>{appt.barbershopName}</td>
-                <td><strong class="text-lavender">{appt.masterName}</strong></td>
+                <td><strong class="text-lavender">{appt.masterName}</strong></td
+                >
                 <td>
                   <div>{appt.clientName}</div>
-                  <div class="table-cell-sub">{appt.clientPhone || '—'}</div>
+                  <div class="table-cell-sub">{appt.clientPhone || "—"}</div>
                 </td>
                 <td>
                   <div>{appt.serviceName}</div>
-                  <div class="table-cell-bold text-sage">{formatCurrency(appt.price)}</div>
+                  <div class="table-cell-bold text-sage">
+                    {formatCurrency(appt.price)}
+                  </div>
                 </td>
                 <td>
                   <span class="badge badge-status-{appt.status}">
@@ -1396,7 +1710,11 @@
                   </span>
                 </td>
                 <td class="text-right">
-                  <button class="btn-icon danger" on:click={() => deleteAppointment(appt)} title="Удалить запись">
+                  <button
+                    class="btn-icon danger"
+                    on:click={() => deleteAppointment(appt)}
+                    title="Удалить запись"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -1404,7 +1722,8 @@
             {:else}
               <tr>
                 <td colspan="7" class="text-center py-5 text-muted">
-                  {#if isAppointmentsLoading}Загрузка записей...{:else}Записи не найдены{/if}
+                  {#if isAppointmentsLoading}Загрузка записей...{:else}Записи не
+                    найдены{/if}
                 </td>
               </tr>
             {/each}
@@ -1417,14 +1736,17 @@
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
   <!-- 6. ADMINS MANAGEMENT                                                      -->
   <!-- ══════════════════════════════════════════════════════════════════════════ -->
-  {#if activeSection === 'admins'}
+  {#if activeSection === "admins"}
     <div class="section-card">
       <div class="section-header">
         <div class="section-title-wrap">
           <Shield size={20} class="text-rose" />
           <h2>Учетные записи Superadmin</h2>
         </div>
-        <button class="btn btn-primary" on:click={() => showCreateAdminModal = true}>
+        <button
+          class="btn btn-primary"
+          on:click={() => (showCreateAdminModal = true)}
+        >
           <Plus size={16} />
           <span>Создать администратора</span>
         </button>
@@ -1458,7 +1780,8 @@
             {:else}
               <tr>
                 <td colspan="4" class="text-center py-5 text-muted">
-                  {#if isAdminsLoading}Загрузка администраторов...{:else}Администраторы не найдены{/if}
+                  {#if isAdminsLoading}Загрузка администраторов...{:else}Администраторы
+                    не найдены{/if}
                 </td>
               </tr>
             {/each}
@@ -1476,42 +1799,70 @@
   {#if showExtendModal && selectedOwnerForSub}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="modal-backdrop" on:click={() => showExtendModal = false}>
+    <div class="modal-backdrop" on:click={() => (showExtendModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
           <h3>Продлить подписку</h3>
-          <button class="modal-close" on:click={() => showExtendModal = false}>&times;</button>
+          <button class="modal-close" on:click={() => (showExtendModal = false)}
+            >&times;</button
+          >
         </div>
         <div class="modal-body">
           <p class="modal-info-text">
-            Заведение: <strong>{selectedOwnerForSub.barbershopName}</strong> ({selectedOwnerForSub.ownerName})
+            Заведение: <strong>{selectedOwnerForSub.barbershopName}</strong>
+            ({selectedOwnerForSub.ownerName})
           </p>
           <p class="modal-info-text">
-            Текущее окончание: <strong>{formatDate(selectedOwnerForSub.nextPayment)}</strong>
+            Текущее окончание: <strong
+              >{formatDate(selectedOwnerForSub.nextPayment)}</strong
+            >
           </p>
 
           <div class="form-group mt-3">
             <label for="extendDays">Количество дней продления</label>
             <div class="quick-days-presets">
-              <button type="button" class="btn btn-xs btn-outline" on:click={() => extendDaysInput = 30}>+30 дн.</button>
-              <button type="button" class="btn btn-xs btn-outline" on:click={() => extendDaysInput = 90}>+90 дн.</button>
-              <button type="button" class="btn btn-xs btn-outline" on:click={() => extendDaysInput = 180}>+180 дн.</button>
-              <button type="button" class="btn btn-xs btn-outline" on:click={() => extendDaysInput = 365}>+1 год</button>
+              <button
+                type="button"
+                class="btn btn-xs btn-outline"
+                on:click={() => (extendDaysInput = 30)}>+30 дн.</button
+              >
+              <button
+                type="button"
+                class="btn btn-xs btn-outline"
+                on:click={() => (extendDaysInput = 90)}>+90 дн.</button
+              >
+              <button
+                type="button"
+                class="btn btn-xs btn-outline"
+                on:click={() => (extendDaysInput = 180)}>+180 дн.</button
+              >
+              <button
+                type="button"
+                class="btn btn-xs btn-outline"
+                on:click={() => (extendDaysInput = 365)}>+1 год</button
+              >
             </div>
-            <input 
-              id="extendDays" 
-              type="number" 
-              class="input mt-2" 
-              bind:value={extendDaysInput} 
-              min="1" 
-              max="3650" 
+            <input
+              id="extendDays"
+              type="number"
+              class="input mt-2"
+              bind:value={extendDaysInput}
+              min="1"
+              max="3650"
             />
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" on:click={() => showExtendModal = false}>Отмена</button>
-          <button class="btn btn-primary" on:click={submitExtendSubscription} disabled={actionLoading}>
-            <span>{actionLoading ? 'Продление...' : 'Продлить подписку'}</span>
+          <button
+            class="btn btn-secondary"
+            on:click={() => (showExtendModal = false)}>Отмена</button
+          >
+          <button
+            class="btn btn-primary"
+            on:click={submitExtendSubscription}
+            disabled={actionLoading}
+          >
+            <span>{actionLoading ? "Продление..." : "Продлить подписку"}</span>
           </button>
         </div>
       </div>
@@ -1522,59 +1873,111 @@
   {#if showEditOwnerModal && editingOwner}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="modal-backdrop" on:click={() => showEditOwnerModal = false}>
+    <div class="modal-backdrop" on:click={() => (showEditOwnerModal = false)}>
       <div class="modal-card modal-lg" on:click|stopPropagation>
         <div class="modal-header">
           <h3>Редактировать заведение</h3>
-          <button class="modal-close" on:click={() => showEditOwnerModal = false}>&times;</button>
+          <button
+            class="modal-close"
+            on:click={() => (showEditOwnerModal = false)}>&times;</button
+          >
         </div>
         <form on:submit|preventDefault={submitEditOwner}>
           <div class="modal-body modal-grid-2">
             <div class="form-group">
               <label for="eoName">Имя владельца</label>
-              <input id="eoName" type="text" class="input" bind:value={editingOwner.ownerName} required />
+              <input
+                id="eoName"
+                type="text"
+                class="input"
+                bind:value={editingOwner.ownerName}
+                required
+              />
             </div>
 
             <div class="form-group">
               <label for="eoPhone">Телефон</label>
-              <input id="eoPhone" type="text" class="input" bind:value={editingOwner.phoneNumber} />
+              <input
+                id="eoPhone"
+                type="text"
+                class="input"
+                bind:value={editingOwner.phoneNumber}
+              />
             </div>
 
             <div class="form-group">
               <label for="eoShopName">Название заведения</label>
-              <input id="eoShopName" type="text" class="input" bind:value={editingOwner.barbershopName} required />
+              <input
+                id="eoShopName"
+                type="text"
+                class="input"
+                bind:value={editingOwner.barbershopName}
+                required
+              />
             </div>
 
             <div class="form-group">
               <label for="eoBotUsername">Telegram Bot Username (без @)</label>
-              <input id="eoBotUsername" type="text" class="input" bind:value={editingOwner.botUsername} placeholder="my_booking_bot" />
+              <input
+                id="eoBotUsername"
+                type="text"
+                class="input"
+                bind:value={editingOwner.botUsername}
+                placeholder="my_booking_bot"
+              />
             </div>
 
             <div class="form-group full-width">
               <label for="eoAddress">Адрес заведения</label>
-              <input id="eoAddress" type="text" class="input" bind:value={editingOwner.barbershopAddress} placeholder="ул. Примерная, 10" />
+              <input
+                id="eoAddress"
+                type="text"
+                class="input"
+                bind:value={editingOwner.barbershopAddress}
+                placeholder="ул. Примерная, 10"
+              />
             </div>
 
             <div class="form-group full-width">
               <label for="eoBotToken">Telegram Bot Token</label>
-              <input id="eoBotToken" type="text" class="input" bind:value={editingOwner.botToken} placeholder="1234567890:ABCdef..." />
+              <input
+                id="eoBotToken"
+                type="text"
+                class="input"
+                bind:value={editingOwner.botToken}
+                placeholder="1234567890:ABCdef..."
+              />
             </div>
 
             <div class="form-group full-width">
-              <label for="eoNewPassword">Новый пароль (оставьте пустым, если не нужно менять)</label>
-              <input id="eoNewPassword" type="password" class="input" bind:value={editingOwner.newPassword} placeholder="•••••••• (минимум 6 символов)" minlength="6" />
+              <label for="eoNewPassword"
+                >Новый пароль (оставьте пустым, если не нужно менять)</label
+              >
+              <input
+                id="eoNewPassword"
+                type="password"
+                class="input"
+                bind:value={editingOwner.newPassword}
+                placeholder="•••••••• (минимум 6 символов)"
+                minlength="6"
+              />
             </div>
 
             <div class="form-group full-width">
               <label for="eoDesc">Описание заведения</label>
-              <textarea id="eoDesc" class="input textarea" bind:value={editingOwner.barbershopDescription} rows="3"></textarea>
+              <textarea
+                id="eoDesc"
+                class="input textarea"
+                bind:value={editingOwner.barbershopDescription}
+                rows="3"
+              ></textarea>
             </div>
           </div>
           <div class="modal-footer">
             {#if editingOwner.email}
-              <button 
-                type="button" 
-                class="btn btn-secondary mr-auto" 
+              <button
+                type="button"
+                class="btn btn-secondary mr-auto"
                 disabled={actionLoading}
                 on:click={() => sendOwnerResetPasswordEmail(editingOwner.email)}
                 title="Отправить ссылку для восстановления пароля на почту владельца"
@@ -1582,9 +1985,19 @@
                 Сбросить пароль по Email
               </button>
             {/if}
-            <button type="button" class="btn btn-secondary" on:click={() => showEditOwnerModal = false}>Отмена</button>
-            <button type="submit" class="btn btn-primary" disabled={actionLoading}>
-              <span>{actionLoading ? 'Сохранение...' : 'Сохранить изменения'}</span>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              on:click={() => (showEditOwnerModal = false)}>Отмена</button
+            >
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={actionLoading}
+            >
+              <span
+                >{actionLoading ? "Сохранение..." : "Сохранить изменения"}</span
+              >
             </button>
           </div>
         </form>
@@ -1596,32 +2009,59 @@
   {#if showEditMasterModal && editingMaster}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="modal-backdrop" on:click={() => showEditMasterModal = false}>
+    <div class="modal-backdrop" on:click={() => (showEditMasterModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
           <h3>Редактировать мастера</h3>
-          <button class="modal-close" on:click={() => showEditMasterModal = false}>&times;</button>
+          <button
+            class="modal-close"
+            on:click={() => (showEditMasterModal = false)}>&times;</button
+          >
         </div>
         <form on:submit|preventDefault={submitEditMaster}>
           <div class="modal-body">
             <div class="form-group">
               <label for="emName">Имя мастера</label>
-              <input id="emName" type="text" class="input" bind:value={editingMaster.name} required />
+              <input
+                id="emName"
+                type="text"
+                class="input"
+                bind:value={editingMaster.name}
+                required
+              />
             </div>
 
             <div class="form-group">
               <label for="emUsername">Telegram Username (@username)</label>
-              <input id="emUsername" type="text" class="input" bind:value={editingMaster.telegramUsername} placeholder="alex_barber" />
+              <input
+                id="emUsername"
+                type="text"
+                class="input"
+                bind:value={editingMaster.telegramUsername}
+                placeholder="alex_barber"
+              />
             </div>
 
             <div class="form-group">
               <label for="emTgId">Telegram Numeric ID</label>
-              <input id="emTgId" type="text" class="input" bind:value={editingMaster.telegramId} placeholder="123456789" />
+              <input
+                id="emTgId"
+                type="text"
+                class="input"
+                bind:value={editingMaster.telegramId}
+                placeholder="123456789"
+              />
             </div>
 
             <div class="form-group">
               <label for="emDesc">Квалификация / Описание</label>
-              <input id="emDesc" type="text" class="input" bind:value={editingMaster.description} placeholder="Top Barber" />
+              <input
+                id="emDesc"
+                type="text"
+                class="input"
+                bind:value={editingMaster.description}
+                placeholder="Top Barber"
+              />
             </div>
 
             <div class="form-checkbox-wrap mt-2">
@@ -1632,9 +2072,17 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" on:click={() => showEditMasterModal = false}>Отмена</button>
-            <button type="submit" class="btn btn-primary" disabled={actionLoading}>
-              <span>{actionLoading ? 'Сохранение...' : 'Сохранить'}</span>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              on:click={() => (showEditMasterModal = false)}>Отмена</button
+            >
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={actionLoading}
+            >
+              <span>{actionLoading ? "Сохранение..." : "Сохранить"}</span>
             </button>
           </div>
         </form>
@@ -1646,28 +2094,57 @@
   {#if showCreateAdminModal}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="modal-backdrop" on:click={() => showCreateAdminModal = false}>
+    <div class="modal-backdrop" on:click={() => (showCreateAdminModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
           <h3>Создать Superadmin аккаунт</h3>
-          <button class="modal-close" on:click={() => showCreateAdminModal = false}>&times;</button>
+          <button
+            class="modal-close"
+            on:click={() => (showCreateAdminModal = false)}>&times;</button
+          >
         </div>
         <form on:submit|preventDefault={submitCreateAdmin}>
           <div class="modal-body">
             <div class="form-group">
               <label for="naEmail">Email администратора</label>
-              <input id="naEmail" type="email" class="input" bind:value={newAdminEmail} placeholder="admin2@barbershop.b2b" required />
+              <input
+                id="naEmail"
+                type="email"
+                class="input"
+                bind:value={newAdminEmail}
+                placeholder="admin2@barbershop.b2b"
+                required
+              />
             </div>
 
             <div class="form-group">
               <label for="naPassword">Пароль</label>
-              <input id="naPassword" type="password" class="input" bind:value={newAdminPassword} placeholder="••••••••" required />
+              <input
+                id="naPassword"
+                type="password"
+                class="input"
+                bind:value={newAdminPassword}
+                placeholder="••••••••"
+                required
+              />
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" on:click={() => showCreateAdminModal = false}>Отмена</button>
-            <button type="submit" class="btn btn-primary" disabled={actionLoading}>
-              <span>{actionLoading ? 'Создание...' : 'Создать администратора'}</span>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              on:click={() => (showCreateAdminModal = false)}>Отмена</button
+            >
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={actionLoading}
+            >
+              <span
+                >{actionLoading
+                  ? "Создание..."
+                  : "Создать администратора"}</span
+              >
             </button>
           </div>
         </form>
@@ -1678,62 +2155,101 @@
   {#if showCreateOwnerModal}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="modal-backdrop" on:click={() => showCreateOwnerModal = false}>
+    <div class="modal-backdrop" on:click={() => (showCreateOwnerModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
           <h3>Создать заведение</h3>
-          <button class="modal-close" on:click={() => showCreateOwnerModal = false}>&times;</button>
+          <button
+            class="modal-close"
+            on:click={() => (showCreateOwnerModal = false)}>&times;</button
+          >
         </div>
         <form on:submit|preventDefault={submitCreateOwner}>
           <div class="modal-body">
             <div class="form-group">
               <label for="noEmail">Gmail / Email заведения</label>
-              <input 
-                id="noEmail" 
-                type="email" 
-                class="input" 
-                bind:value={newOwnerEmail} 
-                placeholder="barbershop@gmail.com" 
-                required 
+              <input
+                id="noEmail"
+                type="email"
+                class="input"
+                bind:value={newOwnerEmail}
+                placeholder="barbershop@gmail.com"
+                required
               />
             </div>
 
             <div class="form-group">
               <label for="noPassword">Пароль</label>
-              <input 
-                id="noPassword" 
-                type="password" 
-                class="input" 
-                bind:value={newOwnerPassword} 
-                placeholder="Минимум 6 символов" 
+              <input
+                id="noPassword"
+                type="password"
+                class="input"
+                bind:value={newOwnerPassword}
+                placeholder="Минимум 6 символов"
                 minlength="6"
-                required 
+                required
               />
             </div>
 
             <div class="form-group">
               <label for="noDuration">Длительность подписки (дней)</label>
               <div class="quick-days-presets">
-                <button type="button" class="btn btn-xs {newOwnerDurationDays === 30 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 30}>1 мес (30 дн.)</button>
-                <button type="button" class="btn btn-xs {newOwnerDurationDays === 90 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 90}>3 мес (90 дн.)</button>
-                <button type="button" class="btn btn-xs {newOwnerDurationDays === 180 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 180}>6 мес (180 дн.)</button>
-                <button type="button" class="btn btn-xs {newOwnerDurationDays === 365 ? 'btn-primary' : 'btn-outline'}" on:click={() => newOwnerDurationDays = 365}>1 год (365 дн.)</button>
+                <button
+                  type="button"
+                  class="btn btn-xs {newOwnerDurationDays === 30
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
+                  on:click={() => (newOwnerDurationDays = 30)}
+                  >1 мес (30 дн.)</button
+                >
+                <button
+                  type="button"
+                  class="btn btn-xs {newOwnerDurationDays === 90
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
+                  on:click={() => (newOwnerDurationDays = 90)}
+                  >3 мес (90 дн.)</button
+                >
+                <button
+                  type="button"
+                  class="btn btn-xs {newOwnerDurationDays === 180
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
+                  on:click={() => (newOwnerDurationDays = 180)}
+                  >6 мес (180 дн.)</button
+                >
+                <button
+                  type="button"
+                  class="btn btn-xs {newOwnerDurationDays === 365
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
+                  on:click={() => (newOwnerDurationDays = 365)}
+                  >1 год (365 дн.)</button
+                >
               </div>
-              <input 
-                id="noDuration" 
-                type="number" 
-                class="input mt-2" 
-                bind:value={newOwnerDurationDays} 
-                min="1" 
-                max="3650" 
-                required 
+              <input
+                id="noDuration"
+                type="number"
+                class="input mt-2"
+                bind:value={newOwnerDurationDays}
+                min="1"
+                max="3650"
+                required
               />
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" on:click={() => showCreateOwnerModal = false}>Отмена</button>
-            <button type="submit" class="btn btn-primary" disabled={actionLoading}>
-              <span>{actionLoading ? 'Создание...' : 'Создать заведение'}</span>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              on:click={() => (showCreateOwnerModal = false)}>Отмена</button
+            >
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={actionLoading}
+            >
+              <span>{actionLoading ? "Создание..." : "Создать заведение"}</span>
             </button>
           </div>
         </form>
@@ -1819,17 +2335,27 @@
     gap: 1rem;
     position: relative;
     overflow: hidden;
-    transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease;
+    transition:
+      transform 0.25s var(--ease-spring),
+      box-shadow 0.25s ease;
   }
 
   .metric-card:hover {
     transform: translateY(-2px);
   }
 
-  .metric-card.glow-rose:hover { box-shadow: 0 8px 24px var(--pastel-rose-glow); }
-  .metric-card.glow-sage:hover { box-shadow: 0 8px 24px var(--pastel-sage-glow); }
-  .metric-card.glow-lavender:hover { box-shadow: 0 8px 24px var(--pastel-lavender-glow); }
-  .metric-card.glow-coral:hover { box-shadow: 0 8px 24px rgba(242, 139, 130, 0.15); }
+  .metric-card.glow-rose:hover {
+    box-shadow: 0 8px 24px var(--pastel-rose-glow);
+  }
+  .metric-card.glow-sage:hover {
+    box-shadow: 0 8px 24px var(--pastel-sage-glow);
+  }
+  .metric-card.glow-lavender:hover {
+    box-shadow: 0 8px 24px var(--pastel-lavender-glow);
+  }
+  .metric-card.glow-coral:hover {
+    box-shadow: 0 8px 24px rgba(242, 139, 130, 0.15);
+  }
 
   .metric-icon-wrap {
     width: 46px;
@@ -1897,8 +2423,14 @@
     flex-wrap: wrap;
   }
 
-  .active-pill { color: var(--pastel-sage); font-weight: 600; }
-  .inactive-pill { color: var(--pastel-coral); font-weight: 600; }
+  .active-pill {
+    color: var(--pastel-sage);
+    font-weight: 600;
+  }
+  .inactive-pill {
+    color: var(--pastel-coral);
+    font-weight: 600;
+  }
 
   /* Chart Controls Panel */
   .chart-controls-panel {
@@ -2220,7 +2752,9 @@
     font-weight: 600;
   }
 
-  .bot-link:hover { text-decoration: underline; }
+  .bot-link:hover {
+    text-decoration: underline;
+  }
 
   .tg-username-badge {
     display: inline-flex;
@@ -2278,7 +2812,9 @@
     gap: 0.6rem;
   }
 
-  .date-val { font-weight: 600; }
+  .date-val {
+    font-weight: 600;
+  }
 
   .stats-mini-grid {
     display: grid;
@@ -2515,19 +3051,47 @@
     gap: 0.75rem;
   }
 
-  .text-rose { color: var(--pastel-rose); }
-  .text-sage { color: var(--pastel-sage); }
-  .text-lavender { color: var(--pastel-lavender); }
-  .text-muted { color: var(--text-muted); }
-  .text-xs { font-size: 0.75rem; }
-  .text-center { text-align: center; }
-  .text-right { text-align: right; }
-  .mt-2 { margin-top: 0.5rem; }
-  .mt-3 { margin-top: 0.75rem; }
-  .mt-4 { margin-top: 1.25rem; }
-  .mb-4 { margin-bottom: 1.75rem; }
-  .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-  .py-5 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .text-rose {
+    color: var(--pastel-rose);
+  }
+  .text-sage {
+    color: var(--pastel-sage);
+  }
+  .text-lavender {
+    color: var(--pastel-lavender);
+  }
+  .text-muted {
+    color: var(--text-muted);
+  }
+  .text-xs {
+    font-size: 0.75rem;
+  }
+  .text-center {
+    text-align: center;
+  }
+  .text-right {
+    text-align: right;
+  }
+  .mt-2 {
+    margin-top: 0.5rem;
+  }
+  .mt-3 {
+    margin-top: 0.75rem;
+  }
+  .mt-4 {
+    margin-top: 1.25rem;
+  }
+  .mb-4 {
+    margin-bottom: 1.75rem;
+  }
+  .py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  .py-5 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
 
   @media (max-width: 768px) {
     .modal-grid-2 {
