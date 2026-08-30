@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import { authStore, setAuthToken } from './store';
 import { push } from 'svelte-spa-router';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://barbershop-backend-production-f891.up.railway.app';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbarbershopdomen.online';
 
 export async function apiRequest(endpoint, options = {}) {
   const { token } = get(authStore);

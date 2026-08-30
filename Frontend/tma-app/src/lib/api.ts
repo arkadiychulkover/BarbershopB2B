@@ -5,7 +5,7 @@ authStore.subscribe(state => {
     currentToken = state.token;
 });
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://barbershop-backend-production-f891.up.railway.app';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbarbershopdomen.online';
 
 export async function apiFetch(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;

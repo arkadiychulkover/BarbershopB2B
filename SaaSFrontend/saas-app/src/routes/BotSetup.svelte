@@ -17,7 +17,7 @@
   
   let copied = false;
   let isLoading = false;
-  const tmaBaseUrl = (import.meta.env.VITE_TMA_URL || 'https://tma-app-rho.vercel.app').replace(/\/+$/, '');
+  const tmaBaseUrl = (import.meta.env.VITE_TMA_URL || 'https://arch-shop-bot.online').replace(/\/+$/, '');
   let botUsername = '';
 
   $: tenant = $profileStore.ownerId || '';

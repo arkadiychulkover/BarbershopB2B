@@ -25,6 +25,8 @@ namespace Backend
                 options.AddDefaultPolicy(policy =>
                 {
                     policy.WithOrigins(
+                              "https://arch-shop.store",
+                              "https://arch-shop-bot.online",
                               "https://saas-app-lovat-zeta.vercel.app",
                               "https://tma-app-rho.vercel.app",
                               "http://localhost:5173")
