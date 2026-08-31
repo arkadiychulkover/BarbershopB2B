@@ -111,6 +111,16 @@
         return apptDateString === dateString;
     }).sort((a,b) => a.appointmentDate.localeCompare(b.appointmentDate));
   }
+
+  function extractTime(dateStr) {
+    const m = String(dateStr).match(/(\d{2}):(\d{2})/);
+    return m ? `${m[1]}:${m[2]}` : '??:??';
+  }
+
+  function extractDate(dateStr) {
+    const m = String(dateStr).match(/(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+  }
   
   function openAddModal(date) {
     editingAppt = null;
@@ -123,9 +133,8 @@
   
   function openEditModal(appt) {
     editingAppt = appt;
-    const d = new Date(appt.appointmentDate);
-    formDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    formTime = d.toTimeString().substring(0,5);
+    formDate = extractDate(appt.appointmentDate);
+    formTime = extractTime(appt.appointmentDate);
     formServiceId = appt.serviceId || (services.length > 0 ? services[0].serviceId : '');
     formClientId = appt.clientId;
     if (appt.status !== undefined && appt.status !== null) {
@@ -143,7 +152,7 @@
   }
   
   async function saveAppt() {
-    const appointmentDate = new Date(`${formDate}T${formTime}:00`).toISOString();
+    const appointmentDate = `${formDate}T${formTime}:00`;
     
     const body = {
       masterId: selectedMasterId,
@@ -247,8 +256,8 @@
                   <div class="appt-time">
                     <Clock size={12} />
                     <span>
-                      {new Date(appt.appointmentDate).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})} - 
-                      {new Date(appt.appointmentEndDate).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}
+                      {extractTime(appt.appointmentDate)} - 
+                      {extractTime(appt.appointmentEndDate)}
                     </span>
                   </div>
                   <div class="appt-service">

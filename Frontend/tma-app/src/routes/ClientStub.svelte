@@ -361,8 +361,9 @@
     loading = true;
     error = '';
     try {
-      // Combine date and time to ISO string
-      const dateTimeString = `${selectedDate}T${selectedTime}:00Z`;
+      // Combine date and time — NOT as UTC (no Z suffix)
+      // Slots from the server are in salon-local time, so we send them as-is
+      const dateTimeString = `${selectedDate}T${selectedTime}:00`;
       const hoursBefore = getEffectiveReminderHours();
       const additionalServiceIds = selectedServices.slice(1).map(s => s.id);
       
@@ -487,11 +488,11 @@
   }
 
   function formatDate(dateStr) {
-    const d = new Date(dateStr);
-    return d.toLocaleString('ru-RU', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
+    // Dates are stored as salon-local time — parse without UTC conversion
+    const raw = String(dateStr).replace('Z', '').replace('T', ' ');
+    const parts = raw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+    if (!parts) return dateStr;
+    return `${parts[3]}.${parts[2]}.${parts[1]}, ${parts[4]}:${parts[5]}`;
   }
 
   function switchView(view: 'booking' | 'appointments' | 'profile') {
@@ -557,7 +558,7 @@
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div class="card master-select-card" on:click={() => selectMaster(master)}>
             {#if master.photoUrl}
-              <img src={master.photoUrl} alt={master.name} class="master-avatar-thumb" />
+              <SecureImage src={master.photoUrl} alt={master.name} className="master-avatar-thumb" />
             {/if}
             <div class="master-card-info">
               <div class="master-title-line">
@@ -626,7 +627,7 @@
     {#if step === 2}
       <div class="master-header">
         {#if selectedMaster.photoUrl}
-          <img src={selectedMaster.photoUrl} alt={selectedMaster.name} class="master-avatar-thumb lg" />
+          <SecureImage src={selectedMaster.photoUrl} alt={selectedMaster.name} className="master-avatar-thumb lg" />
         {/if}
         <div class="master-card-info">
           <div class="master-title-line">
