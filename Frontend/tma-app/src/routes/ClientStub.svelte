@@ -587,9 +587,7 @@
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <div class="card master-select-card" on:click={() => selectMaster(master)}>
-            {#if master.photoUrl}
-              <SecureImage src={master.photoUrl} alt={master.name} className="master-avatar-thumb" />
-            {/if}
+            <SecureImage src={master.photoUrl} alt={master.name} className="master-avatar-thumb" />
             <div class="master-card-info">
               <div class="master-title-line">
                 <h3>{master.name}</h3>
@@ -656,9 +654,7 @@
 
     {#if step === 2}
       <div class="master-header">
-        {#if selectedMaster.photoUrl}
-          <SecureImage src={selectedMaster.photoUrl} alt={selectedMaster.name} className="master-avatar-thumb lg" />
-        {/if}
+        <SecureImage src={selectedMaster.photoUrl} alt={selectedMaster.name} className="master-avatar-thumb lg" />
         <div class="master-card-info">
           <div class="master-title-line">
             <h3>Мастер: {selectedMaster.name}</h3>

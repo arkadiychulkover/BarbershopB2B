@@ -1,107 +1,66 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { fetchImageBlob, getFullImageUrl } from '../api';
-  import Icon from './Icon.svelte';
+  import { getFullImageUrl } from '../api';
 
   export let src: string = '';
   export let alt: string = '';
   export let className: string = '';
   export let style: string = '';
+  export let fallbackText: string = '';
 
-  let blobUrl: string | null = null;
-  let loading = false;
   let failed = false;
   let currentSrc = '';
 
   $: fullUrl = getFullImageUrl(src);
-
-  $: if (src && src !== currentSrc) {
+  $: if (src !== currentSrc) {
     currentSrc = src;
-    loadImage(src);
-  }
-
-  async function loadImage(path: string) {
-    if (!path) {
-      loading = false;
-      failed = true;
-      return;
-    }
-    loading = true;
     failed = false;
-
-    if (blobUrl) {
-      URL.revokeObjectURL(blobUrl);
-      blobUrl = null;
-    }
-
-    try {
-      blobUrl = await fetchImageBlob(path);
-    } catch (err) {
-      console.warn('fetchImageBlob failed, fallback to direct fullUrl', err);
-      // Fallback handled in template
-      failed = false;
-    } finally {
-      loading = false;
-    }
   }
-
-  onMount(() => {
-    if (src) {
-      currentSrc = src;
-      loadImage(src);
-    }
-  });
-
-  onDestroy(() => {
-    if (blobUrl) {
-      URL.revokeObjectURL(blobUrl);
-      blobUrl = null;
-    }
-  });
 </script>
 
-{#if loading}
-  <div class="si-placeholder {className}" {style}></div>
-{:else if blobUrl}
-  <!-- svelte-ignore a11y-img-redundant-alt -->
-  <img src={blobUrl} {alt} class={className} {style} />
-{:else if !failed && fullUrl}
+{#if !src || failed}
+  <div class="si-fallback {className}" {style}>
+    {#if fallbackText}
+      <span class="si-initial">{fallbackText.charAt(0).toUpperCase()}</span>
+    {:else if alt}
+      <span class="si-initial">{alt.charAt(0).toUpperCase()}</span>
+    {:else}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    {/if}
+  </div>
+{:else}
   <!-- svelte-ignore a11y-img-redundant-alt -->
   <img 
     src={fullUrl} 
     {alt} 
     class={className} 
     {style} 
+    loading="lazy"
     on:error={() => { failed = true; }} 
   />
-{:else}
-  <div class="si-error {className}" {style}>
-    <Icon name="user" size={20} color="var(--text-muted)" />
-  </div>
 {/if}
 
 <style>
-  .si-placeholder {
-    background: rgba(255, 255, 255, 0.08);
-    animation: shimmer 1.2s infinite ease-in-out;
-    border-radius: inherit;
-    width: 100%;
-    height: 100%;
-  }
-
-  .si-error {
-    display: flex;
+  .si-fallback {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: inherit;
-    width: 100%;
-    height: 100%;
+    background: linear-gradient(135deg, rgba(224, 163, 154, 0.3), rgba(184, 169, 201, 0.3));
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-primary, #ffffff);
+    flex-shrink: 0;
+    user-select: none;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
-  @keyframes shimmer {
-    0% { opacity: 0.3; }
-    50% { opacity: 0.8; }
-    100% { opacity: 0.3; }
+  .si-initial {
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--text-primary, #ffffff);
+    text-transform: uppercase;
   }
 </style>

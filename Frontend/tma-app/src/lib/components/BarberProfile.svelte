@@ -180,13 +180,7 @@
       />
 
       <div class="avatar-wrap">
-        {#if profile.photoUrl}
-          <SecureImage src={profile.photoUrl} alt={profile.name} className="avatar-img" />
-        {:else}
-          <div class="avatar">
-            {(profile.name || 'M')[0].toUpperCase()}
-          </div>
-        {/if}
+        <SecureImage src={profile.photoUrl} alt={profile.name} className="avatar-img" />
 
         <button 
           type="button" 
