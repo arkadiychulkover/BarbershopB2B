@@ -5,7 +5,15 @@ authStore.subscribe(state => {
     currentToken = state.token;
 });
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbarbershopdomen.online';
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbarbershopdomen.online';
+
+export function getFullImageUrl(path: string | null | undefined): string {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const cleanBase = (BASE_URL || '').replace(/\/+$/, '');
+    const cleanPath = path.replace(/^\/+/, '');
+    return `${cleanBase}/${cleanPath}`;
+}
 
 export async function apiFetch(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;

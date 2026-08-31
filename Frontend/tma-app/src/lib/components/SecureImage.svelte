@@ -1,54 +1,30 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { fetchImageBlob } from '../api';
+  import { getFullImageUrl } from '../api';
   import Icon from './Icon.svelte';
 
-  export let src: string;        // server path, e.g. /results/abc.jpg
+  export let src: string = '';
   export let alt: string = '';
   export let className: string = '';
   export let style: string = '';
 
-  let blobUrl: string | null = null;
-  let loading = true;
   let failed = false;
-  let lastSrc = '';
-
-  // react to src changes
-  $: if (src && src !== lastSrc) {
-    lastSrc = src;
-    load(src);
-  }
-
-  async function load(path: string) {
-    loading = true;
-    failed = false;
-    // revoke previous blob to free memory
-    if (blobUrl) {
-      URL.revokeObjectURL(blobUrl);
-      blobUrl = null;
-    }
-    try {
-      blobUrl = await fetchImageBlob(path);
-    } catch {
-      failed = true;
-    } finally {
-      loading = false;
-    }
-  }
-
-  onMount(() => { if (src) load(src); });
-  onDestroy(() => { if (blobUrl) URL.revokeObjectURL(blobUrl); });
+  $: fullUrl = getFullImageUrl(src);
+  $: if (src) { failed = false; }
 </script>
 
-{#if loading}
-  <div class="si-placeholder {className}" {style}></div>
-{:else if failed || !blobUrl}
+{#if !src || failed}
   <div class="si-error {className}" {style}>
     <Icon name="alert" size={20} color="var(--pastel-coral)" />
   </div>
 {:else}
   <!-- svelte-ignore a11y-img-redundant-alt -->
-  <img src={blobUrl} {alt} class={className} {style} />
+  <img 
+    src={fullUrl} 
+    {alt} 
+    class={className} 
+    {style} 
+    on:error={() => { failed = true; }} 
+  />
 {/if}
 
 <style>
