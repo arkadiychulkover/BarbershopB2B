@@ -3,6 +3,7 @@
   import { apiFetch, getFullImageUrl } from '../api';
   import { showAlert, hapticSuccess, hapticError } from '../telegram';
   import Icon from './Icon.svelte';
+  import SecureImage from './SecureImage.svelte';
 
   interface MasterProfile {
     id: string;
@@ -180,7 +181,7 @@
 
       <div class="avatar-wrap">
         {#if profile.photoUrl}
-          <img src={getFullImageUrl(profile.photoUrl)} alt={profile.name} class="avatar-img" />
+          <SecureImage src={profile.photoUrl} alt={profile.name} className="avatar-img" />
         {:else}
           <div class="avatar">
             {(profile.name || 'M')[0].toUpperCase()}
