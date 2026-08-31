@@ -2,6 +2,8 @@ using Backend.Data;
 using Backend.DTOs;
 using Backend.Extensions;
 using Backend.Models;
+using Backend.Models.Enums;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +16,12 @@ namespace Backend.Controllers
     public class ServiceNamesController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly BotService? _botService;
 
-        public ServiceNamesController(AppDbContext context)
+        public ServiceNamesController(AppDbContext context, BotService? botService = null)
         {
             _context = context;
+            _botService = botService;
         }
 
         [HttpGet]
@@ -109,10 +113,68 @@ namespace Backend.Controllers
             var serviceName = await _context.ServiceNames.FirstOrDefaultAsync(sn => sn.Id == id && sn.OwnerId == ownerId);
             if (serviceName == null) return NotFound(new { message = "Service name not found." });
 
+            var masterServices = await _context.Services
+                .Where(s => s.ServiceNameId == id)
+                .ToListAsync();
+            var masterServiceIds = masterServices.Select(s => s.Id).ToList();
+
+            if (masterServiceIds.Any())
+            {
+                var appointments = await _context.Appointments
+                    .Include(a => a.Client)
+                    .Include(a => a.AdditionalServices)
+                    .Where(a => masterServiceIds.Contains(a.ServiceId) 
+                             || a.AdditionalServices.Any(ads => masterServiceIds.Contains(ads.ServiceId)))
+                    .ToListAsync();
+
+                if (_botService != null && !string.IsNullOrEmpty(owner.BotToken))
+                {
+                    var now = DateTime.UtcNow;
+                    var activeAppointments = appointments
+                        .Where(a => a.Status == AppointmentStatus.Scheduled && a.AppointmentDate >= now)
+                        .ToList();
+
+                    var messagesToSend = new Dictionary<long, string>();
+                    foreach (var appt in activeAppointments)
+                    {
+                        if (appt.Client != null 
+                            && !string.IsNullOrEmpty(appt.Client.TelegramId) 
+                            && appt.Client.TelegramId != "WALKIN"
+                            && !appt.Client.HasBlocked
+                            && long.TryParse(appt.Client.TelegramId, out long clientChatId))
+                        {
+                            var dateStr = appt.AppointmentDate.ToString("dd.MM в HH:mm");
+                            messagesToSend[clientChatId] = $"Ваша запись на услугу «{serviceName.Name}» ({dateStr}) отменена в связи с удалением услуги заведением. Приносим извинения за неудобства.";
+                        }
+                    }
+
+                    if (messagesToSend.Count > 0)
+                    {
+                        await _botService.SendBatchMessagesAsync(owner.BotToken, messagesToSend, HttpContext.RequestAborted);
+                    }
+                }
+
+                var apptIds = appointments.Select(a => a.Id).ToList();
+                var additionalServices = await _context.AppointmentServices
+                    .Where(ads => apptIds.Contains(ads.AppointmentId) || masterServiceIds.Contains(ads.ServiceId))
+                    .ToListAsync();
+                if (additionalServices.Any())
+                {
+                    _context.AppointmentServices.RemoveRange(additionalServices);
+                }
+
+                if (appointments.Any())
+                {
+                    _context.Appointments.RemoveRange(appointments);
+                }
+
+                _context.Services.RemoveRange(masterServices);
+            }
+
             _context.ServiceNames.Remove(serviceName);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Service name deleted successfully." });
+            return Ok(new { message = "Service name and related appointments deleted successfully." });
         }
     }
 }

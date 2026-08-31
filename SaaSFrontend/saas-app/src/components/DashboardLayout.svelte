@@ -112,31 +112,31 @@
           <LayoutDashboard size={19} />
           <span>Обзор</span>
         </a>
-        <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.includes('/schedule')} on:click={closeMobile}>
+        <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/schedule')} on:click={closeMobile}>
           <CalendarDays size={19} />
           <span>Расписание</span>
         </a>
-        <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.includes('/masters')} on:click={closeMobile}>
+        <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/masters')} on:click={closeMobile}>
           <Users size={19} />
           <span>Мастера</span>
         </a>
-        <a href="#/dashboard/clients" class="nav-item" class:active={$currentLocation.includes('/clients')} on:click={closeMobile}>
+        <a href="#/dashboard/clients" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/clients')} on:click={closeMobile}>
           <UserCheck size={19} />
           <span>Клиенты</span>
         </a>
-        <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.includes('/services')} on:click={closeMobile}>
+        <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/services')} on:click={closeMobile}>
           <Scissors size={19} />
           <span>Услуги</span>
         </a>
-        <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.includes('/statistics')} on:click={closeMobile}>
+        <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/statistics')} on:click={closeMobile}>
           <BarChart3 size={19} />
           <span>Статистика</span>
         </a>
-        <a href="#/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.includes('/bot-setup')} on:click={closeMobile}>
+        <a href="#/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/bot-setup')} on:click={closeMobile}>
           <Bot size={19} />
           <span>Telegram Бот</span>
         </a>
-        <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.includes('/settings')} on:click={closeMobile}>
+        <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/settings')} on:click={closeMobile}>
           <Settings size={19} />
           <span>Настройки</span>
         </a>

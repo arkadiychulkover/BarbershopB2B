@@ -117,7 +117,7 @@
     formDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
     formTime = '10:00';
     formServiceId = services.length > 0 ? services[0].serviceId : '';
-    formStatus = 0;
+    formStatus = '0';
     showModal = true;
   }
   
@@ -128,7 +128,17 @@
     formTime = d.toTimeString().substring(0,5);
     formServiceId = appt.serviceId || (services.length > 0 ? services[0].serviceId : '');
     formClientId = appt.clientId;
-    formStatus = appt.status;
+    if (appt.status !== undefined && appt.status !== null) {
+      if (typeof appt.status === 'number') {
+        formStatus = String(appt.status);
+      } else {
+        const statuses = ['Scheduled', 'Completed', 'Cancelled', 'NoShow'];
+        const idx = statuses.indexOf(appt.status);
+        formStatus = idx !== -1 ? String(idx) : (['0', '1', '2', '3'].includes(String(appt.status)) ? String(appt.status) : '0');
+      }
+    } else {
+      formStatus = '0';
+    }
     showModal = true;
   }
   
@@ -299,6 +309,7 @@
             <option value="0">Запланировано</option>
             <option value="1">Выполнено</option>
             <option value="2">Отменено</option>
+            <option value="3">Не явился</option>
           </select>
         </div>
         

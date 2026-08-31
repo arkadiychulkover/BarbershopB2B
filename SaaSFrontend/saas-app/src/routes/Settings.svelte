@@ -1677,6 +1677,8 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
+    margin-top: 2rem !important;
+    padding-top: 0.5rem;
   }
 
   .btn-forgot-link {

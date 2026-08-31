@@ -26,10 +26,28 @@ namespace Backend
                 {
                     policy.WithOrigins(
                               "https://arch-shop.store",
+                              "https://www.arch-shop.store",
                               "https://arch-shop-bot.online",
+                              "https://www.arch-shop-bot.online",
                               "https://saas-app-lovat-zeta.vercel.app",
                               "https://tma-app-rho.vercel.app",
                               "http://localhost:5173")
+                          .SetIsOriginAllowed(origin =>
+                          {
+                              if (string.IsNullOrWhiteSpace(origin)) return false;
+                              try
+                              {
+                                  var host = new Uri(origin).Host;
+                                  return host.EndsWith("arch-shop.store") ||
+                                         host.EndsWith("arch-shop-bot.online") ||
+                                         host.EndsWith("vercel.app") ||
+                                         host == "localhost";
+                              }
+                              catch
+                              {
+                                  return false;
+                              }
+                          })
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });

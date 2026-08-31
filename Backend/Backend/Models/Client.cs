@@ -8,6 +8,7 @@ namespace Backend.Models
         public string? Phone { get; set; }
         public string? Notes { get; set; }
         public bool IsBlacklisted { get; set; } = false;
+        public bool HasBlocked { get; set; } = false;
 
         /// <summary>Дата последнего отправленного win-back сообщения</summary>
         public DateTime? LastWinBackSentAt { get; set; }

@@ -12,7 +12,8 @@
     SlidersHorizontal, 
     CalendarDays, 
     ArrowUpRight,
-    Sparkles
+    Sparkles,
+    Check
   } from 'lucide-svelte';
   
   let isLoading = true;
@@ -82,18 +83,36 @@
         </div>
       </div>
 
-      <div class="stat-card stat-amber">
+      <div class="stat-card stat-amber subscription-card">
         <div class="stat-top">
-          <span class="stat-title">Статус подписки</span>
+          <div>
+            <span class="stat-title">Подписка заведения</span>
+            <div class="subscription-plan-tag">PRO План</div>
+          </div>
           <div class="stat-icon-wrap amber">
             <ShieldCheck size={20} />
           </div>
         </div>
-        <div class="stat-badge-wrap">
+        
+        <div class="stat-badge-wrap subscription-badge-row">
           <span class="status-pill" class:active={$profileStore.status === 'Active'}>
-            {$profileStore.status || 'Active'}
+            <span class="status-dot"></span>
+            {$profileStore.status === 'Active' ? 'Активна' : ($profileStore.status || 'Active')}
           </span>
+          <span class="subscription-period-hint">Безлимитный доступ</span>
         </div>
+
+        <div class="subscription-perks">
+          <div class="perk-item">
+            <Check size={13} class="perk-icon" />
+            <span>Онлайн-запись и Telegram-бот</span>
+          </div>
+          <div class="perk-item">
+            <Check size={13} class="perk-icon" />
+            <span>Неограниченно мастеров и услуг</span>
+          </div>
+        </div>
+
         <div class="stat-footer">
           <a href="#/dashboard/settings" class="stat-link">
             <span>Управление тарифом</span>
@@ -283,6 +302,8 @@
   
   .status-pill {
     display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
     padding: 0.35rem 0.85rem;
     border-radius: var(--radius-pill);
     font-size: 0.95rem;
@@ -297,6 +318,75 @@
     color: var(--pastel-sage);
     border-color: rgba(152, 193, 169, 0.3);
     box-shadow: 0 0 12px var(--pastel-sage-glow);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: currentColor;
+    display: inline-block;
+    box-shadow: 0 0 6px currentColor;
+    animation: pulse-dot 2s infinite ease-in-out;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .subscription-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .subscription-plan-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--pastel-amber);
+    margin-top: 0.2rem;
+  }
+
+  .subscription-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .subscription-period-hint {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .subscription-perks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    padding: 0.55rem 0.65rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .perk-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  :global(.perk-icon) {
+    color: var(--pastel-sage);
+    flex-shrink: 0;
   }
 
   .stat-footer {

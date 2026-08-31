@@ -38,11 +38,20 @@ export function setAuthToken(token, role = null) {
   }
 }
 
+const cleanHash = () => {
+  const hash = window.location.hash.replace(/^#/, '') || '/';
+  return hash.split('?')[0];
+};
+
 export const currentLocation = readable(
-  window.location.hash.replace(/^#/, '') || '/',
+  cleanHash(),
   (set) => {
-    const update = () => set(window.location.hash.replace(/^#/, '') || '/');
+    const update = () => set(cleanHash());
     window.addEventListener('hashchange', update);
-    return () => window.removeEventListener('hashchange', update);
+    window.addEventListener('popstate', update);
+    return () => {
+      window.removeEventListener('hashchange', update);
+      window.removeEventListener('popstate', update);
+    };
   }
 );
