@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { apiRequest } from '../lib/api';
   import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, KeyRound, ShieldAlert } from 'lucide-svelte';
 
   // states: 'verifying' | 'form' | 'invalid' | 'success'
@@ -47,13 +48,7 @@
     verifyErrorMsg = '';
 
     try {
-      const res = await fetch(`/api/Regestration/verify-reset-token?token=${encodeURIComponent(token)}`);
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.message || 'Ссылка недействительна, устарела или уже была использована.');
-      }
-
+      const data = await apiRequest(`/api/Regestration/verify-reset-token?token=${encodeURIComponent(token)}`);
       maskedEmail = data?.email || '';
       state = 'form';
     } catch (err) {
@@ -78,20 +73,13 @@
     isSubmitting = true;
 
     try {
-      const res = await fetch('/api/Regestration/reset-password', {
+      await apiRequest('/api/Regestration/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: token.trim(),
           newPassword: newPassword
         })
       });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.message || 'Не удалось сменить пароль');
-      }
 
       state = 'success';
     } catch (err) {

@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import AdminLayout from "../components/AdminLayout.svelte";
-  import { apiRequest } from "../lib/api";
+  import { apiRequest, BASE_URL } from "../lib/api";
   import { authStore } from "../lib/store";
   import {
     Building2,
@@ -283,7 +283,7 @@
       let url = "/api/Admin/export/clients";
       if (ownerId) url += `?ownerId=${ownerId}`;
 
-      const res = await fetch(url, {
+      const res = await fetch(`${BASE_URL}${url}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

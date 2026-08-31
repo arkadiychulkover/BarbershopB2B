@@ -1,32 +1,71 @@
 using Backend.Interfaces;
 using System.Net;
-using System.Net.Mail;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace Backend.Services
 {
+    /// <summary>
+    /// Sends transactional emails via Brevo (ex-Sendinblue) HTTP API.
+    /// Works on Railway and other platforms that block SMTP ports (25/465/587).
+    /// Uses HTTPS (port 443) which is never blocked.
+    /// </summary>
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
+        private const string BrevoApiUrl = "https://api.brevo.com/v3/smtp/email";
+
+        public EmailService(IConfiguration configuration, ILogger<EmailService> logger, IHttpClientFactory httpClientFactory)
         {
             _configuration = configuration;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+        }
+
+        private async Task SendViaBrevoAsync(string toEmail, string toName, string subject, string htmlContent)
+        {
+            string apiKey = _configuration["BrevoApiKey"] ?? "";
+            string senderEmail = _configuration.GetSection("SmtpSettings").GetValue<string>("SenderEmail") ?? "arkadijculkov2@gmail.com";
+            string senderName = _configuration.GetSection("SmtpSettings").GetValue<string>("SenderName") ?? "BarbershopB2B Platform";
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException("BrevoApiKey не настроен в appsettings.json. Получите API-ключ на https://app.brevo.com");
+            }
+
+            var payload = new
+            {
+                sender = new { name = senderName, email = senderEmail },
+                to = new[] { new { email = toEmail, name = toName } },
+                subject,
+                htmlContent
+            };
+
+            string json = JsonSerializer.Serialize(payload);
+
+            using var client = _httpClientFactory.CreateClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, BrevoApiUrl);
+            request.Headers.Add("api-key", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.SendAsync(request);
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Brevo API error {StatusCode}: {Body}", response.StatusCode, responseBody);
+                throw new Exception($"Brevo API ошибка ({response.StatusCode}): {responseBody}");
+            }
+
+            _logger.LogInformation("Email sent via Brevo to {Email}, response: {Response}", toEmail, responseBody);
         }
 
         public async Task SendPasswordResetEmailAsync(string toEmail, string recipientName, string resetLink)
         {
-            var smtpSection = _configuration.GetSection("SmtpSettings");
-            string host = smtpSection.GetValue<string>("Host") ?? "smtp.gmail.com";
-            int port = smtpSection.GetValue<int>("Port");
-            if (port == 0) port = 587;
-            bool enableSsl = smtpSection.GetValue<bool>("EnableSsl");
-            string senderEmail = smtpSection.GetValue<string>("SenderEmail") ?? "arakdiychulkov11@gmail.com";
-            string senderName = smtpSection.GetValue<string>("SenderName") ?? "BarbershopB2B Platform";
-            string username = smtpSection.GetValue<string>("Username") ?? senderEmail;
-            string password = smtpSection.GetValue<string>("Password") ?? string.Empty;
-
             string safeName = string.IsNullOrWhiteSpace(recipientName) ? "Пользователь" : recipientName.Trim();
 
             string htmlBody = $@"
@@ -108,49 +147,18 @@ namespace Backend.Services
 
             try
             {
-                using var message = new MailMessage
-                {
-                    From = new MailAddress(senderEmail, senderName),
-                    Subject = "Восстановление пароля на платформе",
-                    Body = htmlBody,
-                    IsBodyHtml = true
-                };
-
-                message.To.Add(new MailAddress(toEmail));
-
-                using var smtpClient = new SmtpClient(host, port)
-                {
-                    Host = host,
-                    Port = port,
-                    EnableSsl = enableSsl,
-                    UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(username, password),
-                    DeliveryMethod = SmtpDeliveryMethod.Network,
-                    Timeout = 15000
-                };
-
-                await smtpClient.SendMailAsync(message);
+                await SendViaBrevoAsync(toEmail, safeName, "Восстановление пароля на платформе", htmlBody);
                 _logger.LogInformation("Password reset email successfully sent to {Email}", toEmail);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send password reset email to {Email}", toEmail);
-                throw new Exception($"Не удалось отправить email через SMTP: {ex.Message}", ex);
+                throw new Exception($"Не удалось отправить email: {ex.Message}", ex);
             }
         }
 
         public async Task SendSubscriptionExpirationWarningAsync(string toEmail, string ownerName, string barbershopName, DateTime nextPayment)
         {
-            var smtpSection = _configuration.GetSection("SmtpSettings");
-            string host = smtpSection.GetValue<string>("Host") ?? "smtp.gmail.com";
-            int port = smtpSection.GetValue<int>("Port");
-            if (port == 0) port = 587;
-            bool enableSsl = smtpSection.GetValue<bool>("EnableSsl");
-            string senderEmail = smtpSection.GetValue<string>("SenderEmail") ?? "arakdiychulkov11@gmail.com";
-            string senderName = smtpSection.GetValue<string>("SenderName") ?? "BarbershopB2B Platform";
-            string username = smtpSection.GetValue<string>("Username") ?? senderEmail;
-            string password = smtpSection.GetValue<string>("Password") ?? string.Empty;
-
             string safeName = string.IsNullOrWhiteSpace(ownerName) ? "Владелец" : ownerName.Trim();
             string safeShop = string.IsNullOrWhiteSpace(barbershopName) ? "вашего заведения" : $"заведения \"{barbershopName.Trim()}\"";
             string dateStr = nextPayment.ToString("dd.MM.yyyy HH:mm");
@@ -192,23 +200,7 @@ namespace Backend.Services
 
             try
             {
-                using var message = new MailMessage();
-                message.From = new MailAddress(senderEmail, senderName);
-                message.To.Add(new MailAddress(toEmail));
-                message.Subject = $"Напоминание: подписка BarbershopB2B истекает через 48 часов";
-                message.Body = htmlBody;
-                message.IsBodyHtml = true;
-
-                using var smtpClient = new SmtpClient(host, port)
-                {
-                    EnableSsl = enableSsl,
-                    UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(username, password),
-                    DeliveryMethod = SmtpDeliveryMethod.Network,
-                    Timeout = 15000
-                };
-
-                await smtpClient.SendMailAsync(message);
+                await SendViaBrevoAsync(toEmail, safeName, "Напоминание: подписка BarbershopB2B истекает через 48 часов", htmlBody);
                 _logger.LogInformation("Subscription warning email sent to {Email}", toEmail);
             }
             catch (Exception ex)

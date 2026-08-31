@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
-  import { apiRequest } from '../lib/api';
+  import { apiRequest, BASE_URL } from '../lib/api';
   import { authStore } from '../lib/store';
   import { 
     Users, 
@@ -65,7 +65,7 @@
     successMsg = '';
     try {
       const token = $authStore.token;
-      const res = await fetch('/api/Statistic/export-clients', {
+      const res = await fetch(`${BASE_URL}/api/Statistic/export-clients`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

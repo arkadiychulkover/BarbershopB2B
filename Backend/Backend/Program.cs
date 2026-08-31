@@ -100,6 +100,7 @@ namespace Backend
             builder.Services.AddScoped<TonService>();
             builder.Services.AddScoped<TgValidationService>();
             builder.Services.AddSingleton<BotService>();
+            builder.Services.AddHttpClient();
             builder.Services.AddScoped<Backend.Interfaces.IEmailService, Backend.Services.EmailService>();
 
             builder.Services.AddHostedService<Backend.BackgroundServices.NotifycationBackgroundService>();

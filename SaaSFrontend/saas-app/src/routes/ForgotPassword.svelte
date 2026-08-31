@@ -1,5 +1,6 @@
 <script>
-  import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Sparkles, X } from 'lucide-svelte';
+  import { apiRequest } from '../lib/api';
+  import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Sparkles, X, Send } from 'lucide-svelte';
 
   let email = '';
   let isLoading = false;
@@ -16,17 +17,10 @@
     errorMsg = '';
 
     try {
-      const res = await fetch('/api/Regestration/forgot-password', {
+      await apiRequest('/api/Regestration/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })
       });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.message || 'Не удалось отправить запрос на восстановление');
-      }
 
       isSubmitted = true;
     } catch (err) {
@@ -52,7 +46,7 @@
 
     {#if !isSubmitted}
       <h2>Восстановление доступа</h2>
-      <p class="subtitle">Укажите email, привязанный к вашему заведению, и мы вышлем ссылку для сброса пароля</p>
+      <p class="subtitle">Укажите email, привязанный к вашему заведению, и мы отправим ссылку для сброса пароля в Telegram</p>
       
       {#if errorMsg}
         <div class="alert alert-danger">
@@ -78,7 +72,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading || !email}>
-          <span>{isLoading ? 'Отправка письма...' : 'Отправить ссылку для сброса'}</span>
+          <span>{isLoading ? 'Отправка...' : 'Отправить ссылку в Telegram'}</span>
           {#if !isLoading}
             <ArrowRight size={17} />
           {/if}
@@ -94,15 +88,15 @@
     {:else}
       <div class="success-box">
         <div class="success-icon-wrap">
-          <CheckCircle2 size={44} class="text-rose" />
+          <Send size={44} class="text-rose" />
         </div>
-        <h2>Проверьте почту</h2>
+        <h2>Проверьте Telegram</h2>
         <p class="success-desc">
-          Мы отправили письмо с кнопкой и ссылкой для сброса пароля на адрес <strong class="user-email">{email}</strong>.
+          Мы отправили ссылку для сброса пароля в ваш Telegram, привязанный к аккаунту <strong class="user-email">{email}</strong>.
         </p>
         <div class="info-banner">
           <Sparkles size={16} class="info-icon" />
-          <span>Ссылка действительна в течение <strong>2 часов</strong>. Если письма нет, проверьте папку «Спам».</span>
+          <span>Ссылка действительна в течение <strong>2 часов</strong>. Откройте Telegram и найдите сообщение от бота платформы.</span>
         </div>
         
         <div class="success-actions">
@@ -110,7 +104,7 @@
             <span>Перейти к авторизации</span>
           </a>
           <button type="button" class="btn-text" on:click={() => { isSubmitted = false; email = ''; }}>
-            Отправить на другой email
+            Попробовать другой email
           </button>
         </div>
       </div>

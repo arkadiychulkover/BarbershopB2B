@@ -122,8 +122,7 @@ namespace Backend.Controllers
 
             if (owner == null && admin == null)
             {
-                // Return generic success message to avoid account enumeration
-                return Ok(new { message = "Если аккаунт с указанным email существует, письмо с инструкцией отправлено." });
+                return Ok(new { message = "Если аккаунт с указанным email существует, ссылка для сброса пароля отправлена в Telegram." });
             }
 
             // Generate cryptographically secure token
@@ -131,17 +130,26 @@ namespace Backend.Controllers
             DateTime tokenExpiry = DateTime.UtcNow.AddHours(2);
 
             string recipientName;
+            string? telegramId = null;
+
             if (owner != null)
             {
                 owner.PasswordResetToken = token;
                 owner.PasswordResetTokenExpires = tokenExpiry;
                 recipientName = owner.OwnerName ?? "Владелец заведения";
+                telegramId = owner.TelegramId;
             }
             else
             {
                 admin!.PasswordResetToken = token;
                 admin.PasswordResetTokenExpires = tokenExpiry;
                 recipientName = "Администратор";
+            }
+
+            // Telegram is required for password reset
+            if (string.IsNullOrWhiteSpace(telegramId) || !long.TryParse(telegramId, out long chatId))
+            {
+                return BadRequest(new { message = "К этому аккаунту не привязан Telegram. Обратитесь к администратору для сброса пароля." });
             }
 
             await _context.SaveChangesAsync();
@@ -166,14 +174,24 @@ namespace Backend.Controllers
 
             try
             {
-                await _emailService.SendPasswordResetEmailAsync(cleanEmail, recipientName, resetLink);
+                string platformBotToken = _configuration["TelegramBotToken"] ?? "";
+                var botService = HttpContext.RequestServices.GetRequiredService<BotService>();
+
+                string tgMessage = $"🔐 *Восстановление пароля*\n\n" +
+                    $"Здравствуйте, {recipientName}!\n\n" +
+                    $"Вы запросили сброс пароля для аккаунта на платформе BarbershopB2B\\.\n\n" +
+                    $"👉 [Нажмите здесь, чтобы сбросить пароль]({resetLink})\n\n" +
+                    $"⏱ Ссылка действительна 2 часа\\.\n\n" +
+                    $"Если вы не запрашивали сброс — проигнорируйте это сообщение\\.";
+
+                await botService.SendMessageAsync(platformBotToken, chatId, tgMessage);
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Ошибка отправки письма через почтовый сервер: " + ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Не удалось отправить сообщение в Telegram: " + ex.Message });
             }
 
-            return Ok(new { message = "Письмо с инструкциями по смене пароля успешно отправлено на указанную почту." });
+            return Ok(new { message = "Ссылка для сброса пароля отправлена вам в Telegram." });
         }
 
         [HttpGet("verify-reset-token")]
