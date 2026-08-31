@@ -1,5 +1,5 @@
 <script>
-  import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Sparkles } from 'lucide-svelte';
+  import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Sparkles, X } from 'lucide-svelte';
 
   let email = '';
   let isLoading = false;
@@ -39,10 +39,16 @@
 
 <div class="auth-container">
   <div class="card auth-card">
-    <div class="brand-header">
-      <span class="brand-dot"></span>
-      <span class="brand-name">ARCH SYSTEM</span>
-    </div>
+    <a href="#/" class="btn-close-auth" title="Вернуться на главную" aria-label="Вернуться на главную">
+      <X size={18} />
+    </a>
+
+    <a href="#/" class="brand-header-link" title="На главную">
+      <div class="brand-header">
+        <span class="brand-dot"></span>
+        <span class="brand-name">ARCH SYSTEM</span>
+      </div>
+    </a>
 
     {#if !isSubmitted}
       <h2>Восстановление доступа</h2>
@@ -126,10 +132,39 @@
   }
   
   .auth-card {
+    position: relative;
     width: 100%;
     max-width: 440px;
     padding: 2.5rem 2.25rem;
     animation: fadeIn 0.35s var(--ease-spring);
+  }
+
+  .btn-close-auth {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-close-auth:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+  }
+
+  .brand-header-link {
+    text-decoration: none;
+    display: inline-block;
   }
 
   .brand-header {

@@ -585,9 +585,31 @@
             </div>
             <a href="#/dashboard/bot-setup" class="guide-link">
               <Sparkles size={14} />
-              <span>Инструкция по подключению</span>
+              <span>Пошаговая инструкция</span>
               <ExternalLink size={12} />
             </a>
+          </div>
+        </div>
+
+        <!-- Quick 30-sec cheat sheet card -->
+        <div class="bot-quick-help-card">
+          <div class="quick-help-header">
+            <strong>Как получить токен за 1 минуту:</strong>
+            <a href="#/dashboard/bot-setup" class="quick-help-more">Подробное руководство &rarr;</a>
+          </div>
+          <div class="quick-help-steps">
+            <div class="quick-step-chip">
+              <span class="chip-num">1</span>
+              <span>В Telegram откройте <strong>@BotFather</strong> и отправьте <code>/newbot</code></span>
+            </div>
+            <div class="quick-step-chip">
+              <span class="chip-num">2</span>
+              <span>Введите название и логин бота (например: <code>my_barbershop_bot</code>)</span>
+            </div>
+            <div class="quick-step-chip">
+              <span class="chip-num">3</span>
+              <span>Скопируйте полученный <strong>API Token</strong> и вставьте в поле ниже</span>
+            </div>
           </div>
         </div>
 
@@ -1339,10 +1361,60 @@
     color: var(--text-primary);
   }
 
-  .section-title p {
-    font-size: 0.85rem;
+  .bot-quick-help-card {
+    background: rgba(223, 158, 142, 0.05);
+    border: 1px solid rgba(223, 158, 142, 0.2);
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1.15rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .quick-help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.65rem;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+  }
+
+  .quick-help-more {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--pastel-rose);
+    text-decoration: none;
+  }
+
+  .quick-help-more:hover {
+    text-decoration: underline;
+  }
+
+  .quick-help-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .quick-step-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.84rem;
     color: var(--text-secondary);
-    margin: 0;
+  }
+
+  .chip-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    font-size: 0.72rem;
+    font-weight: 700;
+    flex-shrink: 0;
   }
 
   .form-grid {

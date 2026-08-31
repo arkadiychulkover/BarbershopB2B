@@ -12,7 +12,8 @@
     Check, 
     Sparkles, 
     HelpCircle, 
-    AlertCircle 
+    AlertCircle,
+    KeyRound
   } from 'lucide-svelte';
   
   let copied = false;
@@ -117,73 +118,236 @@
         <div class="step-content">
           <div class="step-head">
             <Bot size={22} class="step-icon rose" />
-            <h3>Создайте бота в @BotFather</h3>
+            <h3>Шаг 1: Создание бота в Telegram (через @BotFather)</h3>
           </div>
-          <p>
-            Откройте официального бота 
-            <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" class="ext-link">
-              @BotFather <ExternalLink size={13} />
-            </a> 
-            и отправьте команду <code>/newbot</code>. Придумайте имя и юзернейм (например, <code>my_barbershop_bot</code>).
-            Скопируйте HTTP API Token и сохраните его в
-            <a href="#/dashboard/settings" class="inline-link">настройках заведения</a>.
+          <p class="step-intro">
+            Вам не нужно уметь программировать. Telegram предоставляет официального бота <strong>@BotFather</strong>, который создает ботов за 1 минуту по текстовым подсказкам:
           </p>
+
+          <ol class="action-steps-list">
+            <li>
+              <span class="action-num">1.1</span>
+              <div>
+                Перейдите по ссылке в официального бота 
+                <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" class="ext-link">
+                  @BotFather <ExternalLink size={13} />
+                </a> 
+                и нажмите <strong>«Запустить» (Start)</strong>.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">1.2</span>
+              <div>
+                Отправьте команду <code>/newbot</code> в чат с @BotFather.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">1.3</span>
+              <div>
+                Бот спросит: <em>«Alright, a new bot. How are we going to call it?»</em>.
+                <br />
+                Напишите <strong>название вашего заведения</strong>, которое увидят клиенты (например: <code>Барбершоп Бородач</code> или <code>Top Gun Тверь</code>).
+              </div>
+            </li>
+            <li>
+              <span class="action-num">1.4</span>
+              <div>
+                Далее бот попросит username: <em>«Now let's choose a username for your bot. It must end in `bot`»</em>.
+                <br />
+                Введите английскими буквами уникальный логин, обязательно заканчивающийся на <code>bot</code>.
+                <br />
+                Например: <code>borodach_barber_bot</code> или <code>my_salon123_bot</code>.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">1.5</span>
+              <div>
+                В ответ @BotFather пришлет поздравительное сообщение со строкой:
+                <br />
+                <strong>Use this token to access the HTTP API:</strong>
+                <br />
+                <span class="token-example"><code>1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ...</code></span>
+                <br />
+                Нажмите на этот длинный токен, чтобы скопировать его в буфер обмена.
+              </div>
+            </li>
+          </ol>
         </div>
       </div>
 
       <!-- Step 2 -->
       <div class="card step-card">
-        <div class="step-badge sage">2</div>
+        <div class="step-badge amber">2</div>
         <div class="step-content">
           <div class="step-head">
-            <Smartphone size={22} class="step-icon sage" />
-            <h3>Привяжите Mini App к кнопке меню</h3>
+            <KeyRound size={22} class="step-icon amber" />
+            <h3>Шаг 2: Вставка токена и юзернейма в панель управления</h3>
           </div>
-          <p>
-            В @BotFather отправьте команду <code>/setmenubutton</code>, выберите вашего созданного бота и отправьте эту ссылку:
+          <p class="step-intro">
+            Чтобы наша система могла присылать клиентам подтверждения и напоминания о записях, сохраните полученные данные:
           </p>
-          
-          <div class="code-box">
-            <code>{tmaLink}</code>
-            <button class="copy-btn" on:click={copyLink} title="Скопировать ссылку">
-              {#if copied}
-                <Check size={16} class="check-icon" />
-                <span>Скопировано!</span>
-              {:else}
-                <Copy size={16} />
-                <span>Копировать</span>
-              {/if}
-            </button>
-          </div>
-          
-          <div class="hint-card">
-            <span class="hint-title">Подсказка:</span> После ссылки @BotFather попросит текст для кнопки меню. Введите <strong>«Онлайн-запись»</strong> или <strong>«Записаться»</strong>.
-          </div>
+
+          <ol class="action-steps-list">
+            <li>
+              <span class="action-num">2.1</span>
+              <div>
+                Откройте раздел <a href="#/dashboard/settings" class="inline-link">«Настройки заведения» <ExternalLink size={12} /></a> в левом боковом меню.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">2.2</span>
+              <div>
+                Пролистайте до блока <strong>«Telegram-бот заведения»</strong>.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">2.3</span>
+              <div>
+                В поле <strong>«HTTP API Token бота»</strong> вставьте скопированный токен из Шага 1.5.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">2.4</span>
+              <div>
+                В поле <strong>«Username бота в Telegram»</strong> введите логин бота без символа @ (например: <code>borodach_barber_bot</code>).
+              </div>
+            </li>
+            <li>
+              <span class="action-num">2.5</span>
+              <div>
+                Нажмите зеленую кнопку <strong>«Сохранить настройки»</strong> внизу страницы.
+              </div>
+            </li>
+          </ol>
         </div>
       </div>
 
       <!-- Step 3 -->
       <div class="card step-card">
-        <div class="step-badge lavender">3</div>
+        <div class="step-badge sage">3</div>
+        <div class="step-content">
+          <div class="step-head">
+            <Smartphone size={22} class="step-icon sage" />
+            <h3>Шаг 3: Включение кнопки «Онлайн-запись» в Telegram-боте</h3>
+          </div>
+          <p class="step-intro">
+            Настройте кнопку Mini App прямо в меню бота, чтобы клиенты открывали расписание в один клик:
+          </p>
+          
+          <ol class="action-steps-list">
+            <li>
+              <span class="action-num">3.1</span>
+              <div>
+                Скопируйте персональную ссылку для вашего барбершопа:
+                <div class="code-box mt-2">
+                  <code>{tmaLink}</code>
+                  <button class="copy-btn" on:click={copyLink} title="Скопировать ссылку">
+                    {#if copied}
+                      <Check size={16} class="check-icon" />
+                      <span>Скопировано!</span>
+                    {:else}
+                      <Copy size={16} />
+                      <span>Копировать</span>
+                    {/if}
+                  </button>
+                </div>
+              </div>
+            </li>
+            <li>
+              <span class="action-num">3.2</span>
+              <div>
+                Снова откройте бота 
+                <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" class="ext-link">
+                  @BotFather <ExternalLink size={13} />
+                </a> 
+                и отправьте команду <code>/setmenubutton</code>.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">3.3</span>
+              <div>
+                @BotFather покажет список ваших ботов. Нажмите на имя вашего бота (например, <code>@{effectiveBotUser || 'ваш_бот'}</code>).
+              </div>
+            </li>
+            <li>
+              <span class="action-num">3.4</span>
+              <div>
+                @BotFather напишет: <em>«Please send the URL of your Web App...»</em>.
+                <br />
+                <strong>Вставьте и отправьте ссылку</strong>, которую вы скопировали в пункте 3.1.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">3.5</span>
+              <div>
+                @BotFather напишет: <em>«Please send the title for the button...»</em>.
+                <br />
+                Отправьте текст для кнопки, например: <code>Онлайн-запись</code> или <code>Записаться</code>.
+              </div>
+            </li>
+          </ol>
+
+          <div class="hint-card mt-3">
+            <span class="hint-title">Готово!</span> @BotFather ответит: <em>«Success! Menu button updated.»</em>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="card step-card">
+        <div class="step-badge lavender">4</div>
         <div class="step-content">
           <div class="step-head">
             <CheckCircle2 size={22} class="step-icon lavender" />
-            <h3>Проверьте запуск Mini App</h3>
+            <h3>Шаг 4: Проверка работы (как клиент)</h3>
           </div>
-          <p>
-            {#if effectiveBotUser}
-              Откройте вашего бота <a href="https://t.me/{effectiveBotUser}" target="_blank" rel="noreferrer" class="inline-link">@{effectiveBotUser}</a> и нажмите на кнопку меню в левом нижнем углу.
-            {:else}
-              Откройте вашего созданного бота в Telegram и нажмите на кнопку меню слева внизу.
-            {/if}
-            Откроется мобильное приложение для клиентов с онлайн-записью, списком мастеров и услуг.
+          <p class="step-intro">
+            Убедитесь, что все подключено корректно:
           </p>
+
+          <ol class="action-steps-list">
+            <li>
+              <span class="action-num">4.1</span>
+              <div>
+                {#if effectiveBotUser}
+                  Откройте вашего бота по прямой ссылке:
+                  <a href="https://t.me/{effectiveBotUser}" target="_blank" rel="noreferrer" class="bot-open-btn">
+                    <span>Открыть @{effectiveBotUser} в Telegram</span>
+                    <ExternalLink size={14} />
+                  </a>
+                {:else}
+                  Найдите вашего созданного бота в поиске Telegram и откройте диалог с ним.
+                {/if}
+              </div>
+            </li>
+            <li>
+              <span class="action-num">4.2</span>
+              <div>
+                Нажмите <strong>«Запустить» (Start)</strong>.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">4.3</span>
+              <div>
+                В нижнем левом углу возле поля ввода текста появится кнопка <strong>«Онлайн-запись»</strong> (или синяя кнопка меню). Нажмите на нее.
+              </div>
+            </li>
+            <li>
+              <span class="action-num">4.4</span>
+              <div>
+                Внутри Telegram откроется стильный интерфейс вашего барбершопа: с каталогом услуг, мастерами и календарем доступных слотов для записи!
+              </div>
+            </li>
+          </ol>
           
-          <div class="support-box">
-            <HelpCircle size={18} class="support-icon" />
-            <span>Возникли сложности? Наша служба поддержки всегда на связи:</span>
-            <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link">
-              <span>Написать @Eyed_Graff</span>
+          <div class="support-box mt-3">
+            <HelpCircle size={20} class="support-icon" />
+            <div class="support-text">
+              <strong>Не получается или возникли вопросы?</strong>
+              <p>Наша заботливая поддержка бесплатно поможет вам подключить и протестировать бота за 5 минут:</p>
+            </div>
+            <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link-btn">
+              <span>Написать в поддержку @Eyed_Graff</span>
               <ExternalLink size={14} />
             </a>
           </div>
@@ -391,9 +555,136 @@
     box-shadow: 0 0 16px var(--pastel-lavender-glow);
   }
 
-  .step-content {
-    flex: 1;
+  .step-badge.amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
   }
+
+  .step-intro {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+
+  .action-steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .action-steps-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .action-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem 0.55rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--pastel-rose);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .token-example {
+    display: inline-block;
+    margin-top: 0.35rem;
+  }
+
+  .token-example code {
+    background: var(--bg-surface-elevated);
+    border: 1px dashed var(--pastel-amber);
+    color: var(--pastel-amber);
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius-sm);
+    word-break: break-all;
+  }
+
+  .bot-open-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.9rem;
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border: 1px solid rgba(223, 158, 142, 0.3);
+    border-radius: var(--radius-pill);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .bot-open-btn:hover {
+    background: rgba(223, 158, 142, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .support-text {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .support-text strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .support-text p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    line-height: 1.4;
+  }
+
+  .support-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1.1rem;
+    background: var(--pastel-lavender-dim);
+    color: var(--pastel-lavender);
+    border: 1px solid rgba(179, 183, 219, 0.3);
+    border-radius: var(--radius-pill);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .support-link-btn:hover {
+    background: rgba(179, 183, 219, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .mt-2 { margin-top: 0.5rem; }
+  .mt-3 { margin-top: 0.85rem; }
+
+  :global(.step-icon.amber) { color: #f59e0b; }
 
   .step-head {
     display: flex;

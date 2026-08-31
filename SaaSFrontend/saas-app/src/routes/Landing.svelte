@@ -12,8 +12,15 @@
     LogIn,
     Sun,
     Moon,
-    Send
+    Send,
+    Scissors,
+    Sparkle,
+    Smile,
+    Heart,
+    Check,
+    Coins
   } from 'lucide-svelte';
+  import miniappMockup from '../assets/miniapp_mockup.jpg';
   import { apiRequest } from '../lib/api';
   import { theme, toggleTheme } from '../lib/theme';
 
@@ -119,22 +126,64 @@
       </div>
 
       <h1 class="hero-title">
-        Управляйте своим заведением <span class="gradient-text">как профессионал</span>
+        Онлайн-запись для салона или барбершопа — <span class="gradient-text">прямо в Telegram, без сайта</span>
       </h1>
 
       <p class="subtitle">
-        Автоматизируйте запись клиентов прямо в Telegram. Управляйте расписанием мастеров, собирайте отзывы, контролируйте финансы и развивайте бизнес.
+        Клиенты записываются сами за 30 секунд в Telegram — вы получаете расписание, CRM и финансовую аналитику
       </p>
 
       <div class="hero-actions">
         <a href="#/register" class="btn btn-primary btn-lg glow">
-          <span>Попробовать сейчас</span>
-          <ArrowRight size={18} />
+          <span>Попробовать бесплатно 14 дней →</span>
         </a>
-        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-lg">
-          <Send size={17} />
-          <span>Поддержка @Eyed_Graff</span>
-        </a>
+      </div>
+
+      <!-- Niches Bar -->
+      <div class="niches-strip" use:scrollReveal>
+        <span class="niches-label">Идеально подходит для:</span>
+        <div class="niches-tags">
+          <div class="niche-tag">
+            <Scissors size={15} />
+            <span>Для барбершопов</span>
+          </div>
+          <div class="niche-tag">
+            <Sparkle size={15} />
+            <span>Для салонов красоты</span>
+          </div>
+          <div class="niche-tag">
+            <Smile size={15} />
+            <span>Для мастеров маникюра</span>
+          </div>
+          <div class="niche-tag">
+            <Heart size={15} />
+            <span>Для спа и массажа</span>
+          </div>
+          <div class="niche-tag">
+            <Users size={15} />
+            <span>Для частных специалистов</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telegram Mini App Showcase / Mockup -->
+      <div class="product-preview" use:scrollReveal>
+        <div class="preview-glass-wrapper">
+          <div class="preview-glow"></div>
+          <img 
+            src={miniappMockup} 
+            alt="Интерфейс Telegram Mini App для онлайн-записи клиентов" 
+            class="preview-image"
+            loading="lazy"
+          />
+          <div class="preview-badge-overlay">
+            <Bot size={18} class="text-rose" />
+            <div class="preview-badge-text">
+              <strong>Telegram Mini App</strong>
+              <span>Работает в 1 клик прямо внутри диалога</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -144,7 +193,7 @@
     <div class="container">
       <div class="section-head" use:scrollReveal>
         <h2>Все инструменты в одной платформе</h2>
-        <p class="section-sub">Полный цикл работы с клиентами и мастерами без сложных интеграций</p>
+        <p class="section-sub">Полный цикл работы с клиентами и специалистами без сложных интеграций</p>
       </div>
 
       <div class="grid">
@@ -161,7 +210,7 @@
             <Calendar size={24} />
           </div>
           <h3>Умное расписание</h3>
-          <p>Гибкие смены мастеров, бронирование слотов, автоматический учет длительности процедур и защита от накладок.</p>
+          <p>Гибкие смены специалистов, бронирование слотов, автоматический учет длительности процедур и защита от накладок.</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
@@ -177,7 +226,7 @@
             <BarChart3 size={24} />
           </div>
           <h3>Финансовая аналитика</h3>
-          <p>Интерактивные графики выручки и посещений, статистика по дням, часам и каждому мастеру в отдельности.</p>
+          <p>Интерактивные графики выручки и посещений, статистика по дням, часам и каждому сотруднику в отдельности.</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
@@ -185,15 +234,15 @@
             <BellRing size={24} />
           </div>
           <h3>Уведомления</h3>
-          <p>Мгновенные оповещения мастеров и клиентов о новых бронированиях, отменах и напоминания перед визитом.</p>
+          <p>Мгновенные оповещения сотрудников и клиентов о новых бронированиях, отменах и напоминания перед визитом.</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap sage">
             <ShieldCheck size={24} />
           </div>
-          <h3>Подписка в сети TON</h3>
-          <p>Простая и безопасная оплата подписки криптовалютой TON через официальные смарт-контракты и кошельки.</p>
+          <h3>Оплата подписки за 1 клик</h3>
+          <p>Быстрая и безопасная оплата.<br /><small class="feature-caption">криптовалютой TON, без карт и чеков</small></p>
         </div>
       </div>
     </div>
@@ -219,10 +268,14 @@
           </div>
           <h2>Готовы вывести свой бизнес на новый уровень?</h2>
           <p>Подключите вашего бота и принимайте первые онлайн-записи уже сегодня.</p>
-          <a href="#/register" class="btn btn-primary btn-lg">
-            <span>{price !== null ? `Купить подписку (${price} TON/мес)` : 'Создать аккаунт'}</span>
-            <ArrowRight size={18} />
-          </a>
+          <div class="cta-actions-group">
+            <a href="#/register" class="btn btn-primary btn-lg glow">
+              <span>Попробовать бесплатно 14 дней →</span>
+            </a>
+            <div class="cta-pricing-subtext">
+              <span>от {price !== null ? price : '18'} TON/мес (≈€30)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -370,6 +423,140 @@
     font-size: 1.05rem;
   }
 
+  /* Niches Strip */
+  .niches-strip {
+    margin-top: 3rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    animation: fadeIn 0.9s ease-out;
+  }
+
+  .niches-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .niches-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.65rem;
+  }
+
+  .niche-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.95rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    transition: all 0.25s var(--ease-spring);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .niche-tag:hover {
+    color: var(--text-primary);
+    border-color: var(--pastel-rose);
+    background: var(--pastel-rose-dim);
+    transform: translateY(-2px);
+  }
+
+  /* Product Preview / Mini App Showcase */
+  .product-preview {
+    margin-top: 2rem;
+    position: relative;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    
+    /* Scroll reveal dynamic state */
+    --p: var(--scroll-progress, 0.9);
+    opacity: calc(0.25 + 0.75 * var(--p));
+    transform: translateY(calc(30px * (1 - var(--p)))) scale(calc(0.95 + 0.05 * var(--p)));
+    transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+    will-change: opacity, transform;
+  }
+
+  .preview-glass-wrapper {
+    position: relative;
+    border-radius: var(--radius-xl);
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 24px 60px rgba(0, 0, 0, 0.65),
+      0 0 40px rgba(223, 158, 142, 0.12);
+    overflow: hidden;
+  }
+
+  .preview-glow {
+    position: absolute;
+    top: -50%;
+    left: 20%;
+    width: 60%;
+    height: 100%;
+    background: radial-gradient(ellipse, rgba(223, 158, 142, 0.2) 0%, rgba(152, 193, 169, 0) 70%);
+    filter: blur(50px);
+    pointer-events: none;
+  }
+
+  .preview-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: calc(var(--radius-xl) - 4px);
+    object-fit: cover;
+  }
+
+  .preview-badge-overlay {
+    position: absolute;
+    bottom: 1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1.4rem;
+    background: rgba(20, 22, 28, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+  }
+
+  .preview-badge-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .preview-badge-text strong {
+    font-size: 0.86rem;
+    color: var(--text-primary);
+  }
+
+  .preview-badge-text span {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 640px) {
+    .preview-badge-overlay {
+      display: none;
+    }
+  }
+
   /* Features */
   .features {
     padding: 5rem 0 4rem;
@@ -484,6 +671,13 @@
     color: var(--text-secondary);
     font-size: 0.95rem;
     line-height: 1.55;
+  }
+
+  .feature-caption {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
   }
 
   /* CTA Section */
@@ -644,6 +838,26 @@
     max-width: 540px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .cta-actions-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cta-pricing-subtext {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .cta-pricing-subtext span {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   @media (max-width: 768px) {

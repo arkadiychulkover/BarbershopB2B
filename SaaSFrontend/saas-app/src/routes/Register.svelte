@@ -13,7 +13,9 @@
     Globe, 
     AlertCircle, 
     CheckCircle2, 
-    ArrowRight 
+    ArrowRight,
+    X,
+    ArrowLeft
   } from 'lucide-svelte';
 
   let formData = {
@@ -69,10 +71,16 @@
 
 <div class="auth-container">
   <div class="card auth-card">
-    <div class="brand-header">
-      <span class="brand-dot"></span>
-      <span class="brand-name">ARCH SYSTEM</span>
-    </div>
+    <a href="#/" class="btn-close-auth" title="Вернуться на главную" aria-label="Вернуться на главную">
+      <X size={18} />
+    </a>
+
+    <a href="#/" class="brand-header-link" title="На главную">
+      <div class="brand-header">
+        <span class="brand-dot"></span>
+        <span class="brand-name">ARCH SYSTEM</span>
+      </div>
+    </a>
 
     <h2>Создать аккаунт</h2>
     <p class="subtitle">Подключите ваше заведение к платформе онлайн-записи</p>
@@ -219,6 +227,13 @@
       <span>Уже есть аккаунт?</span>
       <a href="#/login">Войти</a>
     </div>
+
+    <div class="back-home-wrap">
+      <a href="#/" class="back-home-link">
+        <ArrowLeft size={15} />
+        <span>Вернуться на главную страницу</span>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -236,10 +251,40 @@
   }
   
   .auth-card {
+    position: relative;
     width: 100%;
     max-width: 820px;
     padding: 2.75rem 2.5rem;
     animation: fadeIn 0.35s var(--ease-spring);
+  }
+
+  .btn-close-auth {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-close-auth:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+  }
+
+  .brand-header-link {
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
   }
 
   .brand-header {
@@ -367,5 +412,27 @@
 
   .auth-links a {
     font-weight: 600;
+  }
+
+  .back-home-wrap {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+
+  .back-home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .back-home-link:hover {
+    color: var(--text-primary);
+    transform: translateX(-3px);
   }
 </style>
