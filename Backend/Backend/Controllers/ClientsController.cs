@@ -394,12 +394,14 @@ namespace Backend.Controllers
                 .ToListAsync();
 
             var availableSlots = new List<string>();
-            int stepMinutes = totalDuration > 0 && totalDuration < 30 ? totalDuration : 30;
 
             foreach (var shift in shifts)
             {
                 var currentTime = shift.StartTime;
                 int breakMinutes = shift.BreakDurationMinutes;
+                int stepMinutes = breakMinutes > 0 
+                    ? breakMinutes 
+                    : (totalDuration > 0 && totalDuration < 30 ? totalDuration : 30);
 
                 while (currentTime.AddMinutes(totalDuration) <= shift.EndTime)
                 {
@@ -410,7 +412,14 @@ namespace Backend.Controllers
                     {
                         if (currentTime < shift.BreakEndTime.Value && slotEnd > shift.BreakStartTime.Value)
                         {
-                            currentTime = currentTime.AddMinutes(stepMinutes);
+                            if (currentTime >= shift.BreakStartTime.Value)
+                            {
+                                currentTime = shift.BreakEndTime.Value;
+                            }
+                            else
+                            {
+                                currentTime = currentTime.AddMinutes(stepMinutes);
+                            }
                             continue;
                         }
                     }

@@ -69,6 +69,9 @@ namespace Backend.Controllers
             {
                 var client = await context.Clients.FirstOrDefaultAsync(c => c.TelegramId == userId && c.OwnerId == tenantGuid);
                 string clientId;
+                var cleanClientUsername = !string.IsNullOrWhiteSpace(tgUser.Username) 
+                    ? tgUser.Username.Trim().TrimStart('@') 
+                    : null;
 
                 if (client == null) 
                 {
@@ -76,6 +79,7 @@ namespace Backend.Controllers
                     {
                         Id = Guid.NewGuid(),
                         TelegramId = userId,
+                        TelegramUsername = cleanClientUsername,
                         OwnerId = tenantGuid,
                         Name = clientName
                     };
@@ -86,9 +90,19 @@ namespace Backend.Controllers
                 else
                 {
                     clientId = client.Id.ToString();
+                    bool updated = false;
                     if (!string.IsNullOrWhiteSpace(clientName) && client.Name != clientName)
                     {
                         client.Name = clientName;
+                        updated = true;
+                    }
+                    if (client.TelegramUsername != cleanClientUsername)
+                    {
+                        client.TelegramUsername = cleanClientUsername;
+                        updated = true;
+                    }
+                    if (updated)
+                    {
                         await context.SaveChangesAsync();
                     }
                 }                

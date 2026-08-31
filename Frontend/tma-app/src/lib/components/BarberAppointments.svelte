@@ -52,6 +52,10 @@
     return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
   }
 
+  function isPureNumeric(val: string | null | undefined): boolean {
+    return !!val && /^\d+$/.test(val.trim());
+  }
+
   function extractTime(dateStr: any): string {
     if (!dateStr) return "";
     const m = String(dateStr).match(/(?:T|\s|^)(\d{2}):(\d{2})/);
@@ -258,7 +262,11 @@
       hapticSuccess();
 
       // Immediately sync active view date to the appointment date
-      currentDate = new Date(year, month - 1, day, 12, 0, 0);
+      const dateParts = formDateStr.split("-");
+      const apptYear = parseInt(dateParts[0], 10) || new Date().getFullYear();
+      const apptMonth = parseInt(dateParts[1], 10) || 1;
+      const apptDay = parseInt(dateParts[2], 10) || 1;
+      currentDate = new Date(apptYear, apptMonth - 1, apptDay, 12, 0, 0);
       currentWeekStart = getMonday(currentDate);
 
       view = "list";
@@ -651,10 +659,26 @@
                         <span class="detail-box-value"
                           >{selectedDetailAppt.clientName || "Клиент"}</span
                         >
-                        {#if selectedDetailAppt.clientTelegramId && selectedDetailAppt.clientTelegramId !== "WALKIN"}
-                          <span class="detail-client-handle"
-                            >@{selectedDetailAppt.clientTelegramId}</span
-                          >
+                        {#if selectedDetailAppt.clientTelegramUsername}
+                          <a 
+                            class="detail-client-handle-link"
+                            href="https://t.me/{selectedDetailAppt.clientTelegramUsername}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            on:click|stopPropagation
+                          >@{selectedDetailAppt.clientTelegramUsername}</a>
+                        {:else if selectedDetailAppt.clientTelegramId && selectedDetailAppt.clientTelegramId !== "WALKIN"}
+                          {#if isPureNumeric(selectedDetailAppt.clientTelegramId)}
+                            <span class="detail-client-handle">ID: {selectedDetailAppt.clientTelegramId}</span>
+                          {:else}
+                            <a 
+                              class="detail-client-handle-link"
+                              href="https://t.me/{selectedDetailAppt.clientTelegramId.replace(/^@/, '')}"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              on:click|stopPropagation
+                            >@{selectedDetailAppt.clientTelegramId.replace(/^@/, '')}</a>
+                          {/if}
                         {:else}
                           <span class="detail-client-handle"
                             >История визитов &rarr;</span
@@ -932,10 +956,32 @@
                           size={14}
                           color="var(--pastel-lavender)"
                         />
-                        {#if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
-                          <span
-                            >{appt.clientName || appt.clientTelegramId} · @{appt.clientTelegramId}</span
-                          >
+                        {#if appt.clientTelegramUsername}
+                          <span class="client-handle-text">
+                            {appt.clientName || `@${appt.clientTelegramUsername}`} · 
+                            <a 
+                              class="tg-chat-link" 
+                              href="https://t.me/{appt.clientTelegramUsername}" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              on:click|stopPropagation
+                            >@{appt.clientTelegramUsername}</a>
+                          </span>
+                        {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
+                          {#if isPureNumeric(appt.clientTelegramId)}
+                            <span>{appt.clientName || "Клиент"} · ID: {appt.clientTelegramId}</span>
+                          {:else}
+                            <span class="client-handle-text">
+                              {appt.clientName || appt.clientTelegramId} · 
+                              <a 
+                                class="tg-chat-link" 
+                                href="https://t.me/{appt.clientTelegramId.replace(/^@/, '')}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                on:click|stopPropagation
+                              >@{appt.clientTelegramId.replace(/^@/, '')}</a>
+                            </span>
+                          {/if}
                         {:else}
                           <span>{appt.clientName || "Гость (Вручную)"}</span>
                         {/if}
@@ -2153,9 +2199,31 @@
   }
 
   .detail-client-handle {
-    font-size: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .detail-client-handle-link {
+    font-size: 13px;
     color: var(--pastel-lavender);
+    text-decoration: none;
     font-weight: 600;
+    transition: color 0.2s;
+  }
+  .detail-client-handle-link:hover {
+    color: var(--pastel-rose);
+    text-decoration: underline;
+  }
+
+  .tg-chat-link {
+    color: var(--pastel-lavender);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .tg-chat-link:hover {
+    color: var(--pastel-rose);
+    text-decoration: underline;
   }
 
   .detail-section {

@@ -810,6 +810,7 @@ namespace Backend.Controllers
                 ClientId = a.ClientId,
                 ClientName = a.Client?.Name,
                 ClientTelegramId = a.Client?.TelegramId,
+                ClientTelegramUsername = a.Client?.TelegramUsername,
                 MasterId = a.MasterId,
                 AppointmentDate = a.AppointmentDate,
                 AppointmentEndDate = a.AppointmentEndDate,
@@ -1049,6 +1050,7 @@ namespace Backend.Controllers
                     ClientId = a.ClientId,
                     ClientName = client.Name,
                     ClientTelegramId = client.TelegramId,
+                    ClientTelegramUsername = client.TelegramUsername,
                     MasterId = a.MasterId,
                     AppointmentDate = a.AppointmentDate,
                     AppointmentEndDate = a.AppointmentEndDate,
@@ -1064,7 +1066,7 @@ namespace Backend.Controllers
 
             return Ok(new
             {
-                client = new { client.Id, client.Name, client.TelegramId, client.Phone, client.Notes },
+                client = new { client.Id, client.Name, client.TelegramId, client.TelegramUsername, client.Phone, client.Notes },
                 appointments
             });
         }

@@ -8,6 +8,7 @@ namespace Backend.DTOs
         public Guid ClientId { get; set; }
         public string? ClientName { get; set; }
         public string? ClientTelegramId { get; set; }
+        public string? ClientTelegramUsername { get; set; }
         public Guid MasterId { get; set; }
         public DateTime AppointmentDate { get; set; }
         public DateTime AppointmentEndDate { get; set; }

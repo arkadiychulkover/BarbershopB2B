@@ -24,6 +24,27 @@
   let selectedDate = '';
   let selectedTime = '';
 
+  let currentSlotPage = 0;
+  const SLOTS_PER_PAGE = 12;
+
+  $: totalSlotPages = Math.max(1, Math.ceil(availableSlots.length / SLOTS_PER_PAGE));
+  $: pagedSlots = availableSlots.slice(
+    currentSlotPage * SLOTS_PER_PAGE,
+    (currentSlotPage + 1) * SLOTS_PER_PAGE
+  );
+
+  function nextSlotPage() {
+    if (currentSlotPage < totalSlotPages - 1) {
+      currentSlotPage++;
+    }
+  }
+
+  function prevSlotPage() {
+    if (currentSlotPage > 0) {
+      currentSlotPage--;
+    }
+  }
+
   let reminderPresets = [1, 2, 3, 5, 24];
   let selectedReminderHours = 2;
   let isCustomReminder = false;
@@ -284,6 +305,7 @@
     error = '';
     availableSlots = [];
     selectedTime = '';
+    currentSlotPage = 0;
     try {
       const additionalIds = selectedServices.slice(1).map(s => s.id).join(',');
       const params: Record<string, string> = {
@@ -807,9 +829,41 @@
           </div>
         </div>
 
-        <label for="date">Доступное время (длительность: {totalDuration || selectedService?.duration} мин):</label>
+        <div class="slots-header-bar">
+          <div class="slots-header-title">
+            <span class="slots-title-text">Доступное время:</span>
+            <span class="slots-duration-tag">{totalDuration || selectedService?.duration} мин</span>
+          </div>
+
+          {#if totalSlotPages > 1}
+            <div class="slots-pagination-controls">
+              <button 
+                type="button" 
+                class="slot-nav-btn" 
+                on:click={prevSlotPage} 
+                disabled={currentSlotPage === 0}
+                aria-label="Предыдущее время"
+              >
+                <Icon name="chevron-left" size={16} />
+              </button>
+              <span class="slot-page-badge">
+                {currentSlotPage + 1} / {totalSlotPages}
+              </span>
+              <button 
+                type="button" 
+                class="slot-nav-btn" 
+                on:click={nextSlotPage} 
+                disabled={currentSlotPage >= totalSlotPages - 1}
+                aria-label="Следующее время"
+              >
+                <Icon name="chevron-right" size={16} />
+              </button>
+            </div>
+          {/if}
+        </div>
+
         <div class="slots">
-          {#each availableSlots as slot}
+          {#each pagedSlots as slot}
             <button 
               class="slot-btn {selectedTime === slot ? 'selected' : ''}" 
               on:click={() => selectedTime = slot}
@@ -1520,6 +1574,80 @@
 
   .dot {
     color: var(--text-muted);
+  }
+
+  .slots-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .slots-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .slots-title-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .slots-duration-tag {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pastel-rose);
+    background: var(--pastel-rose-dim);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(223, 158, 142, 0.25);
+  }
+
+  .slots-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 2px 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .slot-nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s var(--ease-spring);
+    padding: 0;
+  }
+
+  .slot-nav-btn:hover:not(:disabled) {
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+  }
+
+  .slot-nav-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+
+  .slot-page-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    padding: 0 4px;
   }
 
   .slots {

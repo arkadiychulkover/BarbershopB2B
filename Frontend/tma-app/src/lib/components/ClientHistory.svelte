@@ -50,6 +50,10 @@
     return "Запланировано";
   }
 
+  function isPureNumeric(val: string | null | undefined): boolean {
+    return !!val && /^\d+$/.test(val.trim());
+  }
+
   function formatDate(iso: string, endIso?: string): string {
     if (!iso) return "";
     const raw = String(iso).replace("Z", "").replace("T", " ");
@@ -274,15 +278,28 @@
         <div class="client-avatar">{(client.name || "?")[0].toUpperCase()}</div>
         <div class="client-meta">
           <div class="client-name-title">{client.name || "Клиент"}</div>
-          {#if client.telegramId && client.telegramId !== "WALKIN"}
+          {#if client.telegramUsername}
             <a
               class="tg-link"
-              href="https://t.me/{client.telegramId}"
+              href="https://t.me/{client.telegramUsername}"
               target="_blank"
               rel="noopener noreferrer"
             >
-              @{client.telegramId}
+              @{client.telegramUsername}
             </a>
+          {:else if client.telegramId && client.telegramId !== "WALKIN"}
+            {#if isPureNumeric(client.telegramId)}
+              <span class="tg-id-text">ID: {client.telegramId}</span>
+            {:else}
+              <a
+                class="tg-link"
+                href="https://t.me/{client.telegramId.replace(/^@/, '')}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @{client.telegramId.replace(/^@/, '')}
+              </a>
+            {/if}
           {:else}
             <span class="tg-guest">Гость (без TG)</span>
           {/if}
@@ -721,6 +738,13 @@
   .tg-link:hover {
     color: var(--pastel-rose);
     text-decoration: underline;
+  }
+
+  .tg-id-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    user-select: text;
   }
 
   .tg-guest {

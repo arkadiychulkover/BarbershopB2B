@@ -4,6 +4,7 @@ namespace Backend.Models
     {
         public Guid Id { get; set; }
         public string TelegramId { get; set; }
+        public string? TelegramUsername { get; set; }
         public string Name { get; set; }
         public string? Phone { get; set; }
         public string? Notes { get; set; }
