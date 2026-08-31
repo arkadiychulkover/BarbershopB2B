@@ -30,6 +30,13 @@
     BarChart3,
     Sparkles,
     CalendarRange,
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Bot,
+    Lock,
+    Globe,
   } from "lucide-svelte";
 
   function formatDateInput(d) {
@@ -117,9 +124,20 @@
   let newAdminPassword = "";
 
   let showCreateOwnerModal = false;
-  let newOwnerEmail = "";
-  let newOwnerPassword = "";
-  let newOwnerDurationDays = 30;
+  let newOwner = {
+    email: "",
+    password: "",
+    subscriptionDays: 30,
+    ownerName: "",
+    phoneNumber: "",
+    telegramId: "",
+    barbershopName: "",
+    barbershopAddress: "",
+    barbershopDescription: "",
+    botToken: "",
+    botUsername: "",
+    timeZone: "Europe/Kyiv"
+  };
 
   onMount(async () => {
     await fetchStats();
@@ -563,15 +581,44 @@
 
   // ─── Owner Creation ────────────────────────────────────────────────────────
 
+  function resetNewOwnerForm() {
+    newOwner = {
+      email: "",
+      password: "",
+      subscriptionDays: 30,
+      ownerName: "",
+      phoneNumber: "",
+      telegramId: "",
+      barbershopName: "",
+      barbershopAddress: "",
+      barbershopDescription: "",
+      botToken: "",
+      botUsername: "",
+      timeZone: "Europe/Kyiv"
+    };
+  }
+
   async function submitCreateOwner() {
-    if (!newOwnerEmail || !newOwnerPassword) {
-      showError("Заполните Gmail/Email и пароль");
+    if (!newOwner.email || !newOwner.password) {
+      showError("Заполните Email и пароль (минимум 6 символов)");
       return;
     }
-    const days = parseInt(newOwnerDurationDays, 10);
+    const days = parseInt(newOwner.subscriptionDays, 10);
     if (isNaN(days) || days < 1) {
       showError("Укажите корректное количество дней подписки (минимум 1)");
       return;
+    }
+
+    if (newOwner.phoneNumber) {
+      const cleaned = newOwner.phoneNumber.trim().replace(/[\s\-\(\)]/g, "");
+      const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
+      if (!phoneRegex.test(cleaned)) {
+        showError(
+          "Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, код страны, 9 цифр)",
+        );
+        return;
+      }
+      newOwner.phoneNumber = cleaned;
     }
 
     actionLoading = true;
@@ -579,15 +626,22 @@
       await apiRequest("/api/Admin/owners", {
         method: "POST",
         body: JSON.stringify({
-          email: newOwnerEmail.trim(),
-          password: newOwnerPassword,
+          email: newOwner.email.trim(),
+          password: newOwner.password,
           subscriptionDays: days,
+          ownerName: newOwner.ownerName?.trim() || undefined,
+          phoneNumber: newOwner.phoneNumber?.trim() || undefined,
+          telegramId: newOwner.telegramId?.trim() || undefined,
+          barbershopName: newOwner.barbershopName?.trim() || undefined,
+          barbershopAddress: newOwner.barbershopAddress?.trim() || undefined,
+          barbershopDescription: newOwner.barbershopDescription?.trim() || undefined,
+          botToken: newOwner.botToken?.trim() || undefined,
+          botUsername: newOwner.botUsername?.trim()?.replace(/^@/, '') || undefined,
+          timeZone: newOwner.timeZone || "Europe/Kyiv",
         }),
       });
-      showSuccess(`Заведение ${newOwnerEmail} успешно создано`);
-      newOwnerEmail = "";
-      newOwnerPassword = "";
-      newOwnerDurationDays = 30;
+      showSuccess(`Заведение ${newOwner.email} успешно создано на ${days} дн.`);
+      resetNewOwnerForm();
       showCreateOwnerModal = false;
       await fetchOwners();
       await fetchStats();
@@ -1823,22 +1877,27 @@
             <div class="quick-days-presets">
               <button
                 type="button"
-                class="btn btn-xs btn-outline"
+                class="btn btn-xs {extendDaysInput === 14 ? 'btn-primary' : 'btn-outline'}"
+                on:click={() => (extendDaysInput = 14)}>+14 дн. (триал)</button
+              >
+              <button
+                type="button"
+                class="btn btn-xs {extendDaysInput === 30 ? 'btn-primary' : 'btn-outline'}"
                 on:click={() => (extendDaysInput = 30)}>+30 дн.</button
               >
               <button
                 type="button"
-                class="btn btn-xs btn-outline"
+                class="btn btn-xs {extendDaysInput === 90 ? 'btn-primary' : 'btn-outline'}"
                 on:click={() => (extendDaysInput = 90)}>+90 дн.</button
               >
               <button
                 type="button"
-                class="btn btn-xs btn-outline"
+                class="btn btn-xs {extendDaysInput === 180 ? 'btn-primary' : 'btn-outline'}"
                 on:click={() => (extendDaysInput = 180)}>+180 дн.</button
               >
               <button
                 type="button"
-                class="btn btn-xs btn-outline"
+                class="btn btn-xs {extendDaysInput === 365 ? 'btn-primary' : 'btn-outline'}"
                 on:click={() => (extendDaysInput = 365)}>+1 год</button
               >
             </div>
@@ -2156,7 +2215,7 @@
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="modal-backdrop" on:click={() => (showCreateOwnerModal = false)}>
-      <div class="modal-card" on:click|stopPropagation>
+      <div class="modal-card modal-lg" on:click|stopPropagation>
         <div class="modal-header">
           <h3>Создать заведение</h3>
           <button
@@ -2165,65 +2224,84 @@
           >
         </div>
         <form on:submit|preventDefault={submitCreateOwner}>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="noEmail">Gmail / Email заведения</label>
-              <input
-                id="noEmail"
-                type="email"
-                class="input"
-                bind:value={newOwnerEmail}
-                placeholder="barbershop@gmail.com"
-                required
-              />
+          <div class="modal-body modal-grid-2">
+            <!-- Секция 1: Доступ и подписка -->
+            <div class="form-section-title full-width">
+              <span>1. Доступ и подписка</span>
             </div>
 
             <div class="form-group">
-              <label for="noPassword">Пароль</label>
-              <input
-                id="noPassword"
-                type="password"
-                class="input"
-                bind:value={newOwnerPassword}
-                placeholder="Минимум 6 символов"
-                minlength="6"
-                required
-              />
+              <label for="noEmail">Email заведения *</label>
+              <div class="input-icon-wrap">
+                <Mail size={16} class="input-icon" />
+                <input
+                  id="noEmail"
+                  type="email"
+                  class="input has-icon"
+                  bind:value={newOwner.email}
+                  placeholder="owner@example.com"
+                  required
+                />
+              </div>
             </div>
 
             <div class="form-group">
+              <label for="noPassword">Пароль *</label>
+              <div class="input-icon-wrap">
+                <Lock size={16} class="input-icon" />
+                <input
+                  id="noPassword"
+                  type="password"
+                  class="input has-icon"
+                  bind:value={newOwner.password}
+                  placeholder="Минимум 6 символов"
+                  minlength="6"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group full-width">
               <label for="noDuration">Длительность подписки (дней)</label>
               <div class="quick-days-presets">
                 <button
                   type="button"
-                  class="btn btn-xs {newOwnerDurationDays === 30
+                  class="btn btn-xs {newOwner.subscriptionDays === 14
                     ? 'btn-primary'
                     : 'btn-outline'}"
-                  on:click={() => (newOwnerDurationDays = 30)}
+                  on:click={() => (newOwner.subscriptionDays = 14)}
+                  >14 дн. (триал)</button
+                >
+                <button
+                  type="button"
+                  class="btn btn-xs {newOwner.subscriptionDays === 30
+                    ? 'btn-primary'
+                    : 'btn-outline'}"
+                  on:click={() => (newOwner.subscriptionDays = 30)}
                   >1 мес (30 дн.)</button
                 >
                 <button
                   type="button"
-                  class="btn btn-xs {newOwnerDurationDays === 90
+                  class="btn btn-xs {newOwner.subscriptionDays === 90
                     ? 'btn-primary'
                     : 'btn-outline'}"
-                  on:click={() => (newOwnerDurationDays = 90)}
+                  on:click={() => (newOwner.subscriptionDays = 90)}
                   >3 мес (90 дн.)</button
                 >
                 <button
                   type="button"
-                  class="btn btn-xs {newOwnerDurationDays === 180
+                  class="btn btn-xs {newOwner.subscriptionDays === 180
                     ? 'btn-primary'
                     : 'btn-outline'}"
-                  on:click={() => (newOwnerDurationDays = 180)}
+                  on:click={() => (newOwner.subscriptionDays = 180)}
                   >6 мес (180 дн.)</button
                 >
                 <button
                   type="button"
-                  class="btn btn-xs {newOwnerDurationDays === 365
+                  class="btn btn-xs {newOwner.subscriptionDays === 365
                     ? 'btn-primary'
                     : 'btn-outline'}"
-                  on:click={() => (newOwnerDurationDays = 365)}
+                  on:click={() => (newOwner.subscriptionDays = 365)}
                   >1 год (365 дн.)</button
                 >
               </div>
@@ -2231,13 +2309,151 @@
                 id="noDuration"
                 type="number"
                 class="input mt-2"
-                bind:value={newOwnerDurationDays}
+                bind:value={newOwner.subscriptionDays}
                 min="1"
                 max="3650"
                 required
               />
             </div>
+
+            <!-- Секция 2: Личные данные владельца -->
+            <div class="form-section-title full-width">
+              <span>2. Данные владельца</span>
+            </div>
+
+            <div class="form-group">
+              <label for="noOwnerName">Имя владельца</label>
+              <div class="input-icon-wrap">
+                <User size={16} class="input-icon" />
+                <input
+                  id="noOwnerName"
+                  type="text"
+                  class="input has-icon"
+                  bind:value={newOwner.ownerName}
+                  placeholder="Александр"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="noPhone">Номер телефона</label>
+              <div class="input-icon-wrap">
+                <Phone size={16} class="input-icon" />
+                <input
+                  id="noPhone"
+                  type="tel"
+                  class="input has-icon"
+                  bind:value={newOwner.phoneNumber}
+                  placeholder="+380991234567"
+                />
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="noTgId">Telegram ID владельца (для уведомлений)</label>
+              <div class="input-icon-wrap">
+                <Send size={16} class="input-icon" />
+                <input
+                  id="noTgId"
+                  type="text"
+                  class="input has-icon"
+                  bind:value={newOwner.telegramId}
+                  placeholder="123456789 или username"
+                />
+              </div>
+            </div>
+
+            <!-- Секция 3: Заведение -->
+            <div class="form-section-title full-width">
+              <span>3. Заведение</span>
+            </div>
+
+            <div class="form-group">
+              <label for="noBarbershopName">Название заведения</label>
+              <div class="input-icon-wrap">
+                <Building2 size={16} class="input-icon" />
+                <input
+                  id="noBarbershopName"
+                  type="text"
+                  class="input has-icon"
+                  bind:value={newOwner.barbershopName}
+                  placeholder="Chop-Chop или Салон красоты"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="noTimeZone">Часовой пояс</label>
+              <div class="input-icon-wrap">
+                <Globe size={16} class="input-icon" />
+                <select id="noTimeZone" class="input has-icon" bind:value={newOwner.timeZone}>
+                  <option value="Europe/Kyiv">Киев (UTC+2/3)</option>
+                  <option value="Europe/Warsaw">Варшава (UTC+1/2)</option>
+                  <option value="Europe/London">Лондон (UTC+0/1)</option>
+                  <option value="Europe/Moscow">Москва (UTC+3)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="noAddress">Адрес заведения</label>
+              <div class="input-icon-wrap">
+                <MapPin size={16} class="input-icon" />
+                <input
+                  id="noAddress"
+                  type="text"
+                  class="input has-icon"
+                  bind:value={newOwner.barbershopAddress}
+                  placeholder="ул. Центральная, 10"
+                />
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="noDesc">Описание заведения (для бота)</label>
+              <textarea
+                id="noDesc"
+                class="input textarea"
+                bind:value={newOwner.barbershopDescription}
+                rows="2"
+                placeholder="Стильное заведение с опытными мастерами..."
+              ></textarea>
+            </div>
+
+            <!-- Секция 4: Telegram Бот -->
+            <div class="form-section-title full-width">
+              <span>4. Telegram-бот записи</span>
+            </div>
+
+            <div class="form-group">
+              <label for="noBotUsername">Username бота (без @)</label>
+              <div class="input-icon-wrap">
+                <Bot size={16} class="input-icon" />
+                <input
+                  id="noBotUsername"
+                  type="text"
+                  class="input has-icon"
+                  bind:value={newOwner.botUsername}
+                  placeholder="my_booking_bot"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="noBotToken">Токен бота (от @BotFather)</label>
+              <div class="input-icon-wrap">
+                <Bot size={16} class="input-icon" />
+                <input
+                  id="noBotToken"
+                  type="text"
+                  class="input has-icon"
+                  bind:value={newOwner.botToken}
+                  placeholder="1234567890:ABCdef..."
+                />
+              </div>
+            </div>
           </div>
+
           <div class="modal-footer">
             <button
               type="button"
@@ -3020,6 +3236,43 @@
     display: flex;
     gap: 0.4rem;
     margin-bottom: 0.5rem;
+  }
+
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    margin: 0.75rem 0 0.25rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .form-section-title span {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pastel-rose);
+    background: var(--pastel-rose-dim);
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(223, 158, 142, 0.2);
+  }
+
+  .input-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.input-icon) {
+    position: absolute;
+    left: 0.85rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .input.has-icon {
+    padding-left: 2.5rem;
   }
 
   .form-group {

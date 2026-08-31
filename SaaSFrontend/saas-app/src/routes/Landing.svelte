@@ -135,7 +135,7 @@
 
       <div class="hero-actions">
         <a href="#/register" class="btn btn-primary btn-lg glow">
-          <span>Попробовать бесплатно 14 дней →</span>
+          <span>Оформить подписку ({price !== null ? `от ${price} TON/мес` : 'от 18 TON/мес'}) →</span>
         </a>
       </div>
 
@@ -270,10 +270,10 @@
           <p>Подключите вашего бота и принимайте первые онлайн-записи уже сегодня.</p>
           <div class="cta-actions-group">
             <a href="#/register" class="btn btn-primary btn-lg glow">
-              <span>Попробовать бесплатно 14 дней →</span>
+              <span>Оформить подписку ({price !== null ? `${price} TON/мес` : '18 TON/мес'}) →</span>
             </a>
             <div class="cta-pricing-subtext">
-              <span>от {price !== null ? price : '18'} TON/мес (≈€30)</span>
+              <span>Оплата в сети TON за 1 клик • ≈€30/мес</span>
             </div>
           </div>
         </div>

@@ -213,6 +213,17 @@ namespace Backend.Controllers
             if (adminExists)
                 return BadRequest(new { message = "Пользователь с таким email уже зарегистрирован как администратор" });
 
+            string? cleanedPhone = null;
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                cleanedPhone = Regex.Replace(request.PhoneNumber.Trim(), @"[\s\-\(\)]", "");
+                var phoneRegex = new Regex(@"^\+[0-9]{1,3}[0-9]{9}$");
+                if (!phoneRegex.IsMatch(cleanedPhone))
+                {
+                    return BadRequest(new { message = "Некорректный номер телефона. Формат: +380991234567 или +79991234567." });
+                }
+            }
+
             var days = request.SubscriptionDays > 0 ? request.SubscriptionDays : 30;
             var now = DateTime.UtcNow;
             var defaultName = cleanEmail.Split('@')[0];
@@ -222,16 +233,16 @@ namespace Backend.Controllers
                 Id = Guid.NewGuid(),
                 Email = cleanEmail,
                 PasswordHash = PasswordSecurity.HashPassword(request.Password),
-                OwnerName = defaultName,
-                BarbershopName = $"Барбершоп ({defaultName})",
-                BarbershopAddress = "",
-                BarbershopDescription = "",
-                PhoneNumber = "",
-                TelegramId = "",
-                BotToken = "",
-                BotUsername = "",
+                OwnerName = !string.IsNullOrWhiteSpace(request.OwnerName) ? request.OwnerName.Trim() : defaultName,
+                BarbershopName = !string.IsNullOrWhiteSpace(request.BarbershopName) ? request.BarbershopName.Trim() : $"Заведение ({defaultName})",
+                BarbershopAddress = request.BarbershopAddress?.Trim() ?? "",
+                BarbershopDescription = request.BarbershopDescription?.Trim() ?? "",
+                PhoneNumber = cleanedPhone ?? "",
+                TelegramId = request.TelegramId?.Trim() ?? "",
+                BotToken = request.BotToken?.Trim() ?? "",
+                BotUsername = request.BotUsername?.Trim()?.TrimStart('@') ?? "",
                 WalletAddress = "",
-                TimeZone = "Europe/Kyiv",
+                TimeZone = string.IsNullOrWhiteSpace(request.TimeZone) ? "Europe/Kyiv" : request.TimeZone.Trim(),
                 ReminderHoursBefore = 2,
                 DepositEnabled = false,
                 Status = OwnerStatus.Active,

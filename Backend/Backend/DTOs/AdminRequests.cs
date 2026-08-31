@@ -119,6 +119,16 @@ namespace Backend.DTOs
         public string Email { get; set; }
         public string Password { get; set; }
         public int SubscriptionDays { get; set; } = 30;
+
+        public string? OwnerName { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? TelegramId { get; set; }
+        public string? BarbershopName { get; set; }
+        public string? BarbershopAddress { get; set; }
+        public string? BarbershopDescription { get; set; }
+        public string? BotToken { get; set; }
+        public string? BotUsername { get; set; }
+        public string? TimeZone { get; set; } = "Europe/Kyiv";
     }
 
     public class AdminDto
