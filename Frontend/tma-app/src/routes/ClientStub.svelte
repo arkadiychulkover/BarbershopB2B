@@ -361,9 +361,9 @@
     loading = true;
     error = '';
     try {
-      // Combine date and time — NOT as UTC (no Z suffix)
-      // Slots from the server are in salon-local time, so we send them as-is
-      const dateTimeString = `${selectedDate}T${selectedTime}:00`;
+      // Combine date and time with Z suffix (UTC) — required by PostgreSQL
+      // Display is handled separately via string parsing (no Date conversion)
+      const dateTimeString = `${selectedDate}T${selectedTime}:00Z`;
       const hoursBefore = getEffectiveReminderHours();
       const additionalServiceIds = selectedServices.slice(1).map(s => s.id);
       

@@ -152,7 +152,7 @@
   }
   
   async function saveAppt() {
-    const appointmentDate = `${formDate}T${formTime}:00`;
+    const appointmentDate = `${formDate}T${formTime}:00Z`;
     
     const body = {
       masterId: selectedMasterId,
