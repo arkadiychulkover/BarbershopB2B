@@ -46,11 +46,56 @@
   let formComment = "";
   let saving = false;
 
-  $: dateString = new Date(
-    currentDate.getTime() - currentDate.getTimezoneOffset() * 60000,
-  )
-    .toISOString()
-    .split("T")[0];
+  function extractDate(dateStr: any): string {
+    if (!dateStr) return "";
+    const m = String(dateStr).match(/(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
+  }
+
+  function extractTime(dateStr: any): string {
+    if (!dateStr) return "";
+    const m = String(dateStr).match(/(?:T|\s|^)(\d{2}):(\d{2})/);
+    return m ? `${m[1]}:${m[2]}` : "";
+  }
+
+  function addMinutesToTimeString(timeStr: string, minutes: number): string {
+    if (!timeStr) return "";
+    const [h, m] = timeStr.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return timeStr;
+    const totalMinutes = h * 60 + m + minutes;
+    const endH = Math.floor(totalMinutes / 60) % 24;
+    const endM = totalMinutes % 60;
+    return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+  }
+
+  function extractEndTime(appt: any): string {
+    if (!appt) return "";
+    const start = extractTime(appt.appointmentDate);
+    let end = extractTime(appt.appointmentEndDate);
+    if (!end || end === start) {
+      const svc = services.find((s) => s.serviceId === appt.serviceId);
+      const duration = svc?.duration || 30;
+      end = addMinutesToTimeString(start, duration);
+    }
+    return end;
+  }
+
+  function formatDateInput(d: Date): string {
+    if (!d) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatModalDate(dateStr: any): string {
+    const raw = extractDate(dateStr);
+    if (!raw) return "";
+    const parts = raw.split("-");
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  }
+
+  $: dateString = formatDateInput(currentDate);
 
   function getMonday(d) {
     d = new Date(d);
@@ -118,20 +163,13 @@
 
   function getApptsForDayDate(date, apptsList = appointments) {
     if (!date || !apptsList) return [];
-    const dStr = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-      .toISOString()
-      .split("T")[0];
+    const targetDateStr = formatDateInput(date);
     return apptsList
       .filter((a) => {
-        const apptDate = new Date(a.appointmentDate);
-        const apptDateStr = new Date(
-          apptDate.getTime() - apptDate.getTimezoneOffset() * 60000,
-        )
-          .toISOString()
-          .split("T")[0];
-        return apptDateStr === dStr;
+        const apptDateStr = extractDate(a.appointmentDate);
+        return apptDateStr === targetDateStr;
       })
-      .sort((a, b) => a.appointmentDate.localeCompare(b.appointmentDate));
+      .sort((a, b) => (a.appointmentDate || "").localeCompare(b.appointmentDate || ""));
   }
 
   $: currentDayAppts = getApptsForDayDate(currentDate, appointments);
@@ -144,11 +182,7 @@
     expandedId = null;
     editingAppt = null;
     const targetDate = dateToUse ? new Date(dateToUse) : new Date();
-    formDateStr = new Date(
-      targetDate.getTime() - targetDate.getTimezoneOffset() * 60000,
-    )
-      .toISOString()
-      .split("T")[0];
+    formDateStr = formatDateInput(targetDate);
     formTime = "10:00";
     formServiceId = services.length > 0 ? services[0].serviceId : "";
     formStatus = 0;
@@ -161,13 +195,8 @@
   function openEditForm(appt) {
     expandedId = null;
     editingAppt = appt;
-    const d = new Date(appt.appointmentDate);
-    formDateStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-      .toISOString()
-      .split("T")[0];
-    const hours = String(d.getHours()).padStart(2, "0");
-    const mins = String(d.getMinutes()).padStart(2, "0");
-    formTime = `${hours}:${mins}`;
+    formDateStr = extractDate(appt.appointmentDate);
+    formTime = extractTime(appt.appointmentDate) || "10:00";
     formServiceId =
       appt.serviceId || (services.length > 0 ? services[0].serviceId : "");
     formStatus = appt.status;
@@ -199,15 +228,7 @@
     const h = parseInt(timeParts[0], 10) || 0;
     const m = parseInt(timeParts[1], 10) || 0;
 
-    const [year, month, day] = formDateStr.split("-").map(Number);
-    const dateObj = new Date(year, month - 1, day, h, m, 0);
-
-    if (isNaN(dateObj.getTime())) {
-      showAlert("Некорректная дата или время");
-      return;
-    }
-
-    const appointmentDate = dateObj.toISOString();
+    const appointmentDate = `${formDateStr}T${formTime}:00Z`;
 
     const body: any = {
       serviceId: formServiceId,
@@ -499,10 +520,9 @@
                   >
                     <div class="card-main-row">
                       <div class="appt-time">
-                        {new Date(appt.appointmentDate).toLocaleTimeString(
-                          "ru-RU",
-                          { hour: "2-digit", minute: "2-digit" },
-                        )}
+                        <span class="time-start">{extractTime(appt.appointmentDate)}</span>
+                        <span class="time-sep">–</span>
+                        <span class="time-end">{extractEndTime(appt)}</span>
                       </div>
                       <div class="appt-details">
                         <div class="service-name">
@@ -570,20 +590,10 @@
                   <div class="detail-time-badge">
                     <Icon name="clock" size={16} />
                     <span
-                      >{new Date(
-                        selectedDetailAppt.appointmentDate,
-                      ).toLocaleTimeString("ru-RU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}</span
+                      >{extractTime(selectedDetailAppt.appointmentDate)} – {extractEndTime(selectedDetailAppt)}</span
                     >
                     <span class="detail-date-sub"
-                      >({new Date(
-                        selectedDetailAppt.appointmentDate,
-                      ).toLocaleDateString("ru-RU", {
-                        day: "numeric",
-                        month: "short",
-                      })})</span
+                      >({formatModalDate(selectedDetailAppt.appointmentDate)})</span
                     >
                   </div>
                   <span
@@ -845,10 +855,9 @@
             >
               <div class="card-main-row">
                 <div class="appt-time">
-                  {new Date(appt.appointmentDate).toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  <span class="time-start">{extractTime(appt.appointmentDate)}</span>
+                  <span class="time-sep">–</span>
+                  <span class="time-end">{extractEndTime(appt)}</span>
                 </div>
                 <div class="appt-details">
                   <div class="service-name">
@@ -1607,14 +1616,41 @@
     font-weight: 700;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    white-space: nowrap;
   }
   .mobile .card-main-row .appt-time {
-    font-size: 18px;
-    min-width: 60px;
+    font-size: 15px;
+    min-width: 100px;
+    align-items: center;
+    gap: 4px;
   }
   .compact .appt-time {
-    font-size: 14px;
-    min-width: 44px;
+    font-size: 13px;
+    min-width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    line-height: 1.2;
+  }
+  .compact .appt-time .time-start {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .compact .appt-time .time-sep {
+    display: none;
+  }
+  .compact .appt-time .time-end {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .compact .appt-time .time-end::before {
+    content: "– ";
   }
 
   .appt-details {

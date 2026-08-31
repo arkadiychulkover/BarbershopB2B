@@ -487,12 +487,20 @@
     }
   }
 
-  function formatDate(dateStr) {
-    // Dates are stored as salon-local time — parse without UTC conversion
+  function formatDate(dateStr, endDateStr?: string) {
+    if (!dateStr) return '';
     const raw = String(dateStr).replace('Z', '').replace('T', ' ');
     const parts = raw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
-    if (!parts) return dateStr;
-    return `${parts[3]}.${parts[2]}.${parts[1]}, ${parts[4]}:${parts[5]}`;
+    if (!parts) return String(dateStr);
+    const start = `${parts[4]}:${parts[5]}`;
+    let end = '';
+    if (endDateStr) {
+      const endRaw = String(endDateStr).replace('Z', '').replace('T', ' ');
+      const endParts = endRaw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+      if (endParts) end = `${endParts[4]}:${endParts[5]}`;
+    }
+    const timeDisplay = end && end !== start ? `${start} – ${end}` : start;
+    return `${parts[3]}.${parts[2]}.${parts[1]}, ${timeDisplay}`;
   }
 
   function switchView(view: 'booking' | 'appointments' | 'profile') {
@@ -1096,7 +1104,7 @@
                   </button>
                 {/if}
               </div>
-              <p>Дата: {formatDate(appt.appointmentDate)}</p>
+              <p>Дата: {formatDate(appt.appointmentDate, appt.appointmentEndDate)}</p>
               <p>Статус: <span class="status-{appt.status}">{formatStatus(appt.status)}</span></p>
               <p>Цена: {appt.price ? appt.price + ' ₴' : 'Не указана'}</p>
               {#if appt.photoResultUrl}
@@ -2538,7 +2546,7 @@
     padding: 16px 18px;
   }
 
-  .master-avatar-thumb {
+  :global(.master-avatar-thumb) {
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -2548,7 +2556,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
 
-  .master-avatar-thumb.lg {
+  :global(.master-avatar-thumb.lg) {
     width: 52px;
     height: 52px;
   }

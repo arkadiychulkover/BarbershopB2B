@@ -68,7 +68,10 @@ export async function fetchImageBlob(path: string): Promise<string> {
     // ngrok requires this header to skip the browser warning page
     headers.set('ngrok-skip-browser-warning', 'true');
 
-    const response = await fetch(`${BASE_URL}${path}`, { headers });
+    const cleanBase = (BASE_URL || '').replace(/\/+$/, '');
+    const cleanPath = path.startsWith('http') ? path : `${cleanBase}/${path.replace(/^\/+/, '')}`;
+
+    const response = await fetch(cleanPath, { headers });
     if (!response.ok) throw new Error(`Image fetch failed: ${response.status}`);
     const blob = await response.blob();
     return URL.createObjectURL(blob);

@@ -113,8 +113,31 @@
   }
 
   function extractTime(dateStr) {
-    const m = String(dateStr).match(/(\d{2}):(\d{2})/);
+    if (!dateStr) return '??:??';
+    const m = String(dateStr).match(/(?:T|\s|^)(\d{2}):(\d{2})/);
     return m ? `${m[1]}:${m[2]}` : '??:??';
+  }
+
+  function addMinutesToTime(timeStr, mins) {
+    if (!timeStr || timeStr === '??:??') return '??:??';
+    const [h, m] = timeStr.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return timeStr;
+    const total = h * 60 + m + mins;
+    const eh = Math.floor(total / 60) % 24;
+    const em = total % 60;
+    return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+  }
+
+  function extractEndTime(appt) {
+    if (!appt) return '??:??';
+    const start = extractTime(appt.appointmentDate);
+    let end = extractTime(appt.appointmentEndDate);
+    if (!end || end === '??:??' || end === start) {
+      const svc = services.find(s => s.serviceId === appt.serviceId);
+      const duration = svc?.duration || 30;
+      end = addMinutesToTime(start, duration);
+    }
+    return end;
   }
 
   function extractDate(dateStr) {
@@ -256,8 +279,7 @@
                   <div class="appt-time">
                     <Clock size={12} />
                     <span>
-                      {extractTime(appt.appointmentDate)} - 
-                      {extractTime(appt.appointmentEndDate)}
+                      {extractTime(appt.appointmentDate)} – {extractEndTime(appt)}
                     </span>
                   </div>
                   <div class="appt-service">

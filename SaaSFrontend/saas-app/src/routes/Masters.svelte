@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
-  import { apiRequest } from '../lib/api';
+  import { apiRequest, BASE_URL } from '../lib/api';
   import { 
     UserPlus, 
     User, 
@@ -15,7 +15,8 @@
     Edit3,
     AtSign,
     Check,
-    ExternalLink
+    ExternalLink,
+    Camera
   } from 'lucide-svelte';
   
   let masters = [];
@@ -28,6 +29,37 @@
 
   let editingMaster = null;
   let isUpdating = false;
+  let isUploadingPhoto = false;
+
+  async function handleMasterPhotoUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file || !editingMaster) return;
+
+    if (file.size > 30 * 1024 * 1024) {
+      alert('Максимальный размер: 30 МБ');
+      return;
+    }
+
+    isUploadingPhoto = true;
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await apiRequest(`/api/Barber/upload-photo/${editingMaster.barberId}`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res && res.photoUrl) {
+        editingMaster.photoUrl = res.photoUrl;
+        masters = masters.map(m => m.id === editingMaster.barberId ? { ...m, photoUrl: res.photoUrl } : m);
+      }
+    } catch (e) {
+      alert('Ошибка загрузки фото: ' + (e.message || ''));
+    } finally {
+      isUploadingPhoto = false;
+    }
+  }
   
   onMount(async () => {
     await loadMasters();
@@ -262,6 +294,19 @@
             </div>
 
             <div class="form-group full-width">
+              <label for="editPhoto">Фотография мастера</label>
+              <div class="photo-upload-row">
+                {#if editingMaster.photoUrl}
+                  <img src={editingMaster.photoUrl.startsWith('http') ? editingMaster.photoUrl : `${BASE_URL}${editingMaster.photoUrl}`} alt="Фото мастера" class="edit-preview-avatar" />
+                {/if}
+                <input type="file" id="editPhoto" accept="image/*" on:change={handleMasterPhotoUpload} class="file-input" disabled={isUploadingPhoto} />
+                {#if isUploadingPhoto}
+                  <span class="uploading-text">Загрузка фото...</span>
+                {/if}
+              </div>
+            </div>
+
+            <div class="form-group full-width">
               <label class="checkbox-label">
                 <input type="checkbox" bind:checked={editingMaster.isActive} />
                 <span>Мастер активен (принимает онлайн-записи)</span>
@@ -309,7 +354,11 @@
           <div class="card master-card">
             <div class="master-top">
               <div class="master-avatar">
-                {(master.name || 'M')[0].toUpperCase()}
+                {#if master.photoUrl}
+                  <img src={master.photoUrl.startsWith('http') ? master.photoUrl : `${BASE_URL}${master.photoUrl}`} alt={master.name} class="master-avatar-img" />
+                {:else}
+                  {(master.name || 'M')[0].toUpperCase()}
+                {/if}
               </div>
               <div class="master-details">
                 <h3>{master.name}</h3>
@@ -575,6 +624,38 @@
     font-weight: 700;
     font-size: 1.2rem;
     flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .master-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .photo-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .edit-preview-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--pastel-rose);
+  }
+
+  .file-input {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+
+  .uploading-text {
+    font-size: 0.85rem;
+    color: var(--pastel-rose);
   }
 
   .master-details {

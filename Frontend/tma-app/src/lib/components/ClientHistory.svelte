@@ -50,14 +50,20 @@
     return "Запланировано";
   }
 
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString("ru-RU", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  function formatDate(iso: string, endIso?: string): string {
+    if (!iso) return "";
+    const raw = String(iso).replace("Z", "").replace("T", " ");
+    const parts = raw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+    if (!parts) return String(iso);
+    const start = `${parts[4]}:${parts[5]}`;
+    let end = "";
+    if (endIso) {
+      const endRaw = String(endIso).replace("Z", "").replace("T", " ");
+      const endParts = endRaw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+      if (endParts) end = `${endParts[4]}:${endParts[5]}`;
+    }
+    const timeDisplay = end && end !== start ? `${start} – ${end}` : start;
+    return `${parts[3]}.${parts[2]}.${parts[1]}, ${timeDisplay}`;
   }
 
   function triggerPhotoUpload(apptId: string, event?: Event) {
@@ -359,7 +365,7 @@
           <div class="appt-row">
             <div class="appt-row-left">
               <div class="appt-row-date">
-                {formatDate(appt.appointmentDate)}
+                {formatDate(appt.appointmentDate, appt.appointmentEndDate)}
               </div>
               <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
               {#if appt.photoResultUrl}
@@ -495,7 +501,7 @@
           <div class="appt-row">
             <div class="appt-row-left">
               <div class="appt-row-date">
-                {formatDate(appt.appointmentDate)}
+                {formatDate(appt.appointmentDate, appt.appointmentEndDate)}
               </div>
               <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
               {#if appt.photoResultUrl}
