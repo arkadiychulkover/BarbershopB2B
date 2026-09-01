@@ -361,20 +361,10 @@
       const formData = new FormData();
       formData.append("photo", file);
 
-      const { authStore } = await import("../stores/auth");
-      let token = null;
-      const unsub = authStore.subscribe((s) => {
-        token = s.token;
-      });
-      unsub();
-
-      const res = await fetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
+      const result = await apiFetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
-
-      if (!res.ok) throw new Error(await res.text());
 
       hapticSuccess();
       await loadData();
@@ -384,9 +374,9 @@
         selectedDetailAppt =
           appointments.find((a) => a.id === pendingPhotoApptId) || null;
       }
-    } catch (e) {
+    } catch (e: any) {
       hapticError();
-      showAlert("Ошибка загрузки фото: " + (e.message || "неизвестная ошибка"));
+      showAlert("Ошибка загрузки фото: " + (e?.message || "неизвестная ошибка"));
     } finally {
       uploadingId = null;
       pendingPhotoApptId = null;
@@ -1356,14 +1346,15 @@
   .card-main-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 16px;
+    gap: 12px;
+    padding: 14px 16px;
+    min-width: 0;
   }
 
   .card-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
   }
 
@@ -1375,6 +1366,9 @@
       color 0.2s;
     line-height: 1;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .expand-arrow.open {
@@ -1386,27 +1380,33 @@
   .card-expanded {
     padding: 0 16px 16px;
     animation: fadeIn 0.25s var(--ease-spring);
+    min-width: 0;
   }
 
   .expand-divider {
     height: 1px;
     background: var(--border-subtle);
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .expand-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
     margin-bottom: 12px;
+    min-width: 0;
   }
 
   .meta-badge {
     font-size: 12px;
     font-weight: 600;
-    padding: 4px 12px;
+    padding: 4px 10px;
     border-radius: var(--radius-pill);
     letter-spacing: 0.02em;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .status-badge-0 {
     background: var(--pastel-amber-dim);
@@ -1428,6 +1428,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
   }
 
   .edit-link {
@@ -1437,11 +1438,12 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    padding: 0;
+    padding: 2px 4px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     transition: opacity 0.2s;
+    white-space: nowrap;
   }
   .edit-link:hover {
     opacity: 0.8;
@@ -1454,11 +1456,12 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    padding: 0;
+    padding: 2px 4px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     transition: opacity 0.2s;
+    white-space: nowrap;
   }
   .cancel-link:hover {
     opacity: 0.8;
@@ -1471,8 +1474,10 @@
     background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: 10px 14px;
+    padding: 10px 12px;
     margin-bottom: 12px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .client-tg-label {
@@ -1487,13 +1492,32 @@
     color: var(--pastel-lavender);
     cursor: pointer;
     flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .client-tg-id:hover {
     color: var(--pastel-rose);
+  }
+
+  .client-handle-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tg-chat-link {
+    color: var(--pastel-rose);
     text-decoration: underline;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .tg-chat-link:hover {
+    opacity: 0.8;
   }
 
   .attach-photo-btn {
@@ -1669,9 +1693,10 @@
   }
   .mobile .card-main-row .appt-time {
     font-size: 15px;
-    min-width: 100px;
+    min-width: 95px;
     align-items: center;
     gap: 4px;
+    flex-shrink: 0;
   }
   .compact .appt-time {
     font-size: 13px;
@@ -1681,6 +1706,7 @@
     align-items: flex-start;
     gap: 1px;
     line-height: 1.2;
+    flex-shrink: 0;
   }
   .compact .appt-time .time-start {
     font-size: 13px;
@@ -1701,25 +1727,65 @@
 
   .appt-details {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .service-name {
     font-weight: 600;
     font-size: 15px;
     color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .compact .service-name {
     font-size: 13px;
     line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .client-name {
     font-size: 13px;
     color: var(--text-secondary);
-    margin-top: 3px;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .compact .client-name {
     font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 375px) {
+    .card-main-row {
+      padding: 12px 14px;
+      gap: 8px;
+    }
+    .mobile .card-main-row .appt-time {
+      font-size: 14px;
+      min-width: 85px;
+    }
+    .service-name {
+      font-size: 14px;
+    }
+    .client-name {
+      font-size: 12px;
+    }
+    .card-expanded {
+      padding: 0 14px 14px;
+    }
+    .expand-actions {
+      gap: 8px;
+    }
+    .edit-link, .cancel-link {
+      font-size: 12px;
+    }
   }
 
   .status-icon {

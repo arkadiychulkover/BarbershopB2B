@@ -97,34 +97,20 @@
       const formData = new FormData();
       formData.append("photo", file);
 
-      const { authStore } = await import("../stores/auth");
-      let token = null;
-      const unsub = authStore.subscribe((s) => {
-        token = s.token;
-      });
-      unsub();
-
-      const res = await fetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
+      const result = await apiFetch(`/api/Barber/put-photo/${pendingPhotoApptId}`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || "Ошибка загрузки фото");
-      }
-
-      const result = await res.json();
       const idx = appointments.findIndex((a) => a.id === pendingPhotoApptId);
-      if (idx !== -1) {
+      if (idx !== -1 && result?.photoUrl) {
         appointments[idx].photoResultUrl = result.photoUrl;
         appointments = [...appointments];
       }
       hapticSuccess();
     } catch (e: any) {
       hapticError();
-      showAlert("Ошибка загрузки фото: " + (e.message || "неизвестная ошибка"));
+      showAlert("Ошибка загрузки фото: " + (e?.message || "неизвестная ошибка"));
     } finally {
       uploadingId = null;
       pendingPhotoApptId = null;
