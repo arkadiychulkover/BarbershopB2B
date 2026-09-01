@@ -366,83 +366,86 @@
       {#each upcoming as appt}
         <div class="appt-card-wrapper status-{appt.status}">
           <div class="appt-row">
-            <div class="appt-row-left">
+            <div class="appt-header-row">
               <div class="appt-row-date">
                 {formatDate(appt.appointmentDate, appt.appointmentEndDate)}
               </div>
-              <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
-              {#if appt.photoResultUrl}
-                <div class="photo-result-row">
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <div
-                    class="photo-thumb-wrap"
-                    on:click={() => (lightboxSrc = appt.photoResultUrl)}
-                  >
-                    <SecureImage
-                      src={appt.photoResultUrl}
-                      alt="Результат"
-                      className="photo-thumb"
-                      style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
-                    />
-                    <span class="photo-thumb-label">
-                      <Icon
-                        name="camera"
-                        size={14}
-                        color="var(--pastel-rose)"
-                      />
-                      <span>Фото результата</span>
-                    </span>
-                  </div>
-                  {#if appt.status === 1}
-                    <button
-                      type="button"
-                      class="btn-change-photo"
-                      on:click={(e) => triggerPhotoUpload(appt.id, e)}
-                      disabled={uploadingId === appt.id}
-                      title="Заменить фото"
-                    >
-                      {#if uploadingId === appt.id}
-                        <span class="spinner-sm"></span>
-                      {:else}
-                        <Icon
-                          name="refresh"
-                          size={13}
-                          color="var(--pastel-lavender)"
-                        />
-                        <span>Заменить</span>
-                      {/if}
-                    </button>
-                  {/if}
-                </div>
-              {:else if appt.status === 1}
-                <div class="attach-photo-wrap">
-                  <button
-                    type="button"
-                    class="btn-attach-photo"
-                    on:click={(e) => triggerPhotoUpload(appt.id, e)}
-                    disabled={uploadingId === appt.id}
-                  >
-                    {#if uploadingId === appt.id}
-                      <span class="spinner-sm"></span>
-                      <span>Загрузка...</span>
-                    {:else}
-                      <Icon
-                        name="camera"
-                        size={14}
-                        color="var(--pastel-rose)"
-                      />
-                      <span>Прикрепить фото результата</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-            </div>
-            <div class="appt-row-right">
               <span class="badge badge-{appt.status}"
                 >{statusLabel(appt.status)}</span
               >
-              {#if appt.status !== 2}
+            </div>
+
+            <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
+
+            {#if appt.photoResultUrl}
+              <div class="photo-result-row">
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                  class="photo-thumb-wrap"
+                  on:click={() => (lightboxSrc = appt.photoResultUrl)}
+                >
+                  <SecureImage
+                    src={appt.photoResultUrl}
+                    alt="Результат"
+                    className="photo-thumb"
+                    style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
+                  />
+                  <span class="photo-thumb-label">
+                    <Icon
+                      name="camera"
+                      size={14}
+                      color="var(--pastel-rose)"
+                    />
+                    <span>Фото результата</span>
+                  </span>
+                </div>
+                {#if appt.status === 1}
+                  <button
+                    type="button"
+                    class="btn-change-photo"
+                    on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                    disabled={uploadingId === appt.id}
+                    title="Заменить фото"
+                  >
+                    {#if uploadingId === appt.id}
+                      <span class="spinner-sm"></span>
+                    {:else}
+                      <Icon
+                        name="refresh"
+                        size={13}
+                        color="var(--pastel-lavender)"
+                      />
+                      <span>Заменить</span>
+                    {/if}
+                  </button>
+                {/if}
+              </div>
+            {:else if appt.status === 1}
+              <div class="attach-photo-wrap">
+                <button
+                  type="button"
+                  class="btn-attach-photo"
+                  on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                  disabled={uploadingId === appt.id}
+                >
+                  {#if uploadingId === appt.id}
+                    <span class="spinner-sm"></span>
+                    <span>Загрузка...</span>
+                  {:else}
+                    <Icon
+                      name="camera"
+                      size={14}
+                      color="var(--pastel-rose)"
+                    />
+                    <span>Прикрепить фото результата</span>
+                  {/if}
+                </button>
+              </div>
+            {/if}
+
+            {#if appt.status !== 2}
+              <div class="appt-actions-row">
                 <button
                   type="button"
                   class="btn-cancel-appt"
@@ -451,8 +454,8 @@
                   <Icon name="x" size={12} />
                   <span>Отменить</span>
                 </button>
-              {/if}
-            </div>
+              </div>
+            {/if}
           </div>
 
           <!-- Comment Section -->
@@ -502,81 +505,83 @@
       {#each past as appt}
         <div class="appt-card-wrapper status-{appt.status}">
           <div class="appt-row">
-            <div class="appt-row-left">
+            <div class="appt-header-row">
               <div class="appt-row-date">
                 {formatDate(appt.appointmentDate, appt.appointmentEndDate)}
               </div>
-              <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
-              {#if appt.photoResultUrl}
-                <div class="photo-result-row">
-                  <!-- svelte-ignore a11y-click-events-have-key-events -->
-                  <!-- svelte-ignore a11y-no-static-element-interactions -->
-                  <div
-                    class="photo-thumb-wrap"
-                    on:click={() => (lightboxSrc = appt.photoResultUrl)}
-                  >
-                    <SecureImage
-                      src={appt.photoResultUrl}
-                      alt="Результат"
-                      className="photo-thumb"
-                      style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
+              <span class="badge badge-{appt.status}"
+                >{statusLabel(appt.status)}</span
+              >
+            </div>
+
+            <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
+
+            {#if appt.photoResultUrl}
+              <div class="photo-result-row">
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                  class="photo-thumb-wrap"
+                  on:click={() => (lightboxSrc = appt.photoResultUrl)}
+                >
+                  <SecureImage
+                    src={appt.photoResultUrl}
+                    alt="Результат"
+                    className="photo-thumb"
+                    style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
+                  />
+                  <span class="photo-thumb-label">
+                    <Icon
+                      name="camera"
+                      size={14}
+                      color="var(--pastel-rose)"
                     />
-                    <span class="photo-thumb-label">
-                      <Icon
-                        name="camera"
-                        size={14}
-                        color="var(--pastel-rose)"
-                      />
-                      <span>Фото результата</span>
-                    </span>
-                  </div>
-                  {#if appt.status === 1}
-                    <button
-                      type="button"
-                      class="btn-change-photo"
-                      on:click={(e) => triggerPhotoUpload(appt.id, e)}
-                      disabled={uploadingId === appt.id}
-                      title="Заменить фото"
-                    >
-                      {#if uploadingId === appt.id}
-                        <span class="spinner-sm"></span>
-                      {:else}
-                        <Icon
-                          name="refresh"
-                          size={13}
-                          color="var(--pastel-lavender)"
-                        />
-                        <span>Заменить</span>
-                      {/if}
-                    </button>
-                  {/if}
+                    <span>Фото результата</span>
+                  </span>
                 </div>
-              {:else if appt.status === 1}
-                <div class="attach-photo-wrap">
+                {#if appt.status === 1}
                   <button
                     type="button"
-                    class="btn-attach-photo"
+                    class="btn-change-photo"
                     on:click={(e) => triggerPhotoUpload(appt.id, e)}
                     disabled={uploadingId === appt.id}
+                    title="Заменить фото"
                   >
                     {#if uploadingId === appt.id}
                       <span class="spinner-sm"></span>
-                      <span>Загрузка...</span>
                     {:else}
                       <Icon
-                        name="camera"
-                        size={14}
-                        color="var(--pastel-rose)"
+                        name="refresh"
+                        size={13}
+                        color="var(--pastel-lavender)"
                       />
-                      <span>Прикрепить фото результата</span>
+                      <span>Заменить</span>
                     {/if}
                   </button>
-                </div>
-              {/if}
-            </div>
-            <span class="badge badge-{appt.status}"
-              >{statusLabel(appt.status)}</span
-            >
+                {/if}
+              </div>
+            {:else if appt.status === 1}
+              <div class="attach-photo-wrap">
+                <button
+                  type="button"
+                  class="btn-attach-photo"
+                  on:click={(e) => triggerPhotoUpload(appt.id, e)}
+                  disabled={uploadingId === appt.id}
+                >
+                  {#if uploadingId === appt.id}
+                    <span class="spinner-sm"></span>
+                    <span>Загрузка...</span>
+                  {:else}
+                    <Icon
+                      name="camera"
+                      size={14}
+                      color="var(--pastel-rose)"
+                    />
+                    <span>Прикрепить фото результата</span>
+                  {/if}
+                </button>
+              </div>
+            {/if}
           </div>
 
           <!-- Comment Section -->
@@ -996,15 +1001,28 @@
     color: var(--pastel-rose);
   }
 
-  .appt-row-left {
-    flex: 1;
+  .appt-row {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .appt-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    width: 100%;
   }
 
   .appt-row-date {
     font-size: 13px;
     color: var(--text-muted);
-    margin-bottom: 4px;
     font-variant-numeric: tabular-nums;
+    font-weight: 500;
   }
 
   .appt-row-service {
@@ -1013,17 +1031,25 @@
     color: var(--text-primary);
   }
 
+  .appt-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+
   /* Photo thumb & result row */
   .photo-result-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-top: 10px;
+    margin-top: 6px;
     background: var(--bg-surface-elevated);
     padding: 6px 12px 6px 6px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .photo-thumb-wrap {
@@ -1031,6 +1057,7 @@
     align-items: center;
     gap: 10px;
     cursor: pointer;
+    min-width: 0;
   }
 
   .photo-thumb {
@@ -1046,6 +1073,7 @@
     font-size: 13px;
     color: var(--pastel-rose);
     font-weight: 600;
+    white-space: nowrap;
   }
 
   .btn-change-photo {
@@ -1061,6 +1089,7 @@
     border-radius: var(--radius-pill);
     cursor: pointer;
     transition: all 0.2s var(--ease-spring);
+    flex-shrink: 0;
   }
   .btn-change-photo:hover {
     color: var(--text-primary);
@@ -1072,7 +1101,7 @@
   }
 
   .attach-photo-wrap {
-    margin-top: 10px;
+    margin-top: 6px;
   }
 
   .btn-attach-photo {
@@ -1132,14 +1161,6 @@
     background: var(--pastel-coral-dim);
     color: var(--pastel-coral);
     border: 1px solid rgba(232, 130, 130, 0.25);
-  }
-
-  .appt-row-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    flex-shrink: 0;
   }
 
   .btn-cancel-appt {

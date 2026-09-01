@@ -1393,10 +1393,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
     gap: 8px 12px;
     margin-bottom: 12px;
     min-width: 0;
+    width: 100%;
   }
 
   .meta-badge {
@@ -1428,7 +1428,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
+    margin-left: auto;
   }
 
   .edit-link {
@@ -1462,6 +1462,7 @@
     gap: 5px;
     transition: opacity 0.2s;
     white-space: nowrap;
+    margin-left: auto;
   }
   .cancel-link:hover {
     opacity: 0.8;
@@ -1780,11 +1781,20 @@
     .card-expanded {
       padding: 0 14px 14px;
     }
+    .expand-meta {
+      flex-wrap: wrap;
+    }
     .expand-actions {
+      width: 100%;
+      justify-content: space-between;
+      margin-left: 0;
       gap: 8px;
     }
     .edit-link, .cancel-link {
       font-size: 12px;
+    }
+    .cancel-link {
+      margin-left: auto;
     }
   }
 
