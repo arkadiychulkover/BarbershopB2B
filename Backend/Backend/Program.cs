@@ -138,7 +138,6 @@ namespace Backend
 
             app.UseMiddleware<Backend.Middlewares.GlobalExceptionMiddleware>();
 
-            // app.UseHttpsRedirection(); // Отключено для корректной работы через Vite/ngrok прокси
             app.UseStaticFiles();
             
             app.UseCors();
@@ -155,13 +154,24 @@ namespace Backend
                 {
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     db.Database.Migrate();
-                    if (!db.SaasAdmins.Any())
+
+                    var oldAdmins = db.SaasAdmins.Where(a => a.Email.ToLower() == "admin@barbershop.b2b").ToList();
+                    if (oldAdmins.Any())
                     {
-                        var (salt, hash) = PasswordSecurity.CreateHashAndSalt("Admin12345!");
+                        db.SaasAdmins.RemoveRange(oldAdmins);
+                        db.SaveChanges();
+                    }
+
+                    string targetAdminEmail = "arkadijculkov2@gmail.com";
+                    var existingAdmin = db.SaasAdmins.FirstOrDefault(a => a.Email.ToLower() == targetAdminEmail);
+                    if (existingAdmin == null)
+                    {
+                        string adminPassword = "ArchAdmin2026!#SecurePass";
+                        var (salt, hash) = PasswordSecurity.CreateHashAndSalt(adminPassword);
                         db.SaasAdmins.Add(new Backend.Models.SaasAdmin
                         {
                             Id = Guid.NewGuid(),
-                            Email = "admin@barbershop.b2b",
+                            Email = targetAdminEmail,
                             PasswordSalt = salt,
                             PasswordHash = hash,
                             CreatedAt = DateTime.UtcNow
