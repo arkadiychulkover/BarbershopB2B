@@ -113,6 +113,9 @@
   main {
     width: 100%;
     min-height: 100vh;
+    min-height: var(--tg-viewport-stable-height, 100dvh);
+    display: flex;
+    flex-direction: column;
     background-color: var(--bg-canvas);
     color: var(--text-primary);
     font-family: var(--font-family);

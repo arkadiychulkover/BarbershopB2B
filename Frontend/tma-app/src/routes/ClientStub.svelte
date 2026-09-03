@@ -1271,10 +1271,9 @@
 
 <style>
   .booking-container {
-    padding: 16px 16px 80px;
+    padding: 14px 16px 20px;
     box-sizing: border-box;
-    min-height: 100vh;
-    background-color: var(--bg-canvas);
+    width: 100%;
     color: var(--text-primary);
     font-family: var(--font-family);
     animation: pageFadeIn 0.3s ease-out;
