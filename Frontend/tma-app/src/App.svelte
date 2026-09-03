@@ -3,6 +3,9 @@
   import { authStore, setAuthStatus } from './lib/stores/auth';
   import { initTelegram, getInitData } from './lib/telegram';
   import { apiFetch } from './lib/api';
+  import { currentLocale } from './lib/locale';
+  import { m } from './lib/paraglide/messages.js';
+  import LanguageSwitcher from './lib/components/LanguageSwitcher.svelte';
   
   import BarberDashboard from './routes/BarberDashboard.svelte';
   import ClientStub from './routes/ClientStub.svelte';
@@ -71,27 +74,39 @@
 </script>
 
 <main>
-  {#if $authStore.status === 'loading'}
-    <div class="loader-container">
-      <div class="spinner"></div>
-      <p>Загрузка...</p>
+  <header class="tma-top-bar">
+    <div class="tma-brand-box">
+      <span class="tma-brand-dot"></span>
+      <span class="tma-brand-text">ARCH SYSTEM</span>
     </div>
-  {:else if $authStore.status === 'error'}
-    <div class="error-container">
-      {#if !initData}
-        <h2>Откройте приложение через Telegram</h2>
-        <p>Это мини-приложение работает только внутри мессенджера Telegram.</p>
-      {:else}
-        <h2>Произошла ошибка</h2>
-        <p>Не удалось подключиться к серверу.</p>
-        <button on:click={authenticate}>Повторить</button>
-      {/if}
+    <div class="tma-top-actions">
+      <LanguageSwitcher />
     </div>
-  {:else if $authStore.status === 'barber'}
-    <BarberDashboard />
-  {:else if $authStore.status === 'client'}
-    <ClientStub />
-  {/if}
+  </header>
+
+  {#key $currentLocale}
+    {#if $authStore.status === 'loading'}
+      <div class="loader-container">
+        <div class="spinner"></div>
+        <p>{m.tma_loading()}</p>
+      </div>
+    {:else if $authStore.status === 'error'}
+      <div class="error-container">
+        {#if !initData}
+          <h2>{m.tma_open_in_tg()}</h2>
+          <p>{m.tma_open_in_tg_desc()}</p>
+        {:else}
+          <h2>{m.tma_error_server()}</h2>
+          <p>{m.tma_error_server()}</p>
+          <button on:click={authenticate}>{m.tma_retry()}</button>
+        {/if}
+      </div>
+    {:else if $authStore.status === 'barber'}
+      <BarberDashboard />
+    {:else if $authStore.status === 'client'}
+      <ClientStub />
+    {/if}
+  {/key}
 </main>
 
 <style>
@@ -101,6 +116,49 @@
     background-color: var(--bg-canvas);
     color: var(--text-primary);
     font-family: var(--font-family);
+  }
+
+  .tma-top-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 46px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(18, 20, 26, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1000;
+  }
+
+  .tma-brand-box {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tma-brand-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--pastel-rose, #e09f8f);
+    box-shadow: 0 0 10px var(--pastel-rose-glow, rgba(223, 158, 142, 0.5));
+  }
+
+  .tma-brand-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-primary, #ffffff);
+  }
+
+  .tma-top-actions {
+    display: flex;
+    align-items: center;
   }
 
   .loader-container, .error-container {

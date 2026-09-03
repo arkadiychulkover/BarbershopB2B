@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { apiRequest } from '../lib/api';
   import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, RefreshCw, KeyRound, ShieldAlert } from 'lucide-svelte';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
 
   // states: 'verifying' | 'form' | 'invalid' | 'success'
   let state = 'verifying';
@@ -40,7 +42,7 @@
 
     if (!token) {
       state = 'invalid';
-      verifyErrorMsg = 'Токен восстановления отсутствует в ссылке.';
+      verifyErrorMsg = m.reset_invalid_desc();
       return;
     }
 
@@ -53,7 +55,7 @@
       state = 'form';
     } catch (err) {
       state = 'invalid';
-      verifyErrorMsg = err.message || 'Ссылка для сброса пароля недействительна или срок её действия истёк.';
+      verifyErrorMsg = err.message || m.reset_invalid_desc();
     }
   }
 
@@ -61,12 +63,12 @@
     submitErrorMsg = '';
 
     if (!newPassword || newPassword.length < 6) {
-      submitErrorMsg = 'Пароль должен содержать минимум 6 символов';
+      submitErrorMsg = m.reset_pwd_min_len();
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      submitErrorMsg = 'Пароли не совпадают';
+      submitErrorMsg = m.reset_pwd_mismatch();
       return;
     }
 
@@ -83,7 +85,7 @@
 
       state = 'success';
     } catch (err) {
-      submitErrorMsg = err.message || 'Ошибка смены пароля. Попробуйте запросить ссылку повторно.';
+      submitErrorMsg = err.message || m.reset_failed_error();
     } finally {
       isSubmitting = false;
     }
@@ -91,6 +93,10 @@
 </script>
 
 <div class="auth-container">
+  <div class="auth-top-actions">
+    <LanguageSwitcher />
+  </div>
+
   <div class="card auth-card">
     <div class="brand-header">
       <span class="brand-dot"></span>
@@ -101,8 +107,8 @@
     {#if state === 'verifying'}
       <div class="status-center-box">
         <div class="spinner-lg"></div>
-        <h2>Проверка ссылки...</h2>
-        <p class="subtitle">Пожалуйста, подождите, мы проверяем валидность токена сброса</p>
+        <h2>{m.reset_verifying_title()}</h2>
+        <p class="subtitle">{m.reset_verifying_subtitle()}</p>
       </div>
 
     <!-- 2. INVALID / EXPIRED STATE -->
@@ -111,29 +117,29 @@
         <div class="error-icon-wrap">
           <ShieldAlert size={40} class="text-coral" />
         </div>
-        <h2>Ссылка недействительна</h2>
+        <h2>{m.reset_invalid_title()}</h2>
         <p class="error-desc">
-          {verifyErrorMsg || 'Срок действия ссылки истёк или она уже была использована ранее.'}
+          {verifyErrorMsg || m.reset_invalid_desc()}
         </p>
 
         <div class="actions-stack">
           <a href="#/forgot-password" class="btn btn-primary w-full">
             <RefreshCw size={16} />
-            <span>Запросить новую ссылку</span>
+            <span>{m.reset_request_new_link()}</span>
           </a>
           <a href="#/login" class="btn btn-secondary w-full">
             <ArrowLeft size={16} />
-            <span>Вернуться ко входу</span>
+            <span>{m.reset_back_to_login()}</span>
           </a>
         </div>
       </div>
 
     <!-- 3. FORM STATE -->
     {:else if state === 'form'}
-      <h2>Новый пароль</h2>
+      <h2>{m.reset_new_password_title()}</h2>
       <p class="subtitle">
-        Придумайте новый надежный пароль
-        {#if maskedEmail}для аккаунта <strong class="text-rose">{maskedEmail}</strong>{/if}
+        {m.reset_new_password_subtitle()}
+        {#if maskedEmail} {m.reset_for_account()} <strong class="text-rose">{maskedEmail}</strong>{/if}
       </p>
 
       {#if submitErrorMsg}
@@ -145,7 +151,7 @@
 
       <form on:submit|preventDefault={handleResetPassword}>
         <div class="form-group">
-          <label for="newPassword">Новый пароль</label>
+          <label for="newPassword">{m.reset_new_password_label()}</label>
           <div class="input-icon-wrap">
             <Lock size={17} class="input-icon" />
             <input 
@@ -153,7 +159,7 @@
               type={showNewPassword ? 'text' : 'password'} 
               class="input has-icon has-trailing" 
               bind:value={newPassword} 
-              placeholder="Минимум 6 символов" 
+              placeholder={m.auth_password_placeholder()} 
               minlength="6"
               required 
             />
@@ -173,7 +179,7 @@
         </div>
 
         <div class="form-group">
-          <label for="confirmPassword">Повторите пароль</label>
+          <label for="confirmPassword">{m.reset_confirm_password_label()}</label>
           <div class="input-icon-wrap">
             <KeyRound size={17} class="input-icon" />
             <input 
@@ -181,7 +187,7 @@
               type={showConfirmPassword ? 'text' : 'password'} 
               class="input has-icon has-trailing" 
               bind:value={confirmPassword} 
-              placeholder="Повторите новый пароль" 
+              placeholder={m.reset_confirm_password_placeholder()} 
               minlength="6"
               required 
             />
@@ -201,7 +207,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary submit-btn" disabled={isSubmitting || !newPassword || !confirmPassword}>
-          <span>{isSubmitting ? 'Сохранение...' : 'Сменить пароль'}</span>
+          <span>{isSubmitting ? m.common_loading() : m.reset_btn_submit()}</span>
           {#if !isSubmitting}
             <ArrowRight size={17} />
           {/if}
@@ -211,7 +217,7 @@
       <div class="auth-links">
         <a href="#/login" class="back-link">
           <ArrowLeft size={15} />
-          <span>Отмена и вход в систему</span>
+          <span>{m.reset_cancel_and_login()}</span>
         </a>
       </div>
 
@@ -221,13 +227,13 @@
         <div class="success-icon-wrap">
           <CheckCircle2 size={44} class="text-rose" />
         </div>
-        <h2>Пароль изменен!</h2>
+        <h2>{m.reset_success_title()}</h2>
         <p class="success-desc">
-          Ваш новый пароль успешно сохранен. Теперь вы можете войти в свой кабинет.
+          {m.reset_success_desc()}
         </p>
 
         <a href="#/login" class="btn btn-primary w-full glow">
-          <span>Войти в личный кабинет</span>
+          <span>{m.reset_login_btn()}</span>
           <ArrowRight size={17} />
         </a>
       </div>
@@ -237,6 +243,7 @@
 
 <style>
   .auth-container {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -246,6 +253,13 @@
     background-image: 
       radial-gradient(ellipse 60% 50% at 50% 20%, rgba(223, 158, 142, 0.08), transparent 70%),
       radial-gradient(ellipse 40% 40% at 80% 80%, rgba(179, 183, 219, 0.05), transparent 70%);
+  }
+
+  .auth-top-actions {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
   }
   
   .auth-card {

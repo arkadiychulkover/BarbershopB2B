@@ -4,6 +4,8 @@
   import Icon from '../lib/components/Icon.svelte';
   import SecureImage from '../lib/components/SecureImage.svelte';
   import { theme, toggleTmaTheme } from '../lib/stores/theme';
+  import { m } from '../lib/paraglide/messages.js';
+  import { currentLocale } from '../lib/locale';
 
   let currentView: 'booking' | 'appointments' | 'profile' = 'booking';
   let myAppointments = [];
@@ -54,10 +56,10 @@
   function formatHoursText(h: number): string {
     const abs = Math.abs(h) % 100;
     const last = abs % 10;
-    if (abs >= 11 && abs <= 19) return 'часов';
-    if (last === 1) return 'час';
-    if (last >= 2 && last <= 4) return 'часа';
-    return 'часов';
+    if (abs >= 11 && abs <= 19) return m.tma_hour_5plus();
+    if (last === 1) return m.tma_hour_1();
+    if (last >= 2 && last <= 4) return m.tma_hour_24();
+    return m.tma_hour_5plus();
   }
 
   function getEffectiveReminderHours(): number {
@@ -117,7 +119,7 @@
 
   function validatePhone(phone: string): { valid: boolean; cleaned: string; error?: string } {
     if (!phone || !phone.trim()) {
-      return { valid: false, cleaned: '', error: 'Укажите номер телефона' };
+      return { valid: false, cleaned: '', error: m.tma_client_phone_modal_title_set() };
     }
     const cleaned = phone.trim().replace(/[\s\-\(\)]/g, '');
     const regex = /^\+[0-9]{1,3}[0-9]{9}$/;
@@ -125,7 +127,7 @@
       return { 
         valid: false, 
         cleaned, 
-        error: 'Номер должен начинаться с + и содержать код страны (1-3 цифры) и 9 цифр номера (например, +380991234567 или +79991234567)' 
+        error: m.tma_client_phone_format() 
       };
     }
     return { valid: true, cleaned };
@@ -146,7 +148,7 @@
   async function saveProfilePhone() {
     const val = validatePhone(profilePhoneInput);
     if (!val.valid) {
-      profilePhoneError = val.error || 'Некорректный номер';
+      profilePhoneError = val.error || m.tma_invalid_phone();
       return;
     }
 
@@ -160,13 +162,13 @@
       });
       if (!clientProfile) clientProfile = {};
       clientProfile.phone = val.cleaned;
-      profilePhoneSuccess = 'Номер телефона успешно сохранен!';
+      profilePhoneSuccess = m.tma_phone_saved_success();
       editingPhone = false;
       setTimeout(() => {
         profilePhoneSuccess = '';
       }, 3000);
     } catch (err: any) {
-      profilePhoneError = err.message || 'Ошибка сохранения номера';
+      profilePhoneError = err.message || m.tma_phone_save_error();
     } finally {
       savingProfilePhone = false;
     }
@@ -191,7 +193,7 @@
     try {
       masters = await apiFetch('/api/Clients/Masters');
     } catch (err) {
-      error = err.message || 'Ошибка загрузки мастеров';
+      error = err.message || m.tma_masters_load_error();
     } finally {
       loading = false;
     }
@@ -212,7 +214,7 @@
     try {
       services = await apiFetch(`/api/Clients/Services/${master.id}`);
     } catch (err) {
-      error = err.message || 'Ошибка загрузки услуг';
+      error = err.message || m.tma_services_load_error();
     } finally {
       loading = false;
     }
@@ -260,7 +262,7 @@
       myAppointments = [...myAppointments];
       closeReviewModal();
     } catch(err) {
-      error = err.message || 'Ошибка отправки отзыва';
+      error = err.message || m.tma_review_send_error();
     } finally {
       submittingReview = false;
     }
@@ -320,7 +322,7 @@
       const query = new URLSearchParams(params).toString();
       availableSlots = await apiFetch(`/api/Clients/AvailableTimeSlots?${query}`);
     } catch (err) {
-      error = err.message || 'Ошибка загрузки расписания';
+      error = err.message || m.tma_schedule_load_error();
     } finally {
       loading = false;
     }
@@ -354,7 +356,7 @@
   async function savePhoneAndBook() {
     const val = validatePhone(phoneInput);
     if (!val.valid) {
-      phoneError = val.error || 'Некорректный номер';
+      phoneError = val.error || m.tma_invalid_phone();
       return;
     }
 
@@ -373,7 +375,7 @@
         await executeBooking();
       }
     } catch (err: any) {
-      phoneError = err.message || 'Не удалось сохранить номер';
+      phoneError = err.message || m.tma_phone_save_failed();
     } finally {
       savingPhone = false;
     }
@@ -401,11 +403,11 @@
       });
       step = 4;
     } catch (err) {
-      if (err.message && (err.message.includes('телефон') || err.message.includes('phone') || err.message.includes('Phone'))) {
+      if (err.message && (err.message.includes('\u0442\u0435\u043b\u0435\u0444\u043e\u043d') || err.message.includes('phone') || err.message.includes('Phone'))) {
         showPhoneModal = true;
         phoneInput = '';
       } else {
-        error = err.message || 'Ошибка при оформлении записи';
+        error = err.message || m.tma_booking_create_error();
       }
     } finally {
       loading = false;
@@ -433,12 +435,12 @@
       event.preventDefault();
     }
     if (!username) {
-      showAlert('У мастера не настроен Telegram @username');
+      showAlert(m.tma_tg_not_configured());
       return;
     }
     const clean = String(username).trim().replace(/^@/, '');
     if (!clean || /^\d+$/.test(clean)) {
-      showAlert('У мастера не настроен Telegram @username');
+      showAlert(m.tma_tg_not_configured());
       return;
     }
 
@@ -477,14 +479,14 @@
     try {
       myAppointments = await apiFetch('/api/Clients/get-my-appointments');
     } catch (err) {
-      error = err.message || 'Ошибка загрузки записей';
+      error = err.message || m.tma_appts_load_error();
     } finally {
       loadingAppointments = false;
     }
   }
 
   async function cancelAppointment(id) {
-    if (!confirm('Вы уверены, что хотите отменить запись?')) return;
+    if (!confirm(m.tma_cancel_appt_prompt())) return;
     
     loadingAppointments = true;
     error = '';
@@ -494,18 +496,18 @@
       });
       await fetchMyAppointments();
     } catch (err) {
-      error = err.message || 'Ошибка отмены записи';
+      error = err.message || m.tma_cancel_appt_error();
       loadingAppointments = false;
     }
   }
 
   function formatStatus(status) {
     switch(status) {
-      case 0: return 'Запланирована';
-      case 1: return 'Завершена';
-      case 2: return 'Отменена';
-      case 3: return 'Не пришел';
-      default: return 'Неизвестно';
+      case 0: return m.tma_status_scheduled_f();
+      case 1: return m.tma_status_completed_f();
+      case 2: return m.tma_status_cancelled_f();
+      case 3: return m.tma_client_status_not_come();
+      default: return m.tma_unknown();
     }
   }
 
@@ -540,12 +542,12 @@
 <div class="booking-container">
   <div class="top-nav-bar">
     <div class="tabs">
-      <button class="tab-btn {currentView === 'booking' ? 'active' : ''}" on:click={() => switchView('booking')}>Запись</button>
-      <button class="tab-btn {currentView === 'appointments' ? 'active' : ''}" on:click={() => switchView('appointments')}>Мои записи</button>
-      <button class="tab-btn {currentView === 'profile' ? 'active' : ''}" on:click={() => switchView('profile')}>Профиль</button>
+      <button class="tab-btn {currentView === 'booking' ? 'active' : ''}" on:click={() => switchView('booking')}>{m.tma_client_tab_booking()}</button>
+      <button class="tab-btn {currentView === 'appointments' ? 'active' : ''}" on:click={() => switchView('appointments')}>{m.tma_client_success_my_appts()}</button>
+      <button class="tab-btn {currentView === 'profile' ? 'active' : ''}" on:click={() => switchView('profile')}>{m.tma_tab_profile()}</button>
     </div>
 
-    <button class="theme-tma-toggle" on:click={toggleTmaTheme} title="Сменить тему">
+    <button class="theme-tma-toggle" on:click={toggleTmaTheme} title={m.tma_theme_toggle_title()}>
       {#if $theme === 'dark'}
         <Icon name="sun" size={17} color="var(--pastel-amber)" />
       {:else}
@@ -560,13 +562,13 @@
       {#if step > 1}
       <button class="back-btn" on:click={goBack}>
         <Icon name="chevron-left" size={16} />
-        <span>Назад</span>
+        <span>{m.tma_back()}</span>
       </button>
     {/if}
       <h2>
-        {#if step === 1}Выбор мастера
-        {:else if step === 2}Выбор услуги
-        {:else if step === 3}Дата и время
+        {#if step === 1}{m.tma_client_step1()}
+        {:else if step === 2}{m.tma_client_step2()}
+        {:else if step === 3}{m.tma_client_step3()}
         {/if}
       </h2>
     </div>
@@ -597,10 +599,10 @@
                   type="button" 
                   class="master-rating-tag" 
                   on:click|stopPropagation={(e) => openMasterReviews(master, e)}
-                  title="Посмотреть отзывы о мастере"
+                  title={m.tma_client_barber_reviews()}
                 >
                   <Icon name="star" size={13} color="var(--pastel-amber)" />
-                  <span class="rating-val">{master.rating && Number(master.rating) > 0 ? Number(master.rating).toFixed(1) : 'Новый'}</span>
+                  <span class="rating-val">{master.rating && Number(master.rating) > 0 ? Number(master.rating).toFixed(1) : m.tma_client_new_badge()}</span>
                   {#if master.reviewsCount > 0}
                     <span class="rating-count">({master.reviewsCount})</span>
                   {/if}
@@ -619,8 +621,8 @@
                   type="button"
                   class="master-square-btn write-btn" 
                   on:click|stopPropagation={(e) => openBarberChat(master.username, e)}
-                  title="Написать мастеру в Telegram"
-                  aria-label="Написать мастеру в Telegram"
+                  title={m.tma_client_write_barber()}
+                  aria-label={m.tma_client_write_barber()}
                 >
                   <Icon name="telegram" size={20} color="var(--pastel-lavender)" />
                 </button>
@@ -632,8 +634,8 @@
                 type="button" 
                 class="master-square-btn reviews-btn" 
                 on:click|stopPropagation={(e) => openMasterReviews(master, e)}
-                title="Отзывы о мастере"
-                aria-label="Отзывы о мастере"
+                title={m.tma_client_barber_reviews()}
+                aria-label={m.tma_client_barber_reviews()}
               >
                 <Icon name="review-rating" size={20} color="var(--pastel-rose)" />
                 {#if master.reviewsCount > 0}
@@ -647,7 +649,7 @@
             </div>
           </div>
         {:else}
-          <p class="empty">Нет доступных мастеров</p>
+          <p class="empty">{m.tma_client_no_barbers()}</p>
         {/each}
       </div>
     {/if}
@@ -657,14 +659,14 @@
         <SecureImage src={selectedMaster.photoUrl} alt={selectedMaster.name} className="master-avatar-thumb lg" />
         <div class="master-card-info">
           <div class="master-title-line">
-            <h3>Мастер: {selectedMaster.name}</h3>
+            <h3>{m.tma_client_barber()} {selectedMaster.name}</h3>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <button 
               type="button" 
               class="master-rating-tag" 
               on:click|stopPropagation={(e) => openMasterReviews(selectedMaster, e)}
-              title="Посмотреть отзывы о мастере"
+              title={m.tma_client_barber_reviews()}
             >
               <Icon name="star" size={13} color="var(--pastel-amber)" />
               <span class="rating-val">
@@ -673,7 +675,7 @@
                 {:else if selectedMaster.rating && Number(selectedMaster.rating) > 0}
                   {Number(selectedMaster.rating).toFixed(1)}
                 {:else}
-                  Новый
+                  {m.tma_client_new_badge()}
                 {/if}
               </span>
               {#if selectedMaster.reviewsCount > 0}
@@ -694,8 +696,8 @@
               type="button"
               class="master-square-btn write-btn" 
               on:click|stopPropagation={(e) => openBarberChat(selectedMaster.username, e)}
-              title="Написать мастеру в Telegram"
-              aria-label="Написать мастеру в Telegram"
+              title={m.tma_client_write_barber()}
+              aria-label={m.tma_client_write_barber()}
             >
               <Icon name="telegram" size={20} color="var(--pastel-lavender)" />
             </button>
@@ -707,8 +709,8 @@
             type="button" 
             class="master-square-btn reviews-btn" 
             on:click|stopPropagation={(e) => openMasterReviews(selectedMaster, e)}
-            title="Отзывы о мастере"
-            aria-label="Отзывы о мастере"
+            title={m.tma_client_barber_reviews()}
+            aria-label={m.tma_client_barber_reviews()}
           >
             <Icon name="review-rating" size={20} color="var(--pastel-rose)" />
             {#if selectedMaster.reviewsCount > 0}
@@ -720,7 +722,7 @@
 
       <div class="step-subheading">
         <Icon name="scissors" size={16} color="var(--pastel-lavender)" />
-        <h3>Выберите услуги (можно несколько)</h3>
+        <h3>{m.tma_client_select_services_multi()}</h3>
       </div>
         <div class="list">
           {#each services as service}
@@ -733,26 +735,24 @@
               </div>
               <div class="info">
                 <h3>{service.name}</h3>
-                <p>{service.duration} мин • {service.price} ₴</p>
+                <p>{service.duration} {m.tma_min_dot()} {service.price} ₴</p>
               </div>
               <div class="arrow">
                 <Icon name="chevron-right" size={18} />
               </div>
             </div>
           {:else}
-            <p class="empty">У этого мастера нет доступных услуг</p>
+            <p class="empty">{m.tma_client_no_services_for_barber()}</p>
           {/each}
         </div>
 
         {#if selectedServices.length > 0}
           <div class="multi-service-bottom-bar">
             <div class="multi-service-summary">
-              <span class="multi-service-count">{selectedServices.length} {selectedServices.length === 1 ? 'услуга выбрана' : 'услуги выбрано'}</span>
-              <span class="multi-service-meta">{totalDuration} мин • {totalPrice} ₴</span>
+              <span class="multi-service-count">{selectedServices.length} {m.tma_service()}</span>
+              <span class="multi-service-meta">{totalDuration} {m.tma_min_dot()} {totalPrice} ₴</span>
             </div>
-            <button type="button" class="primary-btn" on:click={proceedToDateTime}>
-              Выбрать время →
-            </button>
+            <button type="button" class="primary-btn" on:click={proceedToDateTime}>{m.tma_client_choose_time_btn()}</button>
           </div>
         {/if}
     {/if}
@@ -765,21 +765,21 @@
               {selectedServices.length > 0 ? selectedServices.map(s => s.name).join(' + ') : selectedService?.name}
             </span>
             <span class="preview-service-details">
-              <span>{totalDuration || selectedService?.duration} мин</span>
+              <span>{totalDuration || selectedService?.duration} min</span>
               <span class="dot">•</span>
               <span class="preview-service-price">{totalPrice || selectedService?.price} ₴</span>
             </span>
           </div>
         </div>
 
-        <label for="date">Выберите дату:</label>
+        <label for="date">{m.tma_client_choose_date()}</label>
         <input type="date" id="date" bind:value={selectedDate} on:change={fetchAvailableSlots} />
         
         <div class="reminder-section">
           <div class="reminder-label-row">
             <span class="reminder-label">
               <Icon name="bell" size={15} color="var(--pastel-lavender)" />
-              <span>Напомнить до записи за:</span>
+              <span>{m.tma_client_remind_before()}</span>
             </span>
           </div>
 
@@ -790,16 +790,14 @@
                 class="reminder-preset-pill {selectedReminderHours === hours && !isCustomReminder ? 'active' : ''}"
                 on:click={() => { selectedReminderHours = hours; isCustomReminder = false; }}
               >
-                {hours === 24 ? '1 день' : `${hours} ч.`}
+                {hours === 24 ? m.tma_client_remind_1d() : m.tma_client_remind_hours({ hours })}
               </button>
             {/each}
             <button 
               type="button" 
               class="reminder-preset-pill {isCustomReminder ? 'active' : ''}"
               on:click={() => { isCustomReminder = true; }}
-            >
-              Своё
-            </button>
+            >{m.tma_client_remind_custom()}</button>
           </div>
 
           {#if isCustomReminder}
@@ -811,7 +809,7 @@
                 min="1" 
                 max="168"
                 step="1"
-                placeholder="Часов"
+                placeholder={m.tma_client_remind_hours_placeholder()}
                 bind:value={customReminderHours}
               />
               <span class="custom-reminder-suffix">{formatHoursText(customReminderHours || 1)}</span>
@@ -821,15 +819,15 @@
           <div class="reminder-note-text">
             <Icon name="info" size={13} color="var(--text-muted)" />
             <span>
-              Уведомление в Telegram придет за {getEffectiveReminderHours()} {formatHoursText(getEffectiveReminderHours())} до начала
+              {m.tma_client_remind_hint({ hours: getEffectiveReminderHours(), unit: formatHoursText(getEffectiveReminderHours()) })}
             </span>
           </div>
         </div>
 
         <div class="slots-header-bar">
           <div class="slots-header-title">
-            <span class="slots-title-text">Доступное время:</span>
-            <span class="slots-duration-tag">{totalDuration || selectedService?.duration} мин</span>
+            <span class="slots-title-text">{m.tma_client_available_time()}</span>
+            <span class="slots-duration-tag">{totalDuration || selectedService?.duration} min</span>
           </div>
 
           {#if totalSlotPages > 1}
@@ -839,7 +837,7 @@
                 class="slot-nav-btn" 
                 on:click={prevSlotPage} 
                 disabled={currentSlotPage === 0}
-                aria-label="Предыдущее время"
+                aria-label={m.tma_client_prev_time()}
               >
                 <Icon name="chevron-left" size={16} />
               </button>
@@ -851,7 +849,7 @@
                 class="slot-nav-btn" 
                 on:click={nextSlotPage} 
                 disabled={currentSlotPage >= totalSlotPages - 1}
-                aria-label="Следующее время"
+                aria-label={m.tma_client_next_time()}
               >
                 <Icon name="chevron-right" size={16} />
               </button>
@@ -869,14 +867,14 @@
               <span class="slot-time-sub">{slot}–{calculateSlotEndTime(slot, totalDuration || selectedService?.duration)}</span>
             </button>
           {:else}
-            <p class="empty-slots">Нет свободного времени на эту дату для услуг длительностью {totalDuration || selectedService?.duration} мин</p>
+            <p class="empty-slots">{m.tma_client_no_slots({ dur: totalDuration || selectedService?.duration })}</p>
           {/each}
         </div>
 
         {#if selectedTime}
           <div class="selected-slot-banner">
             <Icon name="check" size={16} color="var(--pastel-sage)" />
-            <span>Время записи: <strong>{selectedTime} — {calculateSlotEndTime(selectedTime, totalDuration || selectedService?.duration)}</strong> ({totalDuration || selectedService?.duration} мин)</span>
+            <span>{m.tma_client_appt_time()} <strong>{selectedTime} — {calculateSlotEndTime(selectedTime, totalDuration || selectedService?.duration)}</strong> ({totalDuration || selectedService?.duration} min)</span>
           </div>
         {/if}
 
@@ -884,8 +882,8 @@
           <div class="phone-banner-content">
             <Icon name="phone" size={15} color="var(--pastel-lavender)" />
             <div class="phone-banner-text">
-              <span class="phone-banner-label">Телефон для записи:</span>
-              <span class="phone-banner-value">{clientProfile?.phone || 'Не указан'}</span>
+              <span class="phone-banner-label">{m.tma_client_phone_for_appt()}</span>
+              <span class="phone-banner-value">{clientProfile?.phone || m.tma_client_phone_not_set()}</span>
             </div>
           </div>
           <button 
@@ -894,7 +892,7 @@
             on:click={() => { phoneInput = clientProfile?.phone || ''; phoneError = ''; showPhoneModal = true; }}
           >
             <Icon name="edit" size={12} />
-            <span>{clientProfile?.phone ? 'Изменить' : 'Указать'}</span>
+            <span>{clientProfile?.phone ? m.tma_client_phone_change() : m.tma_client_phone_specify()}</span>
           </button>
         </div>
 
@@ -903,7 +901,7 @@
           disabled={!selectedTime} 
           on:click={confirmBooking}
         >
-          Записаться на {selectedTime ? `${selectedTime} (${totalDuration || selectedService?.duration} мин)` : 'выбранное время'}
+          {selectedTime ? m.tma_client_book_btn({ time: selectedTime, dur: totalDuration || selectedService?.duration }) : m.tma_client_book_no_time()}
         </button>
       </div>
     {/if}
@@ -913,40 +911,40 @@
         <div class="icon">
           <Icon name="check-circle" size={54} color="var(--pastel-sage)" />
         </div>
-        <h2>Вы успешно записаны!</h2>
+        <h2>{m.tma_client_success_title()}</h2>
         <div class="success-details-card">
           <div class="success-master-line">
-            <span class="success-label">Мастер:</span>
+            <span class="success-label">{m.tma_client_barber()}</span>
             <span class="success-val">{selectedMaster.name}</span>
             {#if selectedMaster.username}
               <button 
                 type="button"
                 class="contact-master-btn sm" 
                 on:click={(e) => openBarberChat(selectedMaster.username, e)}
-                title="Написать мастеру в Telegram"
+                title={m.tma_client_write_barber()}
               >
                 <Icon name="comment" size={12} color="var(--pastel-lavender)" />
-                <span>Написать мастеру</span>
+                <span>{m.tma_client_write_barber()}</span>
               </button>
             {/if}
           </div>
           <div class="success-detail-row">
-            <span class="success-label">Услуги:</span>
+            <span class="success-label">{m.tma_client_success_services()}</span>
             <span class="success-val">
               {selectedServices.length > 0 ? selectedServices.map(s => s.name).join(' + ') : selectedService?.name} 
               ({totalPrice || selectedService?.price} ₴)
             </span>
           </div>
           <div class="success-detail-row">
-            <span class="success-label">Дата и время:</span>
-            <span class="success-val highlight">{selectedDate} в {selectedTime}</span>
+            <span class="success-label">{m.tma_client_success_datetime()}</span>
+            <span class="success-val highlight">{selectedDate} {m.tma_client_success_at()} {selectedTime}</span>
           </div>
           <div class="success-detail-row">
-            <span class="success-label">Напоминание:</span>
-            <span class="success-val">За {getEffectiveReminderHours()} {formatHoursText(getEffectiveReminderHours())}</span>
+            <span class="success-label">{m.tma_client_success_reminder()}</span>
+            <span class="success-val">{m.tma_client_remind_hint({ hours: getEffectiveReminderHours(), unit: formatHoursText(getEffectiveReminderHours()) })}</span>
           </div>
         </div>
-        <button class="primary-btn mt-3" on:click={() => { reset(); switchView('appointments'); }}>Мои записи</button>
+        <button class="primary-btn mt-3" on:click={() => { reset(); switchView('appointments'); }}>{m.tma_client_success_my_appts()}</button>
       </div>
     {/if}
   {/if}
@@ -961,27 +959,27 @@
       <div class="modal-content review-modal-card" on:click|stopPropagation>
         <div class="modal-header-row">
           <div class="modal-header-text">
-            <h3>Оставить отзыв</h3>
-            <p class="modal-sub">Поделитесь впечатлениями о визите</p>
+            <h3>{m.tma_client_leave_review()}</h3>
+            <p class="modal-sub">{m.tma_client_review_sub()}</p>
           </div>
-          <button class="modal-close-btn" on:click={closeReviewModal} type="button" aria-label="Закрыть">
+          <button class="modal-close-btn" on:click={closeReviewModal} type="button" aria-label={m.tma_close()}>
             <Icon name="x" size={18} />
           </button>
         </div>
 
         <div class="review-target-box">
           <div class="review-target-row">
-            <span class="target-label">Мастер:</span>
-            <span class="target-value">{reviewingAppt.masterName || 'Мастер'}</span>
+            <span class="target-label">{m.tma_client_barber()}</span>
+            <span class="target-value">{reviewingAppt.masterName || m.tma_barber()}</span>
           </div>
           <div class="review-target-row">
-            <span class="target-label">Услуга:</span>
-            <span class="target-value highlight">{reviewingAppt.serviceName || 'Услуга'}</span>
+            <span class="target-label">{m.tma_service()}:</span>
+            <span class="target-value highlight">{reviewingAppt.serviceName || m.tma_service()}</span>
           </div>
         </div>
         
         <div class="stars-wrap">
-          <span class="stars-label">Ваша оценка:</span>
+          <span class="stars-label">{m.tma_client_your_rating()}</span>
           <div class="stars">
             {#each [1,2,3,4,5] as star}
               <button 
@@ -989,7 +987,7 @@
                 class="star-btn" 
                 class:active={reviewRating >= star}
                 on:click={() => reviewRating = star}
-                aria-label="{star} звезд"
+                aria-label={m.tma_client_stars_aria({ star })}
               >
                 <Icon 
                   name={reviewRating >= star ? 'star' : 'star-outline'} 
@@ -1000,22 +998,22 @@
             {/each}
           </div>
           <div class="rating-text-hint">
-            {reviewRating === 5 ? '⭐⭐⭐⭐⭐ Отлично' : reviewRating === 4 ? '⭐⭐⭐⭐ Хорошо' : reviewRating === 3 ? '⭐⭐⭐ Нормально' : '⭐⭐ Есть замечания'}
+            {reviewRating === 5 ? m.tma_client_rating_excellent() : reviewRating === 4 ? m.tma_client_rating_good() : reviewRating === 3 ? m.tma_client_rating_ok() : m.tma_client_rating_bad()}
           </div>
         </div>
         
         <div class="form-group">
-          <label for="client-review-comment">Комментарий (необязательно)</label>
-          <textarea id="client-review-comment" bind:value={reviewComment} placeholder="Что вам понравилось больше всего?"></textarea>
+          <label for="client-review-comment">{m.tma_client_comment_opt()}</label>
+          <textarea id="client-review-comment" bind:value={reviewComment} placeholder={m.tma_client_comment_placeholder()}></textarea>
         </div>
         
         {#if error}<p class="error-msg-sm">{error}</p>{/if}
         
         <div class="modal-actions">
           <button class="primary-btn flex-1" on:click={submitReview} disabled={submittingReview}>
-            {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
+            {submittingReview ? m.tma_client_sending() : m.tma_client_submit_review()}
           </button>
-          <button class="secondary-btn" on:click={closeReviewModal} disabled={submittingReview}>Отмена</button>
+          <button class="secondary-btn" on:click={closeReviewModal} disabled={submittingReview}>{m.tma_cancel()}</button>
         </div>
       </div>
     </div>
@@ -1029,19 +1027,19 @@
         <div class="modal-header-icon">
           <Icon name="phone" size={26} color="var(--pastel-rose)" />
         </div>
-        <h3 style="text-align:center;">{clientProfile?.phone ? 'Изменить номер телефона' : 'Укажите номер телефона'}</h3>
-        <p style="text-align:center;">Контактный номер необходим мастеру для подтверждения и связи по вашей записи.</p>
+        <h3 style="text-align:center;">{clientProfile?.phone ? m.tma_client_phone_modal_title_change() : m.tma_client_phone_modal_title_set()}</h3>
+        <p style="text-align:center;">{m.tma_client_phone_modal_desc()}.</p>
 
         <div class="phone-input-wrap">
           <input
             type="tel"
             class="phone-input"
             bind:value={phoneInput}
-            placeholder="+380... или +7..."
+            placeholder="+380991234567 / +1..."
             on:keydown={(e) => e.key === 'Enter' && savePhoneAndBook()}
           />
           <div class="phone-format-hint">
-            Формат: <code>+380991234567</code> или <code>+79991234567</code> (+, 1-3 цифры кода, 9 цифр номера)
+            {m.tma_client_phone_format()}
           </div>
         </div>
 
@@ -1050,11 +1048,9 @@
         {/if}
 
         <div class="modal-actions">
-          <button class="secondary-btn" on:click={() => showPhoneModal = false} disabled={savingPhone}>
-            Отмена
-          </button>
+          <button class="secondary-btn" on:click={() => showPhoneModal = false} disabled={savingPhone}>{m.tma_cancel()}</button>
           <button class="primary-btn" on:click={savePhoneAndBook} disabled={savingPhone || !phoneInput.trim()}>
-            {savingPhone ? 'Сохранение...' : (step === 3 && selectedTime ? 'Сохранить и записаться' : 'Сохранить')}
+            {savingPhone ? m.tma_saving() : (step === 3 && selectedTime ? m.tma_client_save_and_book() : m.tma_save())}
           </button>
         </div>
       </div>
@@ -1070,16 +1066,16 @@
       <div class="modal-content master-reviews-modal-content" on:click|stopPropagation>
         <div class="modal-header-row">
           <div class="modal-header-text">
-            <h3>Отзывы: {viewingReviewsMaster.name}</h3>
+            <h3>{m.tma_client_barber_reviews()}: {viewingReviewsMaster.name}</h3>
             <div class="modal-rating-badge">
               <Icon name="star" size={14} color="var(--pastel-amber)" />
-              <strong>{viewingReviewsMaster.rating > 0 ? Number(viewingReviewsMaster.rating).toFixed(1) : 'Нет оценок'}</strong>
+              <strong>{viewingReviewsMaster.rating > 0 ? Number(viewingReviewsMaster.rating).toFixed(1) : m.tma_client_no_ratings_yet()}</strong>
               {#if masterReviews.length > 0}
-                <span class="modal-reviews-count">({masterReviews.length} {masterReviews.length === 1 ? 'отзыв' : (masterReviews.length < 5 ? 'отзыва' : 'отзывов')})</span>
+                <span class="modal-reviews-count">({masterReviews.length} {m.tma_reviews_lbl()})</span>
               {/if}
             </div>
           </div>
-          <button class="modal-close-btn" on:click={closeMasterReviewsModal} type="button" aria-label="Закрыть">
+          <button class="modal-close-btn" on:click={closeMasterReviewsModal} type="button" aria-label={m.tma_close()}>
             <Icon name="x" size={18} />
           </button>
         </div>
@@ -1088,19 +1084,19 @@
           {#if loadingMasterReviews}
             <div class="reviews-loading-box">
               <div class="spinner sm"></div>
-              <span>Загрузка отзывов...</span>
+              <span>{m.tma_reviews_loading()}</span>
             </div>
           {:else if masterReviews.length === 0}
             <div class="empty-reviews-state">
               <Icon name="comment" size={32} color="var(--text-muted)" />
-              <p>У мастера пока нет отзывов. Вы можете стать первым!</p>
+              <p>{m.tma_client_reviews_empty_first()}</p>
             </div>
           {:else}
             <div class="reviews-list">
               {#each masterReviews as r}
                 <div class="review-card">
                   <div class="review-head">
-                    <strong>{r.clientName || 'Клиент'}</strong>
+                    <strong>{r.clientName || m.tma_client()}</strong>
                     <span class="review-stars-badge">
                       <Icon name="star" size={13} color="var(--pastel-amber)" />
                       <span>{r.rating}</span>
@@ -1121,9 +1117,9 @@
             class="primary-btn flex-1"
             on:click={() => selectMasterFromReviewsModal(viewingReviewsMaster)}
           >
-            Записаться к {viewingReviewsMaster.name}
+            {m.tma_client_book_to_barber({ name: viewingReviewsMaster.name })}
           </button>
-          <button class="secondary-btn" on:click={closeMasterReviewsModal} type="button">Закрыть</button>
+          <button class="secondary-btn" on:click={closeMasterReviewsModal} type="button">{m.tma_close()}</button>
         </div>
       </div>
     </div>
@@ -1141,42 +1137,42 @@
             <div class="appt-info">
               <h3>{appt.serviceName}</h3>
               <div class="appt-master-row">
-                <span class="appt-master-name">Мастер: <strong>{appt.masterName}</strong></span>
+                <span class="appt-master-name">{m.tma_client_barber()} <strong>{appt.masterName}</strong></span>
                 {#if appt.masterUsername}
                   <button 
                     type="button"
                     class="contact-master-btn sm" 
                     on:click={(e) => openBarberChat(appt.masterUsername, e)}
-                    title="Написать мастеру в Telegram"
+                    title={m.tma_client_write_barber()}
                   >
                     <Icon name="comment" size={12} color="var(--pastel-lavender)" />
-                    <span>Написать мастеру</span>
+                    <span>{m.tma_client_write_barber()}</span>
                   </button>
                 {/if}
               </div>
-              <p>Дата: {formatDate(appt.appointmentDate, appt.appointmentEndDate)}</p>
-              <p>Статус: <span class="status-{appt.status}">{formatStatus(appt.status)}</span></p>
-              <p>Цена: {appt.price ? appt.price + ' ₴' : 'Не указана'}</p>
+              <p>{m.tma_date()}: {formatDate(appt.appointmentDate, appt.appointmentEndDate)}</p>
+              <p>{m.tma_status()}: <span class="status-{appt.status}">{formatStatus(appt.status)}</span></p>
+              <p>{m.tma_price()}: {appt.price ? appt.price + ' ₴' : m.tma_client_not_specified()}</p>
               {#if appt.photoResultUrl}
                 <div class="client-result-photo-box">
-                  <SecureImage src={appt.photoResultUrl} alt="Результат работы" className="client-result-photo" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin-top:8px;background:rgba(0,0,0,0.2);" />
+                  <SecureImage src={appt.photoResultUrl} alt={m.tma_result()} className="client-result-photo" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;margin-top:8px;background:rgba(0,0,0,0.2);" />
                 </div>
               {/if}
               {#if appt.resultNote}
                 <div class="master-note">
-                  <strong>Заметка мастера:</strong> {appt.resultNote}
+                  <strong>{m.tma_master_note()}:</strong> {appt.resultNote}
                 </div>
               {/if}
             </div>
             {#if appt.status === 0}
-              <button class="cancel-btn" on:click={() => cancelAppointment(appt.id)}>Отменить</button>
+              <button class="cancel-btn" on:click={() => cancelAppointment(appt.id)}>{m.tma_cancel()}</button>
             {/if}
             {#if appt.status === 1 && !appt.hasReview}
-              <button class="primary-btn mt-2" on:click={() => openReviewModal(appt)}>Оценить</button>
+              <button class="primary-btn mt-2" on:click={() => openReviewModal(appt)}>{m.tma_client_rate_btn()}</button>
             {/if}
           </div>
         {:else}
-          <p class="empty">У вас пока нет записей</p>
+          <p class="empty">{m.tma_client_no_appts_yet()}</p>
         {/each}
       </div>
     {/if}
@@ -1190,7 +1186,7 @@
             <Icon name="user" size={32} color="var(--pastel-lavender)" />
           </div>
           <div class="profile-meta">
-            <h3>{clientProfile?.name || 'Клиент'}</h3>
+            <h3>{clientProfile?.name || m.tma_client()}</h3>
             <span class="profile-tg-id">ID: {clientProfile?.telegramId || '—'}</span>
           </div>
         </div>
@@ -1206,12 +1202,12 @@
           <div class="field-label-row">
             <span class="field-title">
               <Icon name="phone" size={15} color="var(--pastel-rose)" />
-              Контактный номер телефона
+              {m.tma_client_phone_contact()}
             </span>
             {#if !editingPhone}
               <button class="edit-action-btn" type="button" on:click={startEditPhone}>
                 <Icon name="edit" size={13} />
-                <span>{clientProfile?.phone ? 'Изменить' : 'Указать'}</span>
+                <span>{clientProfile?.phone ? m.tma_client_phone_change() : m.tma_client_phone_specify()}</span>
               </button>
             {/if}
           </div>
@@ -1222,11 +1218,11 @@
                 type="tel"
                 class="phone-input"
                 bind:value={profilePhoneInput}
-                placeholder="+380991234567 или +79991234567"
+                placeholder="+380991234567 / +1..."
                 on:keydown={(e) => e.key === 'Enter' && saveProfilePhone()}
               />
               <div class="phone-format-hint">
-                Формат: <code>+380991234567</code> или <code>+79991234567</code> (+, 1-3 цифры кода, 9 цифр номера)
+                {m.tma_client_phone_format()}
               </div>
 
               {#if profilePhoneError}
@@ -1234,11 +1230,9 @@
               {/if}
 
               <div class="edit-phone-actions">
-                <button class="secondary-btn sm" type="button" on:click={cancelEditPhone} disabled={savingProfilePhone}>
-                  Отмена
-                </button>
+                <button class="secondary-btn sm" type="button" on:click={cancelEditPhone} disabled={savingProfilePhone}>{m.tma_cancel()}</button>
                 <button class="primary-btn sm" type="button" on:click={saveProfilePhone} disabled={savingProfilePhone || !profilePhoneInput.trim()}>
-                  {savingProfilePhone ? 'Сохранение...' : 'Сохранить'}
+                  {savingProfilePhone ? m.tma_saving() : m.tma_save()}
                 </button>
               </div>
             </div>
@@ -1247,12 +1241,12 @@
               {#if clientProfile?.phone}
                 <span class="phone-value">{clientProfile.phone}</span>
                 <span class="phone-verified-tag">
-                  <Icon name="check" size={12} color="var(--pastel-sage)" /> Привязан
+                  <Icon name="check" size={12} color="var(--pastel-sage)" /> {m.tma_client_phone_bound()}
                 </span>
               {:else}
-                <span class="phone-empty">Номер не указан</span>
+                <span class="phone-empty">{m.tma_client_phone_not_set()}</span>
                 <button class="btn-add-phone-sm" type="button" on:click={startEditPhone}>
-                  + Добавить номер
+                  {m.tma_client_add_phone()}
                 </button>
               {/if}
             </div>
@@ -1262,11 +1256,11 @@
         <div class="profile-stats-card">
           <div class="profile-stat-item">
             <span class="stat-num">{myAppointments.length || 0}</span>
-            <span class="stat-label">Всего записей</span>
+            <span class="stat-label">{m.tma_client_total_appts()}</span>
           </div>
           <div class="profile-stat-divider"></div>
           <button class="profile-stat-link" type="button" on:click={() => switchView('appointments')}>
-            <span>История визитов</span>
+            <span>{m.tma_client_visits_history()}</span>
             <Icon name="chevron-right" size={16} />
           </button>
         </div>

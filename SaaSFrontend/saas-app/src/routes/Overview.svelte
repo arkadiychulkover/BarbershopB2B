@@ -3,6 +3,8 @@
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
   import { profileStore } from '../lib/store';
+  import { currentLocale } from '../lib/locale.js';
+  import { m } from '../lib/paraglide/messages.js';
   import { 
     Wallet, 
     CalendarCheck, 
@@ -40,14 +42,14 @@
   <div class="overview">
     <header class="page-header">
       <div class="header-left">
-        <h1>Панель управления</h1>
+        <h1>{m.nav_dashboard()}</h1>
         <p class="header-subtitle">
-          Добро пожаловать в рабочее пространство, <span class="highlight">{$profileStore.ownerName || $profileStore.barbershopName || 'Владелец'}</span>!
+          {m.overview_welcome()} <span class="highlight">{$profileStore.ownerName || $profileStore.barbershopName || 'Owner'}</span>!
         </p>
       </div>
       <div class="header-badge">
         <Sparkles size={15} />
-        <span>Сегодня {new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span>
+        <span>{m.overview_today()} {new Date().toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long' })}</span>
       </div>
     </header>
 
@@ -55,22 +57,22 @@
     <div class="stats-grid">
       <div class="stat-card stat-rose">
         <div class="stat-top">
-          <span class="stat-title">Денежный оборот за сегодня</span>
+          <span class="stat-title">{m.overview_revenue_today()}</span>
           <div class="stat-icon-wrap rose">
             <Wallet size={20} />
           </div>
         </div>
         <div class="stat-value">
-          {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(summary.revenue)}
+          {new Intl.NumberFormat($currentLocale === 'ru' ? 'uk-UA' : 'en-US', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(summary.revenue)}
         </div>
         <div class="stat-footer">
-          <span class="stat-hint">Общий объем оказанных услуг за день</span>
+          <span class="stat-hint">{m.overview_revenue_hint()}</span>
         </div>
       </div>
 
       <div class="stat-card stat-sage">
         <div class="stat-top">
-          <span class="stat-title">Записей на сегодня</span>
+          <span class="stat-title">{m.overview_appts_today()}</span>
           <div class="stat-icon-wrap sage">
             <CalendarCheck size={20} />
           </div>
@@ -79,15 +81,15 @@
           {summary.appointments}
         </div>
         <div class="stat-footer">
-          <span class="stat-hint">Активных клиентов в графике</span>
+          <span class="stat-hint">{m.overview_appts_hint()}</span>
         </div>
       </div>
 
       <div class="stat-card stat-amber subscription-card">
         <div class="stat-top">
           <div>
-            <span class="stat-title">Подписка заведения</span>
-            <div class="subscription-plan-tag">PRO План</div>
+            <span class="stat-title">{m.overview_subscription()}</span>
+            <div class="subscription-plan-tag">{m.overview_sub_pro()}</div>
           </div>
           <div class="stat-icon-wrap amber">
             <ShieldCheck size={20} />
@@ -97,25 +99,25 @@
         <div class="stat-badge-wrap subscription-badge-row">
           <span class="status-pill" class:active={$profileStore.status === 'Active'}>
             <span class="status-dot"></span>
-            {$profileStore.status === 'Active' ? 'Активна' : ($profileStore.status || 'Active')}
+            {$profileStore.status === 'Active' ? m.status_active() : ($profileStore.status || m.status_active())}
           </span>
-          <span class="subscription-period-hint">Безлимитный доступ</span>
+          <span class="subscription-period-hint">{m.overview_sub_unlimited()}</span>
         </div>
 
         <div class="subscription-perks">
           <div class="perk-item">
             <Check size={13} class="perk-icon" />
-            <span>Онлайн-запись и Telegram-бот</span>
+            <span>{m.overview_sub_perk1()}</span>
           </div>
           <div class="perk-item">
             <Check size={13} class="perk-icon" />
-            <span>Неограниченно мастеров и услуг</span>
+            <span>{m.overview_sub_perk2()}</span>
           </div>
         </div>
 
         <div class="stat-footer">
           <a href="#/dashboard/settings" class="stat-link">
-            <span>Управление тарифом</span>
+            <span>{m.overview_sub_manage()}</span>
             <ArrowUpRight size={14} />
           </a>
         </div>
@@ -125,8 +127,8 @@
     <!-- Quick Actions -->
     <div class="card quick-actions-card">
       <div class="card-head">
-        <h3>Быстрые действия</h3>
-        <p>Мгновенный переход к ключевым разделам платформы</p>
+        <h3>{m.overview_quick_actions()}</h3>
+        <p>{m.overview_quick_sub()}</p>
       </div>
 
       <div class="actions-grid">
@@ -135,8 +137,8 @@
             <CalendarDays size={22} />
           </div>
           <div class="action-text">
-            <h4>Расписание</h4>
-            <p>Просмотр и запись клиентов</p>
+            <h4>{m.nav_schedule()}</h4>
+            <p>{m.overview_qa_schedule_sub()}</p>
           </div>
           <ArrowUpRight size={18} class="action-arrow" />
         </a>
@@ -146,8 +148,8 @@
             <UserPlus size={22} />
           </div>
           <div class="action-text">
-            <h4>Мастера</h4>
-            <p>Управление персоналом и графиками</p>
+            <h4>{m.nav_masters()}</h4>
+            <p>{m.overview_qa_masters_sub()}</p>
           </div>
           <ArrowUpRight size={18} class="action-arrow" />
         </a>
@@ -157,8 +159,8 @@
             <Bot size={22} />
           </div>
           <div class="action-text">
-            <h4>Telegram Бот</h4>
-            <p>Интеграция и ссылка на Mini App</p>
+            <h4>{m.nav_bot_setup()}</h4>
+            <p>{m.overview_qa_bot_sub()}</p>
           </div>
           <ArrowUpRight size={18} class="action-arrow" />
         </a>
@@ -168,8 +170,8 @@
             <SlidersHorizontal size={22} />
           </div>
           <div class="action-text">
-            <h4>Настройки</h4>
-            <p>Профиль и параметры заведения</p>
+            <h4>{m.nav_settings()}</h4>
+            <p>{m.overview_qa_settings_sub()}</p>
           </div>
           <ArrowUpRight size={18} class="action-arrow" />
         </a>

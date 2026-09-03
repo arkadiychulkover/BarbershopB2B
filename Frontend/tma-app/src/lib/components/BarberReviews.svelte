@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { apiFetch } from '../api';
   import Icon from './Icon.svelte';
+  import { m } from '../paraglide/messages.js';
+  import { currentLocale } from '../locale';
   
   let reviews = [];
   let loading = true;
@@ -13,7 +15,7 @@
       reviews = await apiFetch('/api/Barber/my-reviews');
     } catch (e) {
       console.error(e);
-      error = "Не удалось загрузить отзывы";
+      error = m.tma_reviews_load_error();
     } finally {
       loading = false;
     }
@@ -22,7 +24,7 @@
 
 <div class="reviews-container">
   {#if loading}
-    <div class="status-msg">Загрузка отзывов...</div>
+    <div class="status-msg">{m.tma_reviews_loading()}</div>
   {:else if error}
     <div class="status-msg error">{error}</div>
   {:else if reviews.length === 0}
@@ -30,7 +32,7 @@
       <div class="icon">
         <Icon name="star" size={36} color="var(--pastel-amber)" />
       </div>
-      <p>У вас пока нет отзывов.</p>
+      <p>{m.tma_reviews_empty()}</p>
     </div>
   {:else}
     <div class="reviews-list">
@@ -38,7 +40,7 @@
         <div class="review-card">
           <div class="review-header">
             <span class="client-name">{review.clientName}</span>
-            <span class="review-date">{new Date(review.createdAt).toLocaleDateString('ru-RU')}</span>
+            <span class="review-date">{new Date(review.createdAt).toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US')}</span>
           </div>
           <div class="review-rating">
             {#each [1, 2, 3, 4, 5] as star}

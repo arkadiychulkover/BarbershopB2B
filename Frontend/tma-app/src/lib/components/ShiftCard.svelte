@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { m } from '../paraglide/messages.js';
   export let shift: { id: string, dayOfWeek: number, startTime: string, endTime: string, breakDurationMinutes?: number };
 
   const dispatch = createEventDispatcher();
@@ -23,12 +24,12 @@
       <span class="time">{formatTime(shift.endTime)}</span>
     </div>
     {#if shift.breakDurationMinutes && shift.breakDurationMinutes > 0}
-      <span class="break-tag">+{shift.breakDurationMinutes} мин перерыв</span>
+      <span class="break-tag">+{shift.breakDurationMinutes} {m.tma_min_break()}</span>
     {/if}
   </div>
   
   <button class="delete-btn" on:click|stopPropagation={() => dispatch('delete', shift)}>
-    Удалить
+    {m.tma_delete()}
   </button>
 </div>
 

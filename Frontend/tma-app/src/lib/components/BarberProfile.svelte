@@ -4,6 +4,7 @@
   import { showAlert, hapticSuccess, hapticError } from '../telegram';
   import Icon from './Icon.svelte';
   import SecureImage from './SecureImage.svelte';
+  import { m } from '../paraglide/messages.js';
 
   interface MasterProfile {
     id: string;
@@ -46,7 +47,7 @@
       }
     } catch (e: any) {
       console.error('Failed to load profile:', e);
-      errorMsg = 'Не удалось загрузить профиль мастера';
+      errorMsg = m.tma_profile_load_error();
     } finally {
       loading = false;
     }
@@ -65,7 +66,7 @@
     if (!file) return;
 
     if (file.size > 30 * 1024 * 1024) {
-      showAlert('Максимальный размер фото: 30 МБ');
+      showAlert(m.tma_photo_max_size());
       return;
     }
 
@@ -87,7 +88,7 @@
           profile = { ...profile, photoUrl: res.photoUrl };
         }
         hapticSuccess();
-        successMsg = 'Фото профиля успешно обновлено!';
+        successMsg = m.tma_photo_updated();
         setTimeout(() => {
           successMsg = '';
         }, 4000);
@@ -95,7 +96,7 @@
     } catch (e: any) {
       hapticError();
       console.error('Upload photo error:', e);
-      errorMsg = e?.message || 'Ошибка загрузки фотографии';
+      errorMsg = e?.message || m.tma_photo_upload_error();
       showAlert(errorMsg);
     } finally {
       uploadingPhoto = false;
@@ -107,7 +108,7 @@
 
   async function saveProfile() {
     if (!formName.trim()) {
-      showAlert('Пожалуйста, укажите имя');
+      showAlert(m.tma_enter_name_error());
       return;
     }
 
@@ -120,7 +121,7 @@
       if (cleanUsername) {
         const usernameRegex = /^[a-zA-Z0-9_]{5,32}$/;
         if (!usernameRegex.test(cleanUsername)) {
-          showAlert('Некорректный username. Допустимы латинские буквы, цифры и _ (от 5 до 32 символов).');
+          showAlert(m.tma_invalid_username());
           saving = false;
           return;
         }
@@ -141,14 +142,14 @@
       }
 
       hapticSuccess();
-      successMsg = 'Данные профиля успешно сохранены!';
+      successMsg = m.tma_profile_saved();
       setTimeout(() => {
         successMsg = '';
       }, 4000);
     } catch (e: any) {
       hapticError();
       console.error('Save profile error:', e);
-      errorMsg = e?.message || 'Ошибка сохранения профиля';
+      errorMsg = e?.message || m.tma_save_error();
       showAlert(errorMsg);
     } finally {
       saving = false;
@@ -160,13 +161,13 @@
   {#if loading}
     <div class="loading-wrap">
       <div class="spinner-sm"></div>
-      <p>Загрузка профиля...</p>
+      <p>{m.tma_profile_loading()}</p>
     </div>
   {:else if errorMsg && !profile}
     <div class="error-card">
       <Icon name="alert" size={24} color="var(--pastel-coral)" />
       <p>{errorMsg}</p>
-      <button class="retry-btn" on:click={loadProfile}>Повторить</button>
+      <button class="retry-btn" on:click={loadProfile}>{m.tma_retry()}</button>
     </div>
   {:else if profile}
     <!-- Profile Header Card -->
@@ -187,8 +188,8 @@
           class="avatar-camera-btn" 
           on:click={triggerFileInput} 
           disabled={uploadingPhoto}
-          title="Загрузить фотографию мастера"
-          aria-label="Загрузить фото"
+          title={m.tma_photo_upload()}
+          aria-label={m.tma_photo_upload()}
         >
           {#if uploadingPhoto}
             <div class="spinner-tiny"></div>
@@ -198,13 +199,13 @@
         </button>
 
         {#if profile.isActive}
-          <span class="online-indicator" title="Активен"></span>
+          <span class="online-indicator" title={m.tma_online_status()}></span>
         {/if}
       </div>
 
       <div class="header-info">
         <h2>{profile.name}</h2>
-        <span class="role-badge">{profile.description || 'Мастер'}</span>
+        <span class="role-badge">{profile.description || m.tma_barber_role()}</span>
       </div>
 
       <button 
@@ -214,19 +215,19 @@
         disabled={uploadingPhoto}
       >
         <Icon name="camera" size={13} color="var(--pastel-lavender)" />
-        <span>{uploadingPhoto ? 'Загрузка...' : (profile.photoUrl ? 'Изменить фото' : 'Загрузить фото')}</span>
+        <span>{uploadingPhoto ? m.tma_photo_uploading() : (profile.photoUrl ? m.tma_photo_change() : m.tma_photo_upload())}</span>
       </button>
 
       <div class="stats-row">
         <div class="stat-pill">
           <Icon name="star" size={14} color="var(--pastel-amber)" />
           <span class="stat-val">{profile.rating > 0 ? profile.rating.toFixed(1) : '—'}</span>
-          <span class="stat-lbl">Рейтинг</span>
+          <span class="stat-lbl">{m.tma_rating_lbl()}</span>
         </div>
         <div class="stat-pill">
           <Icon name="comment" size={14} color="var(--pastel-lavender)" />
           <span class="stat-val">{profile.reviewsCount}</span>
-          <span class="stat-lbl">Отзывов</span>
+          <span class="stat-lbl">{m.tma_reviews_lbl()}</span>
         </div>
       </div>
     </div>
@@ -235,7 +236,7 @@
     <form class="card profile-form-card" on:submit|preventDefault={saveProfile}>
       <div class="section-title-wrap">
         <Icon name="user" size={18} color="var(--pastel-rose)" />
-        <h3>Настройки аккаунта и связи</h3>
+        <h3>{m.tma_profile_data_title()}</h3>
       </div>
 
       {#if successMsg}
@@ -255,8 +256,8 @@
       <!-- Telegram Username Field (Key feature) -->
       <div class="form-group highlight-group">
         <label for="tg-username">
-          <span>Telegram Юзернейм</span>
-          <span class="badge-accent">Для связи с клиентами</span>
+          <span>{m.tma_telegram_binding()}</span>
+          <span class="badge-accent">{m.tma_auto_bound()}</span>
         </label>
         <div class="input-with-prefix">
           <span class="prefix">@</span>
@@ -270,11 +271,11 @@
           />
         </div>
         <p class="field-hint">
-          Клиенты смогут нажать «Написать мастеру» в своей записи, и Telegram откроет прямой диалог с вами по ссылке 
+          {m.tma_tg_id_desc()} 
           {#if formUsername.trim()}
             <strong>t.me/{formUsername.trim().replace(/^@/, '')}</strong>
           {:else}
-            <em>(укажите ваш @username)</em>
+            <em>{m.tma_login_without_at()}</em>
           {/if}.
         </p>
       </div>
@@ -282,7 +283,7 @@
       <!-- Telegram ID (Read-only badge) -->
       {#if profile.telegramId}
         <div class="form-group">
-          <label for="tg-id">Telegram ID (цифровой идентификатор)</label>
+          <label for="tg-id">{m.tma_tg_id_label()}</label>
           <input
             id="tg-id"
             type="text"
@@ -290,30 +291,30 @@
             disabled
             class="readonly-input"
           />
-          <p class="field-hint">Привязан к вашей учетной записи мастера.</p>
+          <p class="field-hint">{m.tma_tg_id_hint()}</p>
         </div>
       {/if}
 
       <!-- Master Name -->
       <div class="form-group">
-        <label for="master-name">Имя мастера</label>
+        <label for="master-name">{m.tma_master_name_label()}</label>
         <input
           id="master-name"
           type="text"
           bind:value={formName}
-          placeholder="Ваше имя"
+          placeholder={m.tma_master_name_placeholder()}
           required
         />
       </div>
 
       <!-- Description / Role -->
       <div class="form-group">
-        <label for="master-desc">Специализация / Описание</label>
+        <label for="master-desc">{m.tma_master_desc_label()}</label>
         <input
           id="master-desc"
           type="text"
           bind:value={formDescription}
-          placeholder="Ведущий специалист / Мастер"
+          placeholder={m.tma_master_desc_placeholder()}
         />
       </div>
 
@@ -321,10 +322,10 @@
         <button type="submit" class="save-btn" disabled={saving || !formName.trim()}>
           {#if saving}
             <div class="spinner-inline"></div>
-            <span>Сохранение...</span>
+            <span>{m.tma_saving()}</span>
           {:else}
             <Icon name="check" size={16} color="var(--text-inverse)" />
-            <span>Сохранить профиль</span>
+            <span>{m.tma_save()}</span>
           {/if}
         </button>
       </div>

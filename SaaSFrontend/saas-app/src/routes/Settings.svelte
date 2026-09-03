@@ -3,6 +3,8 @@
   import DashboardLayout from "../components/DashboardLayout.svelte";
   import { apiRequest } from "../lib/api";
   import { profileStore } from "../lib/store";
+  import { m } from "../lib/paraglide/messages.js";
+  import { currentLocale } from "../lib/locale.js";
   import QRCode from "qrcode";
   import {
     Building2,
@@ -42,6 +44,7 @@
   let isLoading = true;
   let isSaving = false;
   let isRenewing = false;
+  let isRenewOpen = false;
   let successMsg = "";
   let errorMsg = "";
   let renewSuccessMsg = "";
@@ -84,13 +87,12 @@
   let passwordErrorMsg = "";
 
   let platformWalletAddress = "";
-  let subscriptionAmount = "10";
+  let subscriptionAmount = 5;
   let txHash = "";
   let copied = false;
-  let isRenewOpen = false;
   let qrCanvas;
 
-  $: paymentLink = `ton://transfer/${platformWalletAddress}?amount=${Number(subscriptionAmount) * 1000000000}`;
+  $: paymentLink = `ton://transfer/${platformWalletAddress}?amount=${subscriptionAmount * 1e9}&text=renew_${settings.ownerName || 'owner'}`;
   
   $: remainingDays = settings.nextPayment 
     ? Math.max(0, Math.ceil((new Date(settings.nextPayment).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
@@ -102,15 +104,15 @@
     try {
       const [data, priceData] = await Promise.all([
         apiRequest("/api/Settings"),
-        apiRequest("/api/Payment/price").catch(() => ({ price: "10", platformWalletAddress: "" }))
+        apiRequest("/api/Payment/price").catch(() => ({ amount: 5, platformWalletAddress: "" }))
       ]);
       settings = { ...settings, ...data };
       if (priceData) {
-        subscriptionAmount = priceData.price || "10";
+        subscriptionAmount = priceData.amount || 5;
         platformWalletAddress = priceData.platformWalletAddress || "";
       }
     } catch (e) {
-      errorMsg = "Не удалось загрузить настройки";
+      errorMsg = m.settings_load_error();
     } finally {
       isLoading = false;
     }
@@ -151,7 +153,7 @@
 
   async function handleRenewSubscription() {
     if (!txHash.trim()) {
-      renewErrorMsg = "Пожалуйста, введите Hash транзакции.";
+      renewErrorMsg = m.settings_renew_hash_error();
       return;
     }
 
@@ -165,7 +167,7 @@
         body: JSON.stringify({ txHash: txHash.trim() }),
       });
 
-      renewSuccessMsg = res.message || "Подписка успешно продлена на 1 месяц!";
+      renewSuccessMsg = res.message || m.settings_renew_success();
       settings.nextPayment = res.nextPayment;
       settings.lastPayment = res.lastPayment;
       settings.status = res.status || "Active";
@@ -176,7 +178,7 @@
         renewSuccessMsg = "";
       }, 5000);
     } catch (err) {
-      renewErrorMsg = err.message || "Ошибка проверки транзакции. Убедитесь, что платеж прошел в сети TON.";
+      renewErrorMsg = err.message || m.settings_renew_fail();
     } finally {
       isRenewing = false;
     }
@@ -185,7 +187,7 @@
   function formatDate(isoStr) {
     if (!isoStr) return "—";
     const date = new Date(isoStr);
-    return date.toLocaleDateString("ru-RU", {
+    return date.toLocaleDateString($currentLocale === "ru" ? "ru-RU" : "en-US", {
       day: "numeric",
       month: "long",
       year: "numeric"
@@ -221,10 +223,10 @@
         ownerName: settings.ownerName,
         botUsername: (settings.botUsername || '').replace(/^@/, '')
       }));
-      successMsg = "Настройки успешно сохранены!";
+      successMsg = m.settings_save_success();
       setTimeout(() => (successMsg = ""), 3500);
     } catch (e) {
-      errorMsg = e.message || "Ошибка при сохранении";
+      errorMsg = e.message || m.settings_save_error();
     } finally {
       isSaving = false;
     }
@@ -235,15 +237,15 @@
     passwordErrorMsg = "";
 
     if (!currentPassword || !newPassword) {
-      passwordErrorMsg = "Пожалуйста, заполните текущий и новый пароль.";
+      passwordErrorMsg = m.settings_pwd_fill_error();
       return;
     }
     if (newPassword.length < 6) {
-      passwordErrorMsg = "Новый пароль должен содержать не менее 6 символов.";
+      passwordErrorMsg = m.settings_pwd_len_error();
       return;
     }
     if (newPassword !== confirmPassword) {
-      passwordErrorMsg = "Новый пароль и подтверждение не совпадают.";
+      passwordErrorMsg = m.settings_pwd_match_error();
       return;
     }
 
@@ -256,13 +258,13 @@
           newPassword
         })
       });
-      passwordSuccessMsg = res?.message || "Пароль успешно изменен!";
+      passwordSuccessMsg = res?.message || m.settings_pwd_success();
       currentPassword = "";
       newPassword = "";
       confirmPassword = "";
       setTimeout(() => (passwordSuccessMsg = ""), 5000);
     } catch (e) {
-      passwordErrorMsg = e.message || "Ошибка при смене пароля.";
+      passwordErrorMsg = e.message || m.settings_pwd_fail();
     } finally {
       isChangingPassword = false;
     }
@@ -270,7 +272,7 @@
 
   async function handleSendResetEmail() {
     if (!settings.email) {
-      passwordErrorMsg = "Email не привязан к аккаунту.";
+      passwordErrorMsg = m.settings_email_not_linked();
       return;
     }
     isSendingResetEmail = true;
@@ -282,10 +284,10 @@
         method: "POST",
         body: JSON.stringify({ email: settings.email })
       });
-      passwordSuccessMsg = res?.message || `Ссылка для сброса пароля отправлена на ${settings.email}`;
+      passwordSuccessMsg = res?.message || `${m.settings_reset_email_sent()} ${settings.email}`;
       setTimeout(() => (passwordSuccessMsg = ""), 6000);
     } catch (e) {
-      passwordErrorMsg = e.message || "Не удалось отправить ссылку на почту.";
+      passwordErrorMsg = e.message || m.settings_reset_email_fail();
     } finally {
       isSendingResetEmail = false;
     }
@@ -296,9 +298,9 @@
   <div class="settings-page">
     <header class="page-header">
       <div class="header-left">
-        <h1>Настройки заведения</h1>
+        <h1>{m.settings_title()}</h1>
         <p class="header-subtitle">
-          Управление профилем заведения, контактными данными, тарифом и уведомлениями
+          {m.settings_subtitle()}
         </p>
       </div>
     </header>
@@ -306,7 +308,7 @@
     {#if isLoading}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Загрузка настроек...</p>
+        <p>{m.common_loading()}</p>
       </div>
     {:else}
       {#if successMsg}
@@ -330,21 +332,21 @@
             </div>
             <div>
               <div class="sub-heading-flex">
-                <h3>Тариф & Подписка</h3>
+                <h3>{m.settings_sub_title()}</h3>
                 {#if isSubscriptionActive}
                   <span class="badge badge-active">
                     <span class="badge-dot"></span>
-                    Активна ({remainingDays} дн.)
+                    {m.settings_sub_active()} ({remainingDays} {m.settings_sub_days()})
                   </span>
                 {:else}
                   <span class="badge badge-expired">
                     <span class="badge-dot"></span>
-                    Истекла
+                    {m.settings_sub_expired()}
                   </span>
                 {/if}
               </div>
               <p class="sub-description">
-                Доступ к Telegram Mini App, автоматическому расписанию и выгрузке отчетов
+                {m.settings_sub_desc()}
               </p>
             </div>
           </div>
@@ -356,23 +358,23 @@
               on:click={toggleRenewForm}
             >
               <RefreshCw size={16} />
-              <span>{isRenewOpen ? "Скрыть форму" : "Продлить подписку (+1 мес)"}</span>
+              <span>{isRenewOpen ? m.settings_sub_renew_hide() : m.settings_sub_renew_btn()}</span>
             </button>
           </div>
         </div>
 
         <div class="sub-meta-grid">
           <div class="sub-meta-item">
-            <span class="meta-label">Действует до</span>
+            <span class="meta-label">{m.settings_sub_valid_until()}</span>
             <strong class="meta-value">{formatDate(settings.nextPayment)}</strong>
           </div>
           <div class="sub-meta-item">
-            <span class="meta-label">Последняя оплата</span>
+            <span class="meta-label">{m.settings_sub_last_payment()}</span>
             <strong class="meta-value">{formatDate(settings.lastPayment)}</strong>
           </div>
           <div class="sub-meta-item">
-            <span class="meta-label">Стоимость тарифа</span>
-            <strong class="meta-value text-rose">{subscriptionAmount} TON / мес</strong>
+            <span class="meta-label">{m.settings_sub_cost()}</span>
+            <strong class="meta-value text-rose">{subscriptionAmount} {m.settings_sub_cost_suffix()}</strong>
           </div>
         </div>
 
@@ -380,7 +382,7 @@
           <div class="renew-panel">
             <div class="renew-panel-header">
               <Sparkles size={18} class="text-rose" />
-              <h4>Продление подписки в сети The Open Network (TON)</h4>
+              <h4>{m.settings_ton_renew_title()}</h4>
             </div>
 
             {#if renewSuccessMsg}
@@ -408,7 +410,7 @@
                   class="btn-wallet-link"
                 >
                   <ExternalLink size={13} />
-                  <span>Открыть в кошельке</span>
+                  <span>{m.settings_open_in_wallet()}</span>
                 </a>
               </div>
 
@@ -416,14 +418,14 @@
                 <div class="step-card">
                   <span class="step-num">1</span>
                   <div class="step-content">
-                    <h5>Отправьте {subscriptionAmount} TON на кошелек платформы:</h5>
+                    <h5>{m.settings_send_ton_to({ amount: subscriptionAmount })}</h5>
                     <div class="copy-wallet-box">
-                      <code class="wallet-text">{platformWalletAddress || "Загрузка адреса..."}</code>
+                      <code class="wallet-text">{platformWalletAddress || m.settings_loading_address()}</code>
                       <button 
                         type="button" 
                         class="btn-copy-sm" 
                         on:click={copyAddress}
-                        title="Скопировать адрес"
+                        title={m.common_copy()}
                       >
                         {#if copied}
                           <Check size={15} color="var(--pastel-sage)" />
@@ -438,13 +440,13 @@
                 <div class="step-card">
                   <span class="step-num">2</span>
                   <div class="step-content">
-                    <h5>Вставьте Hash транзакции для подтверждения:</h5>
+                    <h5>{m.settings_paste_hash_label()}</h5>
                     <div class="tx-input-wrap">
                       <input 
                         type="text" 
                         class="input" 
                         bind:value={txHash}
-                        placeholder="Например: 66a9c4f... или ссылка из Tonscan" 
+                        placeholder={m.settings_hash_placeholder()} 
                       />
                       <button 
                         type="button" 
@@ -453,7 +455,7 @@
                         on:click={handleRenewSubscription}
                       >
                         <ShieldCheck size={16} />
-                        <span>{isRenewing ? "Проверка..." : "Подтвердить продление"}</span>
+                        <span>{isRenewing ? m.settings_checking_renewal() : m.settings_confirm_renewal()}</span>
                       </button>
                     </div>
                   </div>
@@ -468,14 +470,14 @@
         <div class="section-title">
           <Building2 size={20} class="sec-icon rose" />
           <div>
-            <h3>Основная информация</h3>
-            <p>Контактные данные и адрес вашего заведения</p>
+            <h3>{m.settings_general_title()}</h3>
+            <p>{m.settings_general_desc()}</p>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label for="ownerName">Имя владельца</label>
+            <label for="ownerName">{m.settings_owner_name_label()}</label>
             <div class="input-icon-wrap">
               <User size={16} class="input-icon" />
               <input
@@ -489,7 +491,7 @@
           </div>
 
           <div class="form-group">
-            <label for="barbershopName">Название заведения</label>
+            <label for="barbershopName">{m.settings_salon_name_label()}</label>
             <div class="input-icon-wrap">
               <Building2 size={16} class="input-icon" />
               <input
@@ -503,7 +505,7 @@
           </div>
 
           <div class="form-group">
-            <label for="barbershopAddress">Адрес</label>
+            <label for="barbershopAddress">{m.settings_address_label()}</label>
             <div class="input-icon-wrap">
               <MapPin size={16} class="input-icon" />
               <input
@@ -517,7 +519,7 @@
           </div>
 
           <div class="form-group">
-            <label for="timeZone">Часовой пояс</label>
+            <label for="timeZone">{m.settings_timezone_label()}</label>
             <div class="input-icon-wrap">
               <Globe size={16} class="input-icon" />
               <input
@@ -531,7 +533,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label for="phoneNumber">Номер телефона владельца</label>
+            <label for="phoneNumber">{m.settings_phone_label()}</label>
             <div class="input-icon-wrap">
               <Phone size={16} class="input-icon" />
               <input
@@ -542,11 +544,11 @@
                 placeholder="+380991234567"
               />
             </div>
-            <small class="hint">В международном формате (+380... / +7...)</small>
+            <small class="hint">{m.settings_phone_hint()}</small>
           </div>
 
           <div class="form-group">
-            <label for="telegramId">Личный Telegram ID</label>
+            <label for="telegramId">{m.settings_tg_id_label()}</label>
             <div class="input-icon-wrap">
               <Send size={16} class="input-icon" />
               <input
@@ -557,14 +559,12 @@
                 placeholder="123456789"
               />
             </div>
-            <small class="hint">Для оповещений (можно узнать в @userinfobot)</small>
+            <small class="hint">{m.settings_tg_id_hint()}</small>
           </div>
         </div>
 
         <div class="form-group full-width mt-3">
-          <label for="description"
-            >Описание для клиентов (в Telegram боте)</label
-          >
+          <label for="description">{m.settings_bot_desc_label()}</label>
           <textarea
             id="description"
             class="input"
@@ -580,12 +580,12 @@
           <Bot size={20} class="sec-icon rose" />
           <div class="flex-between-head">
             <div>
-              <h3>Telegram-бот заведения</h3>
-              <p>Токен и юзернейм вашего бота из @BotFather для работы Mini App</p>
+              <h3>{m.settings_bot_title()}</h3>
+              <p>{m.settings_bot_desc()}</p>
             </div>
             <a href="#/dashboard/bot-setup" class="guide-link">
               <Sparkles size={14} />
-              <span>Пошаговая инструкция</span>
+              <span>{m.settings_step_guide()}</span>
               <ExternalLink size={12} />
             </a>
           </div>
@@ -594,28 +594,28 @@
         <!-- Quick 30-sec cheat sheet card -->
         <div class="bot-quick-help-card">
           <div class="quick-help-header">
-            <strong>Как получить токен за 1 минуту:</strong>
-            <a href="#/dashboard/bot-setup" class="quick-help-more">Подробное руководство &rarr;</a>
+            <strong>{m.settings_quick_help_title()}</strong>
+            <a href="#/dashboard/bot-setup" class="quick-help-more">{m.settings_quick_help_link()}</a>
           </div>
           <div class="quick-help-steps">
             <div class="quick-step-chip">
               <span class="chip-num">1</span>
-              <span>В Telegram откройте <strong>@BotFather</strong> и отправьте <code>/newbot</code></span>
+              <span>{m.settings_step1_bullet()}</span>
             </div>
             <div class="quick-step-chip">
               <span class="chip-num">2</span>
-              <span>Введите название и логин бота (например: <code>my_barbershop_bot</code>)</span>
+              <span>{m.settings_step2_bullet()}</span>
             </div>
             <div class="quick-step-chip">
               <span class="chip-num">3</span>
-              <span>Скопируйте полученный <strong>API Token</strong> и вставьте в поле ниже</span>
+              <span>{m.settings_step3_bullet()}</span>
             </div>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group full-width">
-            <label for="botToken">HTTP API Token бота</label>
+            <label for="botToken">{m.settings_bot_token_label()}</label>
             <div class="input-icon-wrap">
               <Bot size={16} class="input-icon" />
               <input
@@ -629,7 +629,7 @@
                 type="button"
                 class="btn-input-toggle"
                 on:click={() => (showBotToken = !showBotToken)}
-                title={showBotToken ? "Скрыть токен" : "Показать токен"}
+                title={showBotToken ? m.settings_hide_token() : m.settings_show_token()}
               >
                 {#if showBotToken}
                   <EyeOff size={16} />
@@ -638,11 +638,11 @@
                 {/if}
               </button>
             </div>
-            <small class="hint">Выдается @BotFather при создании бота через команду /newbot</small>
+            <small class="hint">{m.settings_bot_token_hint()}</small>
           </div>
 
           <div class="form-group full-width">
-            <label for="botUsername">Username бота в Telegram</label>
+            <label for="botUsername">{m.settings_bot_user_label()}</label>
             <div class="input-icon-wrap">
               <span class="input-prefix">@</span>
               <input
@@ -658,14 +658,14 @@
                   target="_blank"
                   rel="noreferrer"
                   class="btn-input-link"
-                  title="Открыть бота в Telegram"
+                  title={m.settings_bot_open_tooltip()}
                 >
                   <ExternalLink size={13} />
-                  <span>Открыть</span>
+                  <span>{m.settings_bot_open()}</span>
                 </a>
               {/if}
             </div>
-            <small class="hint">Юзернейм бота без знака @ (например, my_barbershop_bot)</small>
+            <small class="hint">{m.settings_bot_user_hint()}</small>
           </div>
         </div>
 
@@ -674,14 +674,14 @@
         <div class="section-title">
           <Bell size={20} class="sec-icon sage" />
           <div>
-            <h3>Параметры и уведомления</h3>
-            <p>TON кошелек заведения и интервалы напоминаний для клиентов</p>
+            <h3>{m.settings_params_title()}</h3>
+            <p>{m.settings_params_desc()}</p>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group full-width">
-            <label for="walletAddress">TON кошелёк заведения (для привязки)</label>
+            <label for="walletAddress">{m.settings_wallet_label()}</label>
             <div class="input-icon-wrap">
               <Wallet size={16} class="input-icon" />
               <input
@@ -695,9 +695,7 @@
           </div>
 
           <div class="form-group">
-            <label for="reminder"
-              >Авто-напоминание клиентам (за N часов)</label
-            >
+            <label for="reminder">{m.settings_reminder_label()}</label>
             <div class="input-icon-wrap">
               <Bell size={16} class="input-icon" />
               <input
@@ -710,15 +708,11 @@
                 required
               />
             </div>
-            <small class="hint"
-              >Бот отправит напоминание клиенту о предстоящей записи.</small
-            >
+            <small class="hint">{m.settings_reminder_hint()}</small>
           </div>
 
           <div class="form-group">
-            <label for="winBackDays"
-              >Win-back: отсутствие клиента (дней)</label
-            >
+            <label for="winBackDays">{m.settings_winback_label()}</label>
             <div class="input-icon-wrap">
               <Bell size={16} class="input-icon" />
               <input
@@ -728,16 +722,14 @@
                 bind:value={settings.winBackDays}
                 min="0"
                 max="365"
-                placeholder="0 — отключено"
+                placeholder={m.settings_winback_placeholder()}
               />
             </div>
-            <small class="hint"
-              >Если клиент не посещал салон N дней — бот отправит ему напоминание. 0 = отключено.</small
-            >
+            <small class="hint">{m.settings_winback_hint()}</small>
           </div>
 
           <div class="form-group">
-            <label for="masterFee">Комиссия мастеров (%)</label>
+            <label for="masterFee">{m.settings_fee_label()}</label>
             <div class="input-icon-wrap">
               <Percent size={16} class="input-icon" />
               <input
@@ -751,7 +743,7 @@
                 placeholder="0"
               />
             </div>
-            <small class="hint">Базовая ставка комиссии заведения</small>
+            <small class="hint">{m.settings_fee_hint()}</small>
           </div>
         </div>
 
@@ -762,7 +754,7 @@
             disabled={isSaving}
           >
             <Save size={18} />
-            <span>{isSaving ? "Сохранение..." : "Сохранить настройки"}</span>
+            <span>{isSaving ? m.common_loading() : m.settings_save_btn()}</span>
           </button>
         </div>
       </form>
@@ -772,15 +764,15 @@
         <div class="section-title">
           <KeyRound size={20} class="sec-icon lavender" />
           <div>
-            <h3>Безопасность и пароль</h3>
-            <p>Смена текущего пароля или запрос ссылки на восстановление</p>
+            <h3>{m.settings_security_title()}</h3>
+            <p>{m.settings_security_desc()}</p>
           </div>
         </div>
 
         {#if settings.email}
           <div class="email-info-badge">
             <Mail size={15} />
-            <span>Привязанный аккаунт: <strong>{settings.email}</strong></span>
+            <span>{m.settings_linked_account()} <strong>{settings.email}</strong></span>
           </div>
         {/if}
 
@@ -800,7 +792,7 @@
         <form on:submit|preventDefault={handleChangePassword} class="password-form mt-3">
           <div class="form-grid">
             <div class="form-group full-width">
-              <label for="currentPassword">Текущий пароль</label>
+              <label for="currentPassword">{m.settings_current_pwd_label()}</label>
               <div class="input-icon-wrap">
                 <Lock size={16} class="input-icon" />
                 <input
@@ -815,7 +807,7 @@
                   type="button"
                   class="btn-input-toggle"
                   on:click={() => (showCurrentPassword = !showCurrentPassword)}
-                  title={showCurrentPassword ? "Скрыть" : "Показать"}
+                  title={showCurrentPassword ? m.settings_hide_pwd() : m.settings_show_pwd()}
                 >
                   {#if showCurrentPassword}
                     <EyeOff size={16} />
@@ -827,7 +819,7 @@
             </div>
 
             <div class="form-group">
-              <label for="newPassword">Новый пароль</label>
+              <label for="newPassword">{m.settings_new_pwd_label()}</label>
               <div class="input-icon-wrap">
                 <Lock size={16} class="input-icon" />
                 <input
@@ -835,14 +827,14 @@
                   type={showNewPassword ? "text" : "password"}
                   class="input has-icon has-toggle"
                   bind:value={newPassword}
-                  placeholder="Минимум 6 символов"
+                  placeholder={m.settings_new_pwd_placeholder()}
                   required
                 />
                 <button
                   type="button"
                   class="btn-input-toggle"
                   on:click={() => (showNewPassword = !showNewPassword)}
-                  title={showNewPassword ? "Скрыть" : "Показать"}
+                  title={showNewPassword ? m.settings_hide_pwd() : m.settings_show_pwd()}
                 >
                   {#if showNewPassword}
                     <EyeOff size={16} />
@@ -854,7 +846,7 @@
             </div>
 
             <div class="form-group">
-              <label for="confirmPassword">Повторите новый пароль</label>
+              <label for="confirmPassword">{m.settings_confirm_new_pwd_label()}</label>
               <div class="input-icon-wrap">
                 <Lock size={16} class="input-icon" />
                 <input
@@ -869,7 +861,7 @@
                   type="button"
                   class="btn-input-toggle"
                   on:click={() => (showConfirmPassword = !showConfirmPassword)}
-                  title={showConfirmPassword ? "Скрыть" : "Показать"}
+                  title={showConfirmPassword ? m.settings_hide_pwd() : m.settings_show_pwd()}
                 >
                   {#if showConfirmPassword}
                     <EyeOff size={16} />
@@ -888,7 +880,7 @@
               disabled={isChangingPassword}
             >
               <Lock size={16} />
-              <span>{isChangingPassword ? "Обновление..." : "Обновить пароль"}</span>
+              <span>{isChangingPassword ? m.settings_updating_pwd() : m.settings_update_pwd_btn()}</span>
             </button>
 
             <button
@@ -896,10 +888,10 @@
               class="btn-forgot-link"
               disabled={isSendingResetEmail || !settings.email}
               on:click={handleSendResetEmail}
-              title="Отправить письмо со ссылкой для сброса пароля"
+              title={m.settings_reset_email_tooltip()}
             >
               <Mail size={15} />
-              <span>{isSendingResetEmail ? "Отправка ссылки..." : "Забыли пароль? Сбросить по почте"}</span>
+              <span>{isSendingResetEmail ? m.settings_sending_reset() : m.settings_forgot_pwd_btn()}</span>
             </button>
           </div>
         </form>
@@ -909,8 +901,8 @@
         <div class="card-head">
           <Sun size={20} class="text-rose" />
           <div>
-            <h3>Оформление интерфейса</h3>
-            <p>Выберите цветовую тему для личного кабинета</p>
+            <h3>{m.settings_appearance_title()}</h3>
+            <p>{m.settings_appearance_desc()}</p>
           </div>
         </div>
 
@@ -930,7 +922,7 @@
             </div>
             <div class="theme-option-info">
               <Moon size={16} />
-              <span>Темная тема</span>
+              <span>{m.settings_dark_theme()}</span>
             </div>
           </button>
 
@@ -949,7 +941,7 @@
             </div>
             <div class="theme-option-info">
               <Sun size={16} />
-              <span>Светлая тема</span>
+              <span>{m.settings_light_theme()}</span>
             </div>
           </button>
         </div>
@@ -959,14 +951,14 @@
         <div class="card-head">
           <HelpCircle size={20} class="text-rose" />
           <div>
-            <h3>Служба поддержки и помощь</h3>
-            <p>Есть вопросы по настройке бота, оплате или функциям системы?</p>
+            <h3>{m.settings_support_title()}</h3>
+            <p>{m.settings_support_desc()}</p>
           </div>
         </div>
 
         <div class="support-card-content">
           <div class="support-info-text">
-            <span>Наша техническая поддержка доступна 24/7 в Telegram:</span>
+            <span>{m.settings_support_availability()}</span>
             <strong class="support-handle">@Eyed_Graff</strong>
           </div>
           <a 
@@ -976,7 +968,7 @@
             class="btn btn-secondary"
           >
             <Send size={16} />
-            <span>Написать в Telegram @Eyed_Graff</span>
+            <span>{m.settings_support_btn()}</span>
             <ExternalLink size={14} />
           </a>
         </div>

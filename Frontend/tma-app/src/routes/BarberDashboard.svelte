@@ -3,6 +3,7 @@
   import { apiFetch } from '../lib/api';
   import { showAlert, showConfirm, hapticSuccess, hapticError, hapticWarning } from '../lib/telegram';
   import ShiftCard from '../lib/components/ShiftCard.svelte';
+  import { m } from '../lib/paraglide/messages.js';
   import ShiftForm from '../lib/components/ShiftForm.svelte';
   import BarberServices from '../lib/components/BarberServices.svelte';
   import BarberAppointments from '../lib/components/BarberAppointments.svelte';
@@ -28,7 +29,7 @@
   let vacations = [];
   let loadingVacations = false;
   let showAddVacationModal = false;
-  let newVacation = { startDate: '', endDate: '', reason: 'Отпуск' };
+  let newVacation = { startDate: '', endDate: '', reason: 'Vacation' };
   let savingVacation = false;
 
   onMount(async () => {
@@ -79,7 +80,7 @@
       });
     } catch (error) {
       console.error('Failed to load shifts', error);
-      showAlert('Ошибка при загрузке смен');
+      showAlert(m.tma_shifts_load_error());
     } finally {
       loading = false;
     }
@@ -118,7 +119,7 @@
 
   async function addVacation() {
     if (!newVacation.startDate || !newVacation.endDate) {
-      showAlert('Укажите даты начала и окончания');
+      showAlert(m.tma_dates_required());
       return;
     }
     savingVacation = true;
@@ -128,24 +129,24 @@
         body: newVacation
       });
       showAddVacationModal = false;
-      newVacation = { startDate: '', endDate: '', reason: 'Отпуск' };
+      newVacation = { startDate: '', endDate: '', reason: 'Vacation' };
       await loadVacations();
       hapticSuccess();
     } catch(e: any) {
-      showAlert(e.message || 'Ошибка добавления отпуска');
+      showAlert(e.message || m.tma_vacation_add_error());
     } finally {
       savingVacation = false;
     }
   }
 
   async function deleteVacation(id: string) {
-    if (!confirm('Удалить этот отпуск?')) return;
+    if (!confirm(m.tma_vacation_delete_confirm())) return;
     try {
       await apiFetch(`/api/Barber/vacations/delete/${id}`, { method: 'DELETE' });
       vacations = vacations.filter(v => v.id !== id);
       hapticSuccess();
     } catch(e) {
-      showAlert('Ошибка удаления');
+      showAlert(m.tma_delete_error());
     }
   }
 
@@ -174,9 +175,9 @@
     } catch (error: any) {
       hapticError();
       if (error.status === 409) {
-        showAlert(error.message || 'Смена пересекается с уже существующей!');
+        showAlert(error.message || m.tma_shift_overlap_error());
       } else {
-        showAlert('Не удалось сохранить смену: ' + (error.message || 'ошибка'));
+        showAlert(m.tma_shift_save_error() + (error.message || ''));
       }
     } finally {
       shiftSaving = false;
@@ -187,7 +188,7 @@
     const shift = event.detail;
     
     hapticWarning();
-    showConfirm('Вы уверены, что хотите удалить эту смену?', async (confirmed) => {
+    showConfirm(m.tma_shift_delete_confirm(), async (confirmed) => {
       if (confirmed) {
         try {
           await apiFetch(`/api/Barber/my-shift/delete/${shift.id}`, {
@@ -197,12 +198,12 @@
           await loadShifts();
         } catch (error) {
           hapticError();
-          showAlert('Не удалось удалить смену');
+          showAlert(m.tma_shift_delete_error());
         }
       }
     });
   }
-  const daysOfWeek = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Сб'];
+  $: daysOfWeek = [m.tma_day_sun(), m.tma_day_mon(), m.tma_day_tue(), m.tma_day_wed(), m.tma_day_thu(), m.tma_day_fri(), m.tma_day_sat()];
   function formatDayOfWeek(day: number) {
     return daysOfWeek[day] || '';
   }
@@ -218,7 +219,7 @@
           on:click={() => selectTab('appointments')}
         >
           <span class="tab-icon"><Icon name="scissors" size={14} /></span>
-          <span class="tab-label">Записи</span>
+          <span class="tab-label">{m.tma_tab_appts()}</span>
         </button>
         <button 
           class="tab" 
@@ -226,7 +227,7 @@
           on:click={() => selectTab('shifts')}
         >
           <span class="tab-icon"><Icon name="calendar" size={14} /></span>
-          <span class="tab-label">Смены</span>
+          <span class="tab-label">{m.tma_tab_schedule()}</span>
         </button>
         <button 
           class="tab" 
@@ -234,7 +235,7 @@
           on:click={() => selectTab('services')}
         >
           <span class="tab-icon"><Icon name="services" size={14} /></span>
-          <span class="tab-label">Услуги</span>
+          <span class="tab-label">{m.tma_tab_services()}</span>
         </button>
         <button 
           class="tab" 
@@ -242,7 +243,7 @@
           on:click={() => selectTab('reviews')}
         >
           <span class="tab-icon"><Icon name="star" size={14} /></span>
-          <span class="tab-label">Отзывы</span>
+          <span class="tab-label">Reviews</span>
         </button>
         <button 
           class="tab" 
@@ -250,7 +251,7 @@
           on:click={() => selectTab('profile')}
         >
           <span class="tab-icon"><Icon name="user" size={14} /></span>
-          <span class="tab-label">Профиль</span>
+          <span class="tab-label">{m.tma_tab_profile()}</span>
         </button>
       </div>
 
@@ -264,7 +265,7 @@
       {/if}
     </div>
 
-    <button class="theme-barber-toggle" on:click={toggleTmaTheme} title="Сменить тему">
+    <button class="theme-barber-toggle" on:click={toggleTmaTheme} title={m.tma_theme_toggle_title()}>
       {#if $theme === 'dark'}
         <Icon name="sun" size={16} color="var(--pastel-amber)" />
       {:else}
@@ -280,16 +281,16 @@
           {#if loading}
             <div class="loading-wrap">
               <div class="spinner-sm"></div>
-              <p>Загрузка смен...</p>
+              <p>{m.tma_loading_shifts()}</p>
             </div>
           {:else if shifts.length === 0}
             <div class="empty-state">
               <div class="empty-icon-circle">
                 <Icon name="calendar" size={28} color="var(--pastel-rose)" />
               </div>
-              <p class="empty-title">У вас пока нет смен</p>
-              <p class="empty-subtitle">Создайте свой первый рабочий график на неделю</p>
-              <button class="primary-btn" on:click={openNewForm}>+ Создать смену</button>
+              <p class="empty-title">{m.tma_no_shifts()}</p>
+              <p class="empty-subtitle">{m.tma_no_shifts_sub()}</p>
+              <button class="primary-btn" on:click={openNewForm}>{m.tma_create_shift_btn()}</button>
             </div>
           {:else}
             <div class="shifts-list">
@@ -307,15 +308,15 @@
               {/each}
             </div>
 
-            <!-- Секция отпусков и больничных -->
+            <!-- Vacations & Sick Leaves -->
             <div class="vacations-section">
               <div class="vacations-header">
                 <div class="vacations-title">
                   <Icon name="calendar" size={16} color="var(--pastel-rose)" />
-                  <span>Отпуска и больничные</span>
+                  <span>{m.tma_vacations_title()}</span>
                 </div>
                 <button type="button" class="btn-add-vacation" on:click={() => showAddVacationModal = true}>
-                  + Добавить
+                  {m.tma_add_btn()}
                 </button>
               </div>
 
@@ -324,7 +325,7 @@
                   {#each vacations as vac}
                     <div class="vacation-item">
                       <div class="vacation-dates">
-                        <span class="vacation-badge-pill">{vac.reason || 'Отпуск'}</span>
+                        <span class="vacation-badge-pill">{vac.reason || m.tma_vacation_reason_default()}</span>
                         <span class="vacation-period">{new Date(vac.startDate).toLocaleDateString('ru-RU')} — {new Date(vac.endDate).toLocaleDateString('ru-RU')}</span>
                       </div>
                       <button type="button" class="vacation-del-btn" on:click={() => deleteVacation(vac.id)}>
@@ -334,7 +335,7 @@
                   {/each}
                 </div>
               {:else}
-                <p class="vacations-empty">Нет запланированных отпусков</p>
+                <p class="vacations-empty">{m.tma_no_vacations()}</p>
               {/if}
             </div>
           {/if}
@@ -349,7 +350,7 @@
       </div>
       
       {#if view === 'list' && !loading}
-        <button class="floating-add-btn" on:click={openNewForm} title="Добавить смену">
+        <button class="floating-add-btn" on:click={openNewForm} title={m.tma_add_shift_title()}>
           <span>+</span>
         </button>
       {/if}
@@ -379,28 +380,28 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="modal-backdrop" on:click={() => showAddVacationModal = false}>
     <div class="modal-card" on:click|stopPropagation>
-      <h3>Добавить отпуск / больничный</h3>
+      <h3>{m.tma_add_vacation_title()}</h3>
       <div class="form-group">
-        <label for="vacation-start">Дата начала</label>
+        <label for="vacation-start">{m.tma_start_date()}</label>
         <input type="date" id="vacation-start" bind:value={newVacation.startDate} />
       </div>
       <div class="form-group">
-        <label for="vacation-end">Дата окончания (включительно)</label>
+        <label for="vacation-end">{m.tma_end_date_inc()}</label>
         <input type="date" id="vacation-end" bind:value={newVacation.endDate} />
       </div>
       <div class="form-group">
-        <label for="vacation-reason">Причина / тип</label>
+        <label for="vacation-reason">{m.tma_reason_type()}</label>
         <select id="vacation-reason" bind:value={newVacation.reason}>
-          <option value="Отпуск">Отпуск</option>
-          <option value="Больничный">Больничный</option>
-          <option value="Выходной">Выходной</option>
+          <option value="Vacation">{m.tma_vacation_reason_default()}</option>
+          <option value="Sick leave">{m.tma_vacation_reason_sick()}</option>
+          <option value="Day off">{m.tma_vacation_reason_dayoff()}</option>
         </select>
       </div>
       <div class="form-actions">
         <button class="primary-btn flex-1" on:click={addVacation} disabled={savingVacation}>
-          {savingVacation ? 'Сохранение...' : 'Сохранить'}
+          {savingVacation ? m.tma_saving() : m.tma_save()}
         </button>
-        <button class="btn-cancel flex-1" on:click={() => showAddVacationModal = false}>Отмена</button>
+        <button class="btn-cancel flex-1" on:click={() => showAddVacationModal = false}>{m.tma_cancel()}</button>
       </div>
     </div>
   </div>

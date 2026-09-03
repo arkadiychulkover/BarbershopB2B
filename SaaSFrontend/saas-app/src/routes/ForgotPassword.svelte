@@ -1,6 +1,8 @@
 <script>
   import { apiRequest } from '../lib/api';
   import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Sparkles, X, Send } from 'lucide-svelte';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
 
   let email = '';
   let isLoading = false;
@@ -9,7 +11,7 @@
 
   async function handleForgotPassword() {
     if (!email || !email.trim()) {
-      errorMsg = 'Пожалуйста, введите адрес электронной почты';
+      errorMsg = m.auth_enter_email_error();
       return;
     }
 
@@ -24,7 +26,7 @@
 
       isSubmitted = true;
     } catch (err) {
-      errorMsg = err.message || 'Произошла ошибка при отправке. Пожалуйста, повторите позже.';
+      errorMsg = err.message || m.auth_generic_error();
     } finally {
       isLoading = false;
     }
@@ -32,12 +34,16 @@
 </script>
 
 <div class="auth-container">
+  <div class="auth-top-actions">
+    <LanguageSwitcher />
+  </div>
+
   <div class="card auth-card">
-    <a href="#/" class="btn-close-auth" title="Вернуться на главную" aria-label="Вернуться на главную">
+    <a href="#/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
       <X size={18} />
     </a>
 
-    <a href="#/" class="brand-header-link" title="На главную">
+    <a href="#/" class="brand-header-link" title="ARCH SYSTEM">
       <div class="brand-header">
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
@@ -45,8 +51,8 @@
     </a>
 
     {#if !isSubmitted}
-      <h2>Восстановление доступа</h2>
-      <p class="subtitle">Укажите email, привязанный к вашему заведению, и мы отправим ссылку для сброса пароля в Telegram</p>
+      <h2>{m.auth_reset_title()}</h2>
+      <p class="subtitle">Enter the email associated with your barbershop</p>
       
       {#if errorMsg}
         <div class="alert alert-danger">
@@ -57,7 +63,7 @@
 
       <form on:submit|preventDefault={handleForgotPassword}>
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">{m.auth_email_label()}</label>
           <div class="input-icon-wrap">
             <Mail size={17} class="input-icon" />
             <input 
@@ -72,7 +78,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading || !email}>
-          <span>{isLoading ? 'Отправка...' : 'Отправить ссылку в Telegram'}</span>
+          <span>{isLoading ? m.common_loading() : m.auth_reset_btn()}</span>
           {#if !isLoading}
             <ArrowRight size={17} />
           {/if}
@@ -82,7 +88,7 @@
       <div class="auth-links">
         <a href="#/login" class="back-link">
           <ArrowLeft size={15} />
-          <span>Вернуться ко входу</span>
+          <span>{m.common_back()}</span>
         </a>
       </div>
     {:else}
@@ -90,21 +96,21 @@
         <div class="success-icon-wrap">
           <Send size={44} class="text-rose" />
         </div>
-        <h2>Проверьте Telegram</h2>
+        <h2>{m.auth_check_telegram_title()}</h2>
         <p class="success-desc">
-          Мы отправили ссылку для сброса пароля в ваш Telegram, привязанный к аккаунту <strong class="user-email">{email}</strong>.
+          {m.auth_check_telegram_desc()} <strong class="user-email">{email}</strong>.
         </p>
         <div class="info-banner">
           <Sparkles size={16} class="info-icon" />
-          <span>Ссылка действительна в течение <strong>2 часов</strong>. Откройте Telegram и найдите сообщение от бота платформы.</span>
+          <span>{m.auth_telegram_link_expiry()}</span>
         </div>
         
         <div class="success-actions">
           <a href="#/login" class="btn btn-secondary w-full">
-            <span>Перейти к авторизации</span>
+            <span>{m.auth_go_to_login()}</span>
           </a>
           <button type="button" class="btn-text" on:click={() => { isSubmitted = false; email = ''; }}>
-            Попробовать другой email
+            {m.auth_try_another_email()}
           </button>
         </div>
       </div>
@@ -116,6 +122,7 @@
   .auth-container {
     display: flex;
     justify-content: center;
+    position: relative;
     align-items: center;
     min-height: 100vh;
     padding: 1.5rem;
@@ -123,6 +130,13 @@
     background-image: 
       radial-gradient(ellipse 60% 50% at 50% 20%, rgba(223, 158, 142, 0.08), transparent 70%),
       radial-gradient(ellipse 40% 40% at 80% 80%, rgba(179, 183, 219, 0.05), transparent 70%);
+  }
+
+  .auth-top-actions {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
   }
   
   .auth-card {

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/api';
   import { showAlert, hapticSuccess, hapticError } from '../../lib/telegram';
+  import { m } from '../paraglide/messages.js';
 
   let services = [];
   let loading = true;
@@ -18,7 +19,7 @@
       // Services is an array of MasterServiceDto
     } catch (error) {
       console.error('Failed to load services', error);
-      showAlert('Ошибка при загрузке услуг');
+      showAlert(m.tma_services_load_error());
     } finally {
       loading = false;
     }
@@ -40,7 +41,7 @@
     } catch (error) {
       console.error('Failed to save service', error);
       hapticError();
-      showAlert('Ошибка при сохранении услуги');
+      showAlert(m.tma_services_save_error());
     } finally {
       savingId = null;
     }
@@ -48,20 +49,18 @@
 
   function toggleActive(service) {
     if (!service.isActive) {
-      // Если услуга выключается - сохраняем сразу
       saveService(service);
     }
-    // Принудительно обновляем массив для Svelte, чтобы отрендерить поля
     services = services;
   }
 </script>
 
 <div class="services-container">
   {#if loading}
-    <div class="loader">Загрузка...</div>
+    <div class="loader">{m.tma_loading()}</div>
   {:else if services.length === 0}
     <div class="empty-state">
-      <p>В заведении пока нет добавленных услуг. Обратитесь к владельцу.</p>
+      <p>{m.tma_no_services()}</p>
     </div>
   {:else}
     <div class="services-list">
@@ -78,23 +77,23 @@
           {#if service.isActive}
             <div class="service-details">
               <div class="form-group">
-                <label>Цена (₴)</label>
-                <input type="number" bind:value={service.price} min="0" />
+                <label for={`service-price-${service.serviceNameId}`}>{m.tma_price()}</label>
+                <input id={`service-price-${service.serviceNameId}`} type="number" bind:value={service.price} min="0" />
               </div>
               <div class="form-group">
-                <label>Длительность (мин)</label>
-                <input type="number" bind:value={service.duration} min="5" step="5" />
+                <label for={`service-duration-${service.serviceNameId}`}>{m.tma_duration()}</label>
+                <input id={`service-duration-${service.serviceNameId}`} type="number" bind:value={service.duration} min="5" step="5" />
               </div>
               <div class="form-group full-width">
-                <label>Описание (опционально)</label>
-                <input type="text" bind:value={service.description} placeholder="Детали..." />
+                <label for={`service-desc-${service.serviceNameId}`}>{m.tma_description_opt()}</label>
+                <input id={`service-desc-${service.serviceNameId}`} type="text" bind:value={service.description} placeholder="..." />
               </div>
               <button 
                 class="save-btn" 
                 disabled={savingId === service.serviceNameId || !service.price || service.price <= 0}
                 on:click={() => saveService(service)}
               >
-                {savingId === service.serviceNameId ? 'Сохранение...' : 'Сохранить изменения'}
+                {savingId === service.serviceNameId ? m.tma_saving() : m.tma_save_changes()}
               </button>
             </div>
           {/if}

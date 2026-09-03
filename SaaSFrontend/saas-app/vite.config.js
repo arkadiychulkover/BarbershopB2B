@@ -2,8 +2,16 @@
 // Trigger CI/CD pipeline
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { paraglideVitePlugin } from '@inlang/paraglide-js'
+
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [
+    svelte(),
+    paraglideVitePlugin({
+      project: './project.inlang',
+      outdir: './src/lib/paraglide'
+    })
+  ],
   server: {
     allowedHosts: ['goldmine-unloved-capsule.ngrok-free.dev'],
     proxy: {

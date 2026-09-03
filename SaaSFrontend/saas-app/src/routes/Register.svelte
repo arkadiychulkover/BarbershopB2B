@@ -17,6 +17,8 @@
     X,
     ArrowLeft
   } from 'lucide-svelte';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
 
   let formData = {
     ownerName: '',
@@ -44,7 +46,7 @@
       const cleaned = formData.phoneNumber.trim().replace(/[\s\-\(\)]/g, '');
       const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
       if (!phoneRegex.test(cleaned)) {
-        errorMsg = 'Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, 1-3 цифры кода, 9 цифр номера)';
+        errorMsg = m.auth_phone_format_error();
         isLoading = false;
         return;
       }
@@ -57,12 +59,12 @@
         body: JSON.stringify(formData)
       });
       
-      successMsg = 'Регистрация успешна! Сейчас вы будете перенаправлены на страницу входа...';
+      successMsg = m.auth_reg_success_msg();
       setTimeout(() => {
         push('/login');
       }, 2000);
     } catch (err) {
-      errorMsg = err.message || 'Ошибка регистрации. Проверьте данные.';
+      errorMsg = err.message || m.auth_reg_error_msg();
     } finally {
       isLoading = false;
     }
@@ -70,20 +72,24 @@
 </script>
 
 <div class="auth-container">
+  <div class="auth-top-actions">
+    <LanguageSwitcher />
+  </div>
+
   <div class="card auth-card">
-    <a href="#/" class="btn-close-auth" title="Вернуться на главную" aria-label="Вернуться на главную">
+    <a href="#/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
       <X size={18} />
     </a>
 
-    <a href="#/" class="brand-header-link" title="На главную">
+    <a href="#/" class="brand-header-link" title="ARCH SYSTEM">
       <div class="brand-header">
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
       </div>
     </a>
 
-    <h2>Создать аккаунт</h2>
-    <p class="subtitle">Подключите ваше заведение к платформе онлайн-записи</p>
+    <h2>{m.auth_register_title()}</h2>
+    <p class="subtitle">{m.auth_register_subtitle()}</p>
     
     {#if errorMsg}
       <div class="alert alert-danger">
@@ -101,20 +107,20 @@
 
     <form on:submit|preventDefault={handleRegister}>
       <div class="section-divider">
-        <span>1. Личные данные владельца</span>
+        <span>{m.auth_section_owner()}</span>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
-          <label for="ownerName">Ваше имя</label>
+          <label for="ownerName">{m.auth_owner_name()}</label>
           <div class="input-icon-wrap">
             <User size={16} class="input-icon" />
-            <input id="ownerName" type="text" class="input has-icon" bind:value={formData.ownerName} placeholder="Александр" required />
+            <input id="ownerName" type="text" class="input has-icon" bind:value={formData.ownerName} placeholder={m.auth_owner_placeholder()} required />
           </div>
         </div>
         
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">{m.auth_email_label()}</label>
           <div class="input-icon-wrap">
             <Mail size={16} class="input-icon" />
             <input id="email" type="email" class="input has-icon" bind:value={formData.email} placeholder="owner@shop.com" required />
@@ -122,7 +128,7 @@
         </div>
 
         <div class="form-group">
-          <label for="phoneNumber">Телефон</label>
+          <label for="phoneNumber">{m.auth_phone()}</label>
           <div class="input-icon-wrap">
             <Phone size={16} class="input-icon" />
             <input id="phoneNumber" type="tel" class="input has-icon" bind:value={formData.phoneNumber} placeholder="+380..." required />
@@ -130,55 +136,55 @@
         </div>
 
         <div class="form-group">
-          <label for="telegramId">Telegram ID владельца</label>
+          <label for="telegramId">{m.auth_tg_owner_label()}</label>
           <div class="input-icon-wrap">
             <Send size={16} class="input-icon" />
-            <input id="telegramId" type="text" class="input has-icon" bind:value={formData.telegramId} placeholder="123456789 или username" required />
+            <input id="telegramId" type="text" class="input has-icon" bind:value={formData.telegramId} placeholder={m.auth_tg_owner_placeholder()} required />
           </div>
         </div>
       </div>
 
       <div class="section-divider">
-        <span>2. Информация о заведении</span>
+        <span>{m.auth_section_salon()}</span>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
-          <label for="barbershopName">Название заведения</label>
+          <label for="barbershopName">{m.auth_barbershop_name()}</label>
           <div class="input-icon-wrap">
             <Building2 size={16} class="input-icon" />
-            <input id="barbershopName" type="text" class="input has-icon" bind:value={formData.barbershopName} placeholder="Название студии или салона" required />
+            <input id="barbershopName" type="text" class="input has-icon" bind:value={formData.barbershopName} placeholder={m.auth_salon_placeholder()} required />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="barbershopAddress">Адрес</label>
+          <label for="barbershopAddress">{m.auth_salon_address()}</label>
           <div class="input-icon-wrap">
             <MapPin size={16} class="input-icon" />
-            <input id="barbershopAddress" type="text" class="input has-icon" bind:value={formData.barbershopAddress} placeholder="ул. Центральная, 12" required />
+            <input id="barbershopAddress" type="text" class="input has-icon" bind:value={formData.barbershopAddress} placeholder={m.auth_address_placeholder()} required />
           </div>
         </div>
       </div>
 
       <div class="form-group full-width">
-        <label for="barbershopDescription">Описание для клиентов (в боте)</label>
+        <label for="barbershopDescription">{m.auth_salon_desc()}</label>
         <textarea 
           id="barbershopDescription" 
           class="input" 
           bind:value={formData.barbershopDescription} 
           rows="2" 
-          placeholder="Уютное заведение в центре города с опытными мастерами..."
+          placeholder={m.auth_salon_desc_placeholder()}
           required
         ></textarea>
       </div>
       
       <div class="section-divider">
-        <span>3. Бот и безопасность</span>
+        <span>{m.auth_section_bot()}</span>
       </div>
 
       <div class="form-grid">
         <div class="form-group">
-          <label for="botToken">Токен Telegram-бота (от @BotFather)</label>
+          <label for="botToken">{m.auth_bot_token_label()}</label>
           <div class="input-icon-wrap">
             <Bot size={16} class="input-icon" />
             <input id="botToken" type="text" class="input has-icon" bind:value={formData.botToken} placeholder="123456:ABC-DEF..." required />
@@ -186,7 +192,7 @@
         </div>
 
         <div class="form-group">
-          <label for="botUsername">Username бота (без @)</label>
+          <label for="botUsername">{m.auth_bot_user_label()}</label>
           <div class="input-icon-wrap">
             <Bot size={16} class="input-icon" />
             <input id="botUsername" type="text" class="input has-icon" bind:value={formData.botUsername} placeholder="my_booking_bot" required />
@@ -194,29 +200,29 @@
         </div>
 
         <div class="form-group">
-          <label for="password">Пароль для входа</label>
+          <label for="password">{m.auth_password_label()}</label>
           <div class="input-icon-wrap">
             <Lock size={16} class="input-icon" />
-            <input id="password" type="password" class="input has-icon" bind:value={formData.password} placeholder="Минимум 6 символов" required minlength="6" />
+            <input id="password" type="password" class="input has-icon" bind:value={formData.password} placeholder={m.auth_password_placeholder()} required minlength="6" />
           </div>
         </div>
         
         <div class="form-group">
-          <label for="timeZone">Часовой пояс</label>
+          <label for="timeZone">{m.auth_timezone_label()}</label>
           <div class="input-icon-wrap">
             <Globe size={16} class="input-icon" />
             <select id="timeZone" class="input has-icon" bind:value={formData.timeZone}>
-              <option value="Europe/Kyiv">Киев (UTC+2/3)</option>
-              <option value="Europe/Warsaw">Варшава (UTC+1/2)</option>
-              <option value="Europe/London">Лондон (UTC+0/1)</option>
-              <option value="Europe/Moscow">Москва (UTC+3)</option>
+              <option value="Europe/Kyiv">{m.auth_tz_kyiv()}</option>
+              <option value="Europe/Warsaw">{m.auth_tz_warsaw()}</option>
+              <option value="Europe/London">{m.auth_tz_london()}</option>
+              <option value="Europe/Moscow">{m.auth_tz_moscow()}</option>
             </select>
           </div>
         </div>
       </div>
 
       <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading}>
-        <span>{isLoading ? 'Создание кабинета...' : 'Зарегистрировать заведение'}</span>
+        <span>{isLoading ? m.common_loading() : m.auth_register_btn()}</span>
         {#if !isLoading}
           <ArrowRight size={17} />
         {/if}
@@ -224,14 +230,14 @@
     </form>
     
     <div class="auth-links">
-      <span>Уже есть аккаунт?</span>
-      <a href="#/login">Войти</a>
+      <span>{m.auth_have_account()}</span>
+      <a href="#/login">{m.nav_login()}</a>
     </div>
 
     <div class="back-home-wrap">
       <a href="#/" class="back-home-link">
         <ArrowLeft size={15} />
-        <span>Вернуться на главную страницу</span>
+        <span>{m.common_back()}</span>
       </a>
     </div>
   </div>
@@ -239,6 +245,7 @@
 
 <style>
   .auth-container {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -248,6 +255,13 @@
     background-image: 
       radial-gradient(ellipse 70% 50% at 50% 10%, rgba(223, 158, 142, 0.07), transparent 70%),
       radial-gradient(ellipse 50% 50% at 85% 85%, rgba(152, 193, 169, 0.05), transparent 70%);
+  }
+
+  .auth-top-actions {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
   }
   
   .auth-card {

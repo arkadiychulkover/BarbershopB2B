@@ -37,7 +37,7 @@
       client = data.client;
       appointments = data.appointments;
     } catch (e) {
-      error = "Не удалось загрузить историю клиента";
+      error = m.tma_history_load_error();
       console.error(e);
     } finally {
       loading = false;
@@ -45,9 +45,9 @@
   }
 
   function statusLabel(status: number): string {
-    if (status === 1) return "Выполнено";
-    if (status === 2) return "Отменено";
-    return "Запланировано";
+    if (status === 1) return m.tma_status_done();
+    if (status === 2) return m.tma_status_cancelled();
+    return m.tma_status_scheduled();
   }
 
   function isPureNumeric(val: string | null | undefined): boolean {
@@ -77,7 +77,7 @@
     const appt = appointments.find((a) => a.id === apptId);
     if (appt && appt.status !== 1) {
       showAlert(
-        "Фото результата можно прикрепить только к выполненным записям.",
+        m.tma_photo_only_completed(),
       );
       return;
     }
@@ -110,7 +110,7 @@
       hapticSuccess();
     } catch (e: any) {
       hapticError();
-      showAlert("Ошибка загрузки фото: " + (e?.message || "неизвестная ошибка"));
+      showAlert(m.tma_photo_upload_err() + (e?.message || ""));
     } finally {
       uploadingId = null;
       pendingPhotoApptId = null;
@@ -143,12 +143,12 @@
       editingCommentId = null;
     } catch (e) {
       console.error(e);
-      alert("Ошибка при сохранении комментария");
+      alert(m.tma_comment_save_error());
     }
   }
 
   async function deleteComment(apptId: string) {
-    if (!confirm("Удалить комментарий?")) return;
+    if (!confirm(m.tma_delete_comment_confirm())) return;
     try {
       await apiFetch(`/api/Barber/appointment-comment/${apptId}`, {
         method: "DELETE",
@@ -160,14 +160,14 @@
       }
     } catch (e) {
       console.error(e);
-      alert("Ошибка при удалении комментария");
+      alert(m.tma_delete_comment_error());
     }
   }
 
   function cancelAppointment(apptId: string) {
     hapticWarning();
     showConfirm(
-      "Вы действительно хотите отменить эту запись?",
+      m.tma_cancel_appt_confirm(),
       async (confirmed) => {
         if (!confirmed) return;
         try {
@@ -175,11 +175,11 @@
             method: "PUT",
           });
           hapticSuccess();
-          showAlert("Запись успешно отменена");
+          showAlert(m.tma_appt_cancelled_success());
           await loadHistory();
         } catch (e: any) {
           hapticError();
-          showAlert("Ошибка: " + (e.message || "не удалось отменить запись"));
+          showAlert(m.tma_cancel_error() + (e.message || ""));
         }
       },
     );
@@ -219,7 +219,7 @@
       isEditingClientNotes = false;
       hapticSuccess();
     } catch (e) {
-      alert("Ошибка при сохранении заметок о клиенте");
+      alert(m.tma_notes_save_error());
     } finally {
       savingClientNotes = false;
     }
@@ -243,7 +243,7 @@
   <div class="lightbox" on:click={() => (lightboxSrc = null)}>
     <SecureImage
       src={lightboxSrc}
-      alt="Результат"
+      alt={m.tma_result()}
       className="lightbox-img"
       style="max-height:85vh;object-fit:contain;"
     />
@@ -257,13 +257,13 @@
   <div class="history-header">
     <button class="back-btn" on:click={() => dispatch("back")}>
       <Icon name="chevron-left" size={16} />
-      <span>Назад</span>
+      <span>{m.tma_back()}</span>
     </button>
     {#if client}
       <div class="client-header-info">
         <div class="client-avatar">{(client.name || "?")[0].toUpperCase()}</div>
         <div class="client-meta">
-          <div class="client-name-title">{client.name || "Клиент"}</div>
+          <div class="client-name-title">{client.name || m.tma_client()}</div>
           {#if client.telegramUsername}
             <a
               class="tg-link"
@@ -287,7 +287,7 @@
               </a>
             {/if}
           {:else}
-            <span class="tg-guest">Гость (без TG)</span>
+            <span class="tg-guest">{m.tma_guest_no_tg()}</span>
           {/if}
           {#if client.phone}
             <div class="client-phone">
@@ -303,7 +303,7 @@
   {#if loading}
     <div class="loading-wrap">
       <div class="spinner-lg"></div>
-      <p>Загрузка истории...</p>
+      <p>{m.tma_loading_history()}</p>
     </div>
   {:else if error}
     <div class="error-msg">{error}</div>
@@ -312,27 +312,27 @@
     <div class="stats-strip">
       <div class="stat">
         <div class="stat-value">{appointments.length}</div>
-        <div class="stat-label">Всего</div>
+        <div class="stat-label">{m.tma_total()}</div>
       </div>
       <div class="stat">
         <div class="stat-value">
           {appointments.filter((a) => a.status === 1).length}
         </div>
-        <div class="stat-label">Выполнено</div>
+        <div class="stat-label">{m.tma_status_done()}</div>
       </div>
       <div class="stat">
         <div class="stat-value">{upcoming.length}</div>
-        <div class="stat-label">Предстоит</div>
+        <div class="stat-label">{m.tma_upcoming()}</div>
       </div>
     </div>
 
     <div class="notes-card">
       <div class="notes-header-row">
-        <span class="notes-label">✂️ Профиль стрижки / Заметки о клиенте:</span>
+        <span class="notes-label">{m.tma_haircut_profile()}</span>
         {#if !isEditingClientNotes}
           <button class="notes-edit-btn" on:click={startEditClientNotes}>
             <Icon name="edit" size={13} />
-            <span>{client?.notes ? "Изменить" : "Добавить"}</span>
+            <span>{client?.notes ? m.tma_change() : m.tma_add()}</span>
           </button>
         {/if}
       </div>
@@ -340,7 +340,7 @@
         <textarea
           class="notes-input"
           bind:value={clientNotesText}
-          placeholder="Насадки, пробор, форма бороды, предпочтения..."
+          placeholder={m.tma_notes_placeholder()}
         ></textarea>
         <div class="notes-actions">
           <button
@@ -348,21 +348,20 @@
             on:click={saveClientNotes}
             disabled={savingClientNotes}
           >
-            {savingClientNotes ? "Сохранение..." : "Сохранить"}
+            {savingClientNotes ? m.tma_saving() : m.tma_save()}
           </button>
           <button class="btn-cancel" on:click={cancelEditClientNotes}
-            >Отмена</button
-          >
+            >{m.tma_cancel()}</button>
         </div>
       {:else if client?.notes}
         <div class="notes-content">{client.notes}</div>
       {:else}
-        <div class="notes-placeholder">Нет заметок о предпочтениях стрижки</div>
+        <div class="notes-placeholder">{m.tma_no_notes()}</div>
       {/if}
     </div>
 
     {#if upcoming.length > 0}
-      <div class="section-title">Предстоящие</div>
+      <div class="section-title">{m.tma_upcoming_section()}</div>
       {#each upcoming as appt}
         <div class="appt-card-wrapper status-{appt.status}">
           <div class="appt-row">
@@ -375,7 +374,7 @@
               >
             </div>
 
-            <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
+            <div class="appt-row-service">{appt.serviceName || m.tma_service()}</div>
 
             {#if appt.photoResultUrl}
               <div class="photo-result-row">
@@ -387,7 +386,7 @@
                 >
                   <SecureImage
                     src={appt.photoResultUrl}
-                    alt="Результат"
+                    alt={m.tma_result()}
                     className="photo-thumb"
                     style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
                   />
@@ -397,7 +396,7 @@
                       size={14}
                       color="var(--pastel-rose)"
                     />
-                    <span>Фото результата</span>
+                    <span>{m.tma_photo_result()}</span>
                   </span>
                 </div>
                 {#if appt.status === 1}
@@ -406,7 +405,7 @@
                     class="btn-change-photo"
                     on:click={(e) => triggerPhotoUpload(appt.id, e)}
                     disabled={uploadingId === appt.id}
-                    title="Заменить фото"
+                    title={m.tma_replace_photo()}
                   >
                     {#if uploadingId === appt.id}
                       <span class="spinner-sm"></span>
@@ -416,7 +415,7 @@
                         size={13}
                         color="var(--pastel-lavender)"
                       />
-                      <span>Заменить</span>
+                      <span>{m.tma_replace()}</span>
                     {/if}
                   </button>
                 {/if}
@@ -431,14 +430,14 @@
                 >
                   {#if uploadingId === appt.id}
                     <span class="spinner-sm"></span>
-                    <span>Загрузка...</span>
+                    <span>{m.tma_loading()}</span>
                   {:else}
                     <Icon
                       name="camera"
                       size={14}
                       color="var(--pastel-rose)"
                     />
-                    <span>Прикрепить фото результата</span>
+                    <span>{m.tma_attach_result_photo()}</span>
                   {/if}
                 </button>
               </div>
@@ -452,7 +451,7 @@
                   on:click={() => cancelAppointment(appt.id)}
                 >
                   <Icon name="x" size={12} />
-                  <span>Отменить</span>
+                  <span>{m.tma_cancel()}</span>
                 </button>
               </div>
             {/if}
@@ -464,15 +463,13 @@
               <textarea
                 class="comment-input"
                 bind:value={commentText}
-                placeholder="Комментарий / Заметка..."
+                placeholder={m.tma_comment_placeholder()}
               ></textarea>
               <div class="comment-actions">
                 <button class="btn-save" on:click={() => saveComment(appt.id)}
-                  >Сохранить</button
-                >
+                  >{m.tma_save()}</button>
                 <button class="btn-cancel" on:click={cancelCommentEdit}
-                  >Отмена</button
-                >
+                  >{m.tma_cancel()}</button>
               </div>
             {:else if appt.resultNote}
               <div class="comment-display">
@@ -481,19 +478,17 @@
                   <span>{appt.resultNote}</span>
                 </div>
                 <div class="comment-actions-sm">
-                  <button on:click={() => openCommentEdit(appt)}>Ред.</button>
+                  <button on:click={() => openCommentEdit(appt)}>{m.tma_edit_short()}</button>
                   <button
                     class="text-danger"
-                    on:click={() => deleteComment(appt.id)}>Удал.</button
-                  >
+                    on:click={() => deleteComment(appt.id)}>{m.tma_delete_short()}</button>
                 </div>
               </div>
             {:else}
               <button
                 class="btn-add-comment"
                 on:click={() => openCommentEdit(appt)}
-                >+ Добавить комментарий</button
-              >
+                >{m.tma_add_comment()}</button>
             {/if}
           </div>
         </div>
@@ -501,7 +496,7 @@
     {/if}
 
     {#if past.length > 0}
-      <div class="section-title">История</div>
+      <div class="section-title">{m.tma_history_section()}</div>
       {#each past as appt}
         <div class="appt-card-wrapper status-{appt.status}">
           <div class="appt-row">
@@ -514,7 +509,7 @@
               >
             </div>
 
-            <div class="appt-row-service">{appt.serviceName || "Услуга"}</div>
+            <div class="appt-row-service">{appt.serviceName || m.tma_service()}</div>
 
             {#if appt.photoResultUrl}
               <div class="photo-result-row">
@@ -526,7 +521,7 @@
                 >
                   <SecureImage
                     src={appt.photoResultUrl}
-                    alt="Результат"
+                    alt={m.tma_result()}
                     className="photo-thumb"
                     style="width:56px;height:56px;object-fit:cover;border-radius:8px;"
                   />
@@ -536,7 +531,7 @@
                       size={14}
                       color="var(--pastel-rose)"
                     />
-                    <span>Фото результата</span>
+                    <span>{m.tma_photo_result()}</span>
                   </span>
                 </div>
                 {#if appt.status === 1}
@@ -545,7 +540,7 @@
                     class="btn-change-photo"
                     on:click={(e) => triggerPhotoUpload(appt.id, e)}
                     disabled={uploadingId === appt.id}
-                    title="Заменить фото"
+                    title={m.tma_replace_photo()}
                   >
                     {#if uploadingId === appt.id}
                       <span class="spinner-sm"></span>
@@ -555,7 +550,7 @@
                         size={13}
                         color="var(--pastel-lavender)"
                       />
-                      <span>Заменить</span>
+                      <span>{m.tma_replace()}</span>
                     {/if}
                   </button>
                 {/if}
@@ -570,14 +565,14 @@
                 >
                   {#if uploadingId === appt.id}
                     <span class="spinner-sm"></span>
-                    <span>Загрузка...</span>
+                    <span>{m.tma_loading()}</span>
                   {:else}
                     <Icon
                       name="camera"
                       size={14}
                       color="var(--pastel-rose)"
                     />
-                    <span>Прикрепить фото результата</span>
+                    <span>{m.tma_attach_result_photo()}</span>
                   {/if}
                 </button>
               </div>
@@ -590,15 +585,13 @@
               <textarea
                 class="comment-input"
                 bind:value={commentText}
-                placeholder="Комментарий / Заметка..."
+                placeholder={m.tma_comment_placeholder()}
               ></textarea>
               <div class="comment-actions">
                 <button class="btn-save" on:click={() => saveComment(appt.id)}
-                  >Сохранить</button
-                >
+                  >{m.tma_save()}</button>
                 <button class="btn-cancel" on:click={cancelCommentEdit}
-                  >Отмена</button
-                >
+                  >{m.tma_cancel()}</button>
               </div>
             {:else if appt.resultNote}
               <div class="comment-display">
@@ -607,19 +600,17 @@
                   <span>{appt.resultNote}</span>
                 </div>
                 <div class="comment-actions-sm">
-                  <button on:click={() => openCommentEdit(appt)}>Ред.</button>
+                  <button on:click={() => openCommentEdit(appt)}>{m.tma_edit_short()}</button>
                   <button
                     class="text-danger"
-                    on:click={() => deleteComment(appt.id)}>Удал.</button
-                  >
+                    on:click={() => deleteComment(appt.id)}>{m.tma_delete_short()}</button>
                 </div>
               </div>
             {:else}
               <button
                 class="btn-add-comment"
                 on:click={() => openCommentEdit(appt)}
-                >+ Добавить комментарий</button
-              >
+                >{m.tma_add_comment()}</button>
             {/if}
           </div>
         </div>
@@ -631,7 +622,7 @@
         <div class="empty-icon">
           <Icon name="clipboard" size={44} color="var(--pastel-rose)" />
         </div>
-        <p>У этого клиента пока нет записей</p>
+        <p>{m.tma_client_no_appts()}</p>
       </div>
     {/if}
   {/if}

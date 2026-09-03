@@ -1,5 +1,6 @@
 <script>
   import Router from 'svelte-spa-router';
+  import { currentLocale } from './lib/locale.js';
   import Landing from './routes/Landing.svelte';
   import Register from './routes/Register.svelte';
   import Login from './routes/Login.svelte';
@@ -39,4 +40,6 @@
   };
 </script>
 
-<Router {routes} />
+{#key $currentLocale}
+  <Router {routes} />
+{/key}

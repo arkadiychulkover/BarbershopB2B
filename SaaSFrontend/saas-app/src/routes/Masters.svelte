@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest, BASE_URL } from '../lib/api';
+  import { m } from '../lib/paraglide/messages.js';
   import { 
     UserPlus, 
     User, 
@@ -36,7 +37,7 @@
     if (!file || !editingMaster) return;
 
     if (file.size > 30 * 1024 * 1024) {
-      alert('Максимальный размер: 30 МБ');
+      alert(m.masters_max_photo_size());
       return;
     }
 
@@ -55,7 +56,7 @@
         masters = masters.map(m => m.id === editingMaster.barberId ? { ...m, photoUrl: res.photoUrl } : m);
       }
     } catch (e) {
-      alert('Ошибка загрузки фото: ' + (e.message || ''));
+      alert(m.masters_photo_upload_error() + (e.message || ''));
     } finally {
       isUploadingPhoto = false;
     }
@@ -71,14 +72,14 @@
     try {
       masters = await apiRequest('/api/Barber/all');
     } catch (e) {
-      errorMsg = 'Не удалось загрузить список мастеров';
+      errorMsg = m.masters_load_error();
     } finally {
       isLoading = false;
     }
   }
 
   async function deleteMaster(id) {
-    if (!confirm('Вы уверены, что хотите удалить этого мастера?')) return;
+    if (!confirm(m.masters_delete_confirm())) return;
     try {
       await apiRequest('/api/Barber/delete', {
         method: 'DELETE',
@@ -86,7 +87,7 @@
       });
       masters = masters.filter(m => m.id !== id);
     } catch (e) {
-      alert('Ошибка удаления: ' + e.message);
+      alert(m.masters_delete_error() + e.message);
     }
   }
 
@@ -121,7 +122,7 @@
       showAddForm = false;
       newMaster = { name: '', description: '', telegramId: '', telegramUsername: '' };
     } catch (e) {
-      alert('Ошибка добавления: ' + (e.message || 'Неизвестная ошибка'));
+      alert(m.masters_add_error() + (e.message || ''));
     } finally {
       isSaving = false;
     }
@@ -167,7 +168,7 @@
       masters = masters.map(m => m.id === payload.barberId ? { ...m, ...payload, id: payload.barberId } : m);
       editingMaster = null;
     } catch (e) {
-      alert('Ошибка обновления: ' + (e.message || 'Неизвестная ошибка'));
+      alert(m.masters_update_error() + (e.message || ''));
     } finally {
       isUpdating = false;
     }
@@ -178,16 +179,16 @@
   <div class="masters-page">
     <header class="page-header">
       <div class="header-left">
-        <h1>Команда мастеров</h1>
-        <p class="header-subtitle">Управляйте мастерами, их Telegram юзернеймами и профилями</p>
+        <h1>{m.masters_heading()}</h1>
+        <p class="header-subtitle">{m.masters_sub()}</p>
       </div>
       <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
         {#if showAddForm}
           <X size={18} />
-          <span>Скрыть форму</span>
+          <span>{m.masters_hide_form()}</span>
         {:else}
           <UserPlus size={18} />
-          <span>Добавить мастера</span>
+          <span>{m.masters_add_btn()}</span>
         {/if}
       </button>
     </header>
@@ -195,53 +196,53 @@
     {#if showAddForm}
       <div class="card add-card mb-4">
         <div class="card-head">
-          <h3>Новый мастер</h3>
-          <p>Введите данные мастера, цифровой Telegram ID и юзернейм (@username) для прямой связи клиентов со специалистом</p>
+          <h3>{m.masters_new_title()}</h3>
+          <p>{m.masters_new_desc()}</p>
         </div>
 
         <form on:submit|preventDefault={addMaster}>
           <div class="form-grid">
             <div class="form-group">
-              <label for="masterName">Имя мастера</label>
+              <label for="masterName">{m.masters_name_label()}</label>
               <div class="input-icon-wrap">
                 <User size={16} class="input-icon" />
-                <input id="masterName" type="text" class="input has-icon" bind:value={newMaster.name} placeholder="Алексей" required />
+                <input id="masterName" type="text" class="input has-icon" bind:value={newMaster.name} placeholder="Alex" required />
               </div>
             </div>
 
             <div class="form-group">
-              <label for="masterDesc">Квалификация / Должность</label>
+              <label for="masterDesc">{m.masters_desc_label()}</label>
               <div class="input-icon-wrap">
                 <Briefcase size={16} class="input-icon" />
-                <input id="masterDesc" type="text" class="input has-icon" bind:value={newMaster.description} placeholder="Ведущий специалист / Мастер" />
+                <input id="masterDesc" type="text" class="input has-icon" bind:value={newMaster.description} placeholder="Master / Barber" />
               </div>
             </div>
 
             <div class="form-group">
-              <label for="masterTg">Telegram ID (цифровой ID)</label>
+              <label for="masterTg">{m.masters_tg_id_label()}</label>
               <div class="input-icon-wrap">
                 <Send size={16} class="input-icon" />
                 <input id="masterTg" type="text" class="input has-icon" bind:value={newMaster.telegramId} placeholder="123456789" required />
               </div>
-              <span class="field-hint">Для авторизации мастера в Telegram Mini App</span>
+              <span class="field-hint">Authorization in Telegram Mini App</span>
             </div>
 
             <div class="form-group">
-              <label for="masterTgUsername">Telegram Username (@username)</label>
+              <label for="masterTgUsername">{m.masters_tg_user_label()}</label>
               <div class="input-icon-wrap">
                 <AtSign size={16} class="input-icon" />
-                <input id="masterTgUsername" type="text" class="input has-icon" bind:value={newMaster.telegramUsername} placeholder="master_username (без @)" />
+                <input id="masterTgUsername" type="text" class="input has-icon" bind:value={newMaster.telegramUsername} placeholder="username" />
               </div>
-              <span class="field-hint">Клиенты смогут сразу открыть чат через «Написать мастеру»</span>
+              <span class="field-hint">Clients can chat directly via «Contact Barber»</span>
             </div>
           </div>
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" disabled={isSaving || !newMaster.name || !newMaster.telegramId}>
-              {isSaving ? 'Сохранение...' : 'Сохранить мастера'}
+              {isSaving ? m.common_loading() : m.common_save()}
             </button>
             <button type="button" class="btn btn-secondary" on:click={() => showAddForm = false}>
-              Отмена
+              {m.common_cancel()}
             </button>
           </div>
         </form>
@@ -253,15 +254,15 @@
         <div class="card-head">
           <div class="card-head-title">
             <Edit3 size={20} class="text-rose" />
-            <h3>Редактирование профиля мастера: {editingMaster.name}</h3>
+            <h3>{m.masters_edit_title()} {editingMaster.name}</h3>
           </div>
-          <p>Измените контакты, цифровой Telegram ID или @username для связи с клиентами</p>
+          <p>{m.masters_edit_desc()}</p>
         </div>
 
         <form on:submit|preventDefault={saveEdit}>
           <div class="form-grid">
             <div class="form-group">
-              <label for="editName">Имя мастера</label>
+              <label for="editName">{m.masters_edit_name_label()}</label>
               <div class="input-icon-wrap">
                 <User size={16} class="input-icon" />
                 <input id="editName" type="text" class="input has-icon" bind:value={editingMaster.name} required />
@@ -269,39 +270,39 @@
             </div>
 
             <div class="form-group">
-              <label for="editDesc">Квалификация / Должность</label>
+              <label for="editDesc">{m.masters_edit_desc_label()}</label>
               <div class="input-icon-wrap">
                 <Briefcase size={16} class="input-icon" />
-                <input id="editDesc" type="text" class="input has-icon" bind:value={editingMaster.description} placeholder="Специалист" />
+                <input id="editDesc" type="text" class="input has-icon" bind:value={editingMaster.description} placeholder={m.masters_edit_desc_placeholder()} />
               </div>
             </div>
 
             <div class="form-group">
-              <label for="editTgId">Telegram ID (цифровой ID)</label>
+              <label for="editTgId">{m.masters_edit_tgid_label()}</label>
               <div class="input-icon-wrap">
                 <Send size={16} class="input-icon" />
-                <input id="editTgId" type="text" class="input has-icon" bind:value={editingMaster.telegramId} placeholder="123456789" />
+                <input id="editTgId" type="text" class="input has-icon" bind:value={editingMaster.telegramId} placeholder={m.masters_edit_tgid_placeholder()} />
               </div>
             </div>
 
             <div class="form-group">
-              <label for="editTgUsername">Telegram Username (@username)</label>
+              <label for="editTgUsername">{m.masters_edit_tguser_label()}</label>
               <div class="input-icon-wrap">
                 <AtSign size={16} class="input-icon" />
                 <input id="editTgUsername" type="text" class="input has-icon" bind:value={editingMaster.telegramUsername} placeholder="username" />
               </div>
-              <span class="field-hint">Используется для ссылки t.me/username в кнопке «Написать мастеру»</span>
+              <span class="field-hint">{m.masters_edit_tguser_hint()}</span>
             </div>
 
             <div class="form-group full-width">
-              <label for="editPhoto">Фотография мастера</label>
+              <label for="editPhoto">{m.masters_edit_photo_label()}</label>
               <div class="photo-upload-row">
                 {#if editingMaster.photoUrl}
-                  <img src={editingMaster.photoUrl.startsWith('http') ? editingMaster.photoUrl : `${BASE_URL}${editingMaster.photoUrl}`} alt="Фото мастера" class="edit-preview-avatar" />
+                  <img src={editingMaster.photoUrl.startsWith('http') ? editingMaster.photoUrl : `${BASE_URL}${editingMaster.photoUrl}`} alt={m.masters_edit_photo_alt()} class="edit-preview-avatar" />
                 {/if}
                 <input type="file" id="editPhoto" accept="image/*" on:change={handleMasterPhotoUpload} class="file-input" disabled={isUploadingPhoto} />
                 {#if isUploadingPhoto}
-                  <span class="uploading-text">Загрузка фото...</span>
+                  <span class="uploading-text">{m.masters_edit_uploading()}</span>
                 {/if}
               </div>
             </div>
@@ -309,17 +310,17 @@
             <div class="form-group full-width">
               <label class="checkbox-label">
                 <input type="checkbox" bind:checked={editingMaster.isActive} />
-                <span>Мастер активен (принимает онлайн-записи)</span>
+                <span>{m.masters_edit_active_label()}</span>
               </label>
             </div>
           </div>
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" disabled={isUpdating || !editingMaster.name}>
-              {isUpdating ? 'Сохранение...' : 'Сохранить изменения'}
+              {isUpdating ? m.common_loading() : m.common_save()}
             </button>
             <button type="button" class="btn btn-secondary" on:click={cancelEdit}>
-              Отмена
+              {m.common_cancel()}
             </button>
           </div>
         </form>
@@ -329,7 +330,7 @@
     {#if isLoading}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Загрузка мастеров...</p>
+        <p>{m.common_loading()}</p>
       </div>
     {:else if errorMsg}
       <div class="alert alert-danger">
@@ -341,11 +342,11 @@
         <div class="empty-icon-circle">
           <Users size={32} />
         </div>
-        <h3>У вас пока нет мастеров</h3>
-        <p>Добавьте первого специалиста, чтобы начать формировать рабочий график и принимать записи.</p>
+        <h3>{m.masters_empty_title()}</h3>
+        <p>{m.masters_empty_desc()}</p>
         <button class="btn btn-primary mt-2" on:click={() => showAddForm = true}>
           <UserPlus size={17} />
-          <span>Добавить первого мастера</span>
+          <span>{m.masters_add_first_btn()}</span>
         </button>
       </div>
     {:else}
@@ -362,10 +363,10 @@
               </div>
               <div class="master-details">
                 <h3>{master.name}</h3>
-                <span class="master-role">{master.description || 'Мастер'}</span>
+                <span class="master-role">{master.description || 'Master'}</span>
               </div>
               <span class="status-badge" class:active={master.isActive}>
-                {master.isActive ? 'Активен' : 'Неактивен'}
+                {master.isActive ? m.masters_status_active() : m.masters_status_inactive()}
               </span>
             </div>
 
@@ -373,13 +374,13 @@
               {#if master.telegramUsername}
                 <div class="meta-row highlight-meta">
                   <AtSign size={14} class="meta-icon text-rose" />
-                  <span>Юзернейм: <strong>@{master.telegramUsername.replace(/^@/, '')}</strong></span>
+                  <span>Username: <strong>@{master.telegramUsername.replace(/^@/, '')}</strong></span>
                   <a 
                     href={`https://t.me/${master.telegramUsername.replace(/^@/, '')}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="tg-ext-link"
-                    title="Открыть в Telegram"
+                    title="Open in Telegram"
                   >
                     <ExternalLink size={12} />
                   </a>
@@ -387,7 +388,7 @@
               {:else}
                 <div class="meta-row empty-meta">
                   <AtSign size={14} class="meta-icon text-muted" />
-                  <span>Юзернейм: <em>не указан</em></span>
+                  <span>Username: <em>—</em></span>
                 </div>
               {/if}
 
@@ -402,11 +403,11 @@
             <div class="master-footer">
               <button class="btn btn-secondary btn-sm" on:click={() => startEdit(master)}>
                 <Edit3 size={14} />
-                <span>Изменить</span>
+                <span>{m.common_edit()}</span>
               </button>
               <button class="btn btn-danger btn-sm" on:click={() => deleteMaster(master.id)}>
                 <Trash2 size={14} />
-                <span>Удалить</span>
+                <span>{m.common_delete()}</span>
               </button>
             </div>
           </div>

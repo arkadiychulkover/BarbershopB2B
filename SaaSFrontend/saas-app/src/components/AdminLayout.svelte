@@ -4,6 +4,8 @@
   import { authStore, setAuthToken, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
   import { theme, toggleTheme } from '../lib/theme';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from './LanguageSwitcher.svelte';
   import { 
     LayoutDashboard, 
     Building2, 
@@ -58,12 +60,16 @@
     if (onSectionChange) onSectionChange(tab);
     isMobileOpen = false;
   }
+
+  function toggleMobileMenu() {
+    isMobileOpen = !isMobileOpen;
+  }
 </script>
 
 {#if isLoading}
   <div class="loader-container">
     <div class="spinner"></div>
-    <p class="loader-text">Проверка прав администратора...</p>
+    <p class="loader-text">{m.admin_layout_checking()}</p>
   </div>
 {:else}
   <div class="admin-layout">
@@ -75,23 +81,23 @@
         </div>
         <span class="brand-name">ARCH SYSTEM <span class="badge-admin">Admin</span></span>
       </div>
-      <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Меню">
-        {#if isMobileOpen}
-          <X size={22} />
-        {:else}
-          <Menu size={22} />
-        {/if}
-      </button>
+      <div class="mobile-header-actions">
+        <LanguageSwitcher />
+        <button class="mobile-toggle-btn" on:click={toggleMobileMenu} aria-label="Toggle Navigation">
+          {#if isMobileOpen}
+            <X size={20} />
+          {:else}
+            <Menu size={20} />
+          {/if}
+        </button>
+      </div>
     </header>
 
-    <!-- Mobile overlay -->
+    <!-- Backdrop for mobile -->
     {#if isMobileOpen}
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
-      <div class="mobile-backdrop" on:click={() => isMobileOpen = false}></div>
+      <div class="sidebar-backdrop" on:click={() => isMobileOpen = false}></div>
     {/if}
 
-    <!-- Sidebar -->
     <aside class="sidebar" class:mobile-open={isMobileOpen}>
       <div class="logo">
         <div class="brand-wrapper">
@@ -100,7 +106,7 @@
           </div>
           <div>
             <h2>ARCH SYSTEM</h2>
-            <span class="sub-brand">Панель управления</span>
+            <span class="sub-brand">{m.admin_layout_control_panel()}</span>
           </div>
         </div>
         <span class="superadmin-badge">
@@ -116,7 +122,7 @@
           on:click={() => selectTab('overview')}
         >
           <LayoutDashboard size={18} />
-          <span>Сводка & Метрики</span>
+          <span>{m.admin_layout_summary_metrics()}</span>
         </button>
 
         <button 
@@ -125,7 +131,7 @@
           on:click={() => selectTab('owners')}
         >
           <Building2 size={18} />
-          <span>Заведения</span>
+          <span>{m.admin_layout_salons()}</span>
         </button>
 
         <button 
@@ -134,7 +140,7 @@
           on:click={() => selectTab('masters')}
         >
           <UserCheck size={18} />
-          <span>Мастера</span>
+          <span>{m.admin_layout_barbers()}</span>
         </button>
 
         <button 
@@ -143,7 +149,7 @@
           on:click={() => selectTab('clients')}
         >
           <Users size={18} />
-          <span>Клиенты</span>
+          <span>{m.admin_layout_clients()}</span>
         </button>
 
         <button 
@@ -152,7 +158,7 @@
           on:click={() => selectTab('appointments')}
         >
           <Calendar size={18} />
-          <span>Все записи</span>
+          <span>{m.admin_layout_all_appointments()}</span>
         </button>
 
         <button 
@@ -161,25 +167,25 @@
           on:click={() => selectTab('admins')}
         >
           <Shield size={18} />
-          <span>Администраторы</span>
+          <span>{m.admin_layout_admins()}</span>
         </button>
       </nav>
 
       <div class="sidebar-footer">
         <div class="sidebar-actions-row">
-          <button class="theme-toggle-btn" on:click={toggleTheme} title="Переключить тему (Светлая / Темная)">
+          <button class="theme-toggle-btn" on:click={toggleTheme} title={m.admin_layout_theme_toggle()}>
             {#if $theme === 'dark'}
               <Sun size={15} class="text-amber" />
-              <span>Светлая тема</span>
+              <span>{m.admin_layout_light_theme()}</span>
             {:else}
               <Moon size={15} class="text-lavender" />
-              <span>Темная тема</span>
+              <span>{m.admin_layout_dark_theme()}</span>
             {/if}
           </button>
 
-          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title="Связаться с поддержкой @Eyed_Graff">
+          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title={m.admin_layout_support_title()}>
             <Send size={13} />
-            <span>Поддержка</span>
+            <span>{m.admin_layout_support()}</span>
           </a>
         </div>
 
@@ -188,20 +194,23 @@
             {(adminEmail || 'A')[0].toUpperCase()}
           </div>
           <div class="admin-info">
-            <span class="admin-role-title">Администратор</span>
+            <span class="admin-role-title">{m.admin_layout_role_admin()}</span>
             <span class="admin-email" title={adminEmail}>{adminEmail}</span>
           </div>
         </div>
 
-        <button class="logout-btn" on:click={handleLogout} title="Выйти из системы">
+        <button class="logout-btn" on:click={handleLogout} title={m.nav_logout()}>
           <LogOut size={16} />
-          <span>Выйти</span>
+          <span>{m.nav_logout()}</span>
         </button>
       </div>
     </aside>
 
     <!-- Main Content Area -->
     <main class="main-content">
+      <div class="desktop-top-bar">
+        <LanguageSwitcher />
+      </div>
       <slot />
     </main>
   </div>
@@ -213,6 +222,27 @@
     min-height: 100vh;
     background-color: var(--bg-canvas);
     color: var(--text-primary);
+  }
+
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .desktop-top-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1.25rem 2rem 0;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 1024px) {
+    .desktop-top-bar {
+      display: none;
+    }
   }
 
   .mobile-header {

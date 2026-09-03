@@ -23,6 +23,8 @@
   import miniappMockup from '../assets/miniapp_mockup.jpg';
   import { apiRequest } from '../lib/api';
   import { theme, toggleTheme } from '../lib/theme';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
 
   let price = null;
 
@@ -95,23 +97,24 @@
         <span class="brand-title">ARCH SYSTEM</span>
       </div>
       <div class="nav-actions">
-        <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title="Переключить тему">
+        <LanguageSwitcher />
+        <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title="Theme">
           {#if $theme === 'dark'}
             <Sun size={16} class="text-amber" />
           {:else}
             <Moon size={16} class="text-lavender" />
           {/if}
         </button>
-        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Служба поддержки">
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Support @Eyed_Graff">
           <Send size={14} />
-          <span>Поддержка</span>
+          <span>Support</span>
         </a>
         <a href="#/login" class="btn btn-secondary btn-sm">
           <LogIn size={16} />
-          <span>Войти</span>
+          <span>{m.nav_login()}</span>
         </a>
         <a href="#/register" class="btn btn-primary btn-sm">
-          <span>Регистрация</span>
+          <span>{m.nav_register()}</span>
         </a>
       </div>
     </div>
@@ -122,46 +125,46 @@
     <div class="container hero-container">
       <div class="hero-badge">
         <Sparkles size={14} />
-        <span>Telegram Mini App & Cloud CRM для сферы услуг и заведений</span>
+        <span>{m.landing_badge()}</span>
       </div>
 
       <h1 class="hero-title">
-        Онлайн-запись для салона или барбершопа — <span class="gradient-text">прямо в Telegram, без сайта</span>
+        {m.landing_hero_title_1()} <span class="gradient-text">{m.landing_hero_title_2()}</span>
       </h1>
 
       <p class="subtitle">
-        Клиенты записываются сами за 30 секунд в Telegram — вы получаете расписание, CRM и финансовую аналитику
+        {m.landing_hero_subtitle()}
       </p>
 
       <div class="hero-actions">
         <a href="#/register" class="btn btn-primary btn-lg glow">
-          <span>Оформить подписку ({price !== null ? `от ${price} TON/мес` : 'от 18 TON/мес'}) →</span>
+          <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
         </a>
       </div>
 
       <!-- Niches Bar -->
       <div class="niches-strip" use:scrollReveal>
-        <span class="niches-label">Идеально подходит для:</span>
+        <span class="niches-label">{m.landing_niche_label()}</span>
         <div class="niches-tags">
           <div class="niche-tag">
             <Scissors size={15} />
-            <span>Для барбершопов</span>
+            <span>{m.landing_niche_barber()}</span>
           </div>
           <div class="niche-tag">
             <Sparkle size={15} />
-            <span>Для салонов красоты</span>
+            <span>{m.landing_niche_salon()}</span>
           </div>
           <div class="niche-tag">
             <Smile size={15} />
-            <span>Для мастеров маникюра</span>
+            <span>{m.landing_niche_nails()}</span>
           </div>
           <div class="niche-tag">
             <Heart size={15} />
-            <span>Для спа и массажа</span>
+            <span>{m.landing_niche_spa()}</span>
           </div>
           <div class="niche-tag">
             <Users size={15} />
-            <span>Для частных специалистов</span>
+            <span>{m.landing_niche_solo()}</span>
           </div>
         </div>
       </div>
@@ -172,15 +175,15 @@
           <div class="preview-glow"></div>
           <img 
             src={miniappMockup} 
-            alt="Интерфейс Telegram Mini App для онлайн-записи клиентов" 
+            alt={m.landing_mockup_alt()} 
             class="preview-image"
             loading="lazy"
           />
           <div class="preview-badge-overlay">
             <Bot size={18} class="text-rose" />
             <div class="preview-badge-text">
-              <strong>Telegram Mini App</strong>
-              <span>Работает в 1 клик прямо внутри диалога</span>
+              <strong>{m.landing_mockup_badge()}</strong>
+              <span>{m.landing_mockup_sub()}</span>
             </div>
           </div>
         </div>
@@ -192,8 +195,8 @@
   <section class="features">
     <div class="container">
       <div class="section-head" use:scrollReveal>
-        <h2>Все инструменты в одной платформе</h2>
-        <p class="section-sub">Полный цикл работы с клиентами и специалистами без сложных интеграций</p>
+        <h2>{m.landing_features_heading()}</h2>
+        <p class="section-sub">{m.landing_features_subheading()}</p>
       </div>
 
       <div class="grid">
@@ -201,48 +204,48 @@
           <div class="icon-wrap rose">
             <Bot size={24} />
           </div>
-          <h3>Telegram Mini App</h3>
-          <p>Клиенты записываются за 30 секунд прямо внутри Telegram без установки лишних приложений и регистрации.</p>
+          <h3>{m.landing_feat_tg_title()}</h3>
+          <p>{m.landing_feat_tg_desc()}</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap sage">
             <Calendar size={24} />
           </div>
-          <h3>Умное расписание</h3>
-          <p>Гибкие смены специалистов, бронирование слотов, автоматический учет длительности процедур и защита от накладок.</p>
+          <h3>{m.landing_feat_schedule_title()}</h3>
+          <p>{m.landing_feat_schedule_desc()}</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap lavender">
             <Users size={24} />
           </div>
-          <h3>База клиентов & CRM</h3>
-          <p>История всех визитов, предпочтения, контактные данные и выгрузка отчетов в Excel в один клик.</p>
+          <h3>{m.landing_feat_crm_title()}</h3>
+          <p>{m.landing_feat_crm_desc()}</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap amber">
             <BarChart3 size={24} />
           </div>
-          <h3>Финансовая аналитика</h3>
-          <p>Интерактивные графики выручки и посещений, статистика по дням, часам и каждому сотруднику в отдельности.</p>
+          <h3>{m.landing_feat_analytics_title()}</h3>
+          <p>{m.landing_feat_analytics_desc()}</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap rose">
             <BellRing size={24} />
           </div>
-          <h3>Уведомления</h3>
-          <p>Мгновенные оповещения сотрудников и клиентов о новых бронированиях, отменах и напоминания перед визитом.</p>
+          <h3>{m.landing_feat_notif_title()}</h3>
+          <p>{m.landing_feat_notif_desc()}</p>
         </div>
 
         <div class="feature-card" use:scrollReveal>
           <div class="icon-wrap sage">
             <ShieldCheck size={24} />
           </div>
-          <h3>Оплата подписки за 1 клик</h3>
-          <p>Быстрая и безопасная оплата.<br /><small class="feature-caption">криптовалютой TON, без карт и чеков</small></p>
+          <h3>{m.landing_feat_payment_title()}</h3>
+          <p>{m.landing_feat_payment_desc()}</p>
         </div>
       </div>
     </div>
@@ -264,16 +267,16 @@
         <div class="cta-content">
           <div class="cta-badge">
             <ShieldCheck size={16} />
-            <span>Быстрый старт за 2 минуты</span>
+            <span>{m.landing_cta_badge()}</span>
           </div>
-          <h2>Готовы вывести свой бизнес на новый уровень?</h2>
-          <p>Подключите вашего бота и принимайте первые онлайн-записи уже сегодня.</p>
+          <h2>{m.landing_cta_heading()}</h2>
+          <p>{m.landing_cta_sub()}</p>
           <div class="cta-actions-group">
             <a href="#/register" class="btn btn-primary btn-lg glow">
-              <span>Оформить подписку ({price !== null ? `${price} TON/мес` : '18 TON/мес'}) →</span>
+              <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
             </a>
             <div class="cta-pricing-subtext">
-              <span>Оплата в сети TON за 1 клик • ≈€30/мес</span>
+              <span>{m.landing_cta_ton()}</span>
             </div>
           </div>
         </div>
@@ -287,13 +290,13 @@
       <div class="footer-brand">
         <span class="brand-dot"></span>
         <span class="brand-title">ARCH SYSTEM</span>
-        <span class="footer-copy">© 2026 Все права защищены</span>
+        <span class="footer-copy">{m.landing_footer_rights()}</span>
       </div>
 
       <div class="footer-links">
         <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="footer-support-link">
           <Send size={15} />
-          <span>Служба поддержки: @Eyed_Graff</span>
+          <span>{m.landing_footer_support()}</span>
         </a>
       </div>
     </div>

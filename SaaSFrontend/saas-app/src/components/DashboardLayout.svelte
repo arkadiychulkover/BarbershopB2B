@@ -4,6 +4,8 @@
   import { authStore, profileStore, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
   import { theme, toggleTheme } from '../lib/theme';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from './LanguageSwitcher.svelte';
   import { 
     LayoutDashboard, 
     Settings, 
@@ -68,7 +70,7 @@
 {#if isLoading}
   <div class="loader-container">
     <div class="spinner"></div>
-    <p class="loader-text">Загрузка платформы...</p>
+    <p class="loader-text">{m.common_loading()}</p>
   </div>
 {:else}
   <div class="dashboard-layout">
@@ -78,13 +80,16 @@
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
       </div>
-      <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Меню">
-        {#if isMobileOpen}
-          <X size={22} />
-        {:else}
-          <Menu size={22} />
-        {/if}
-      </button>
+      <div class="mobile-header-actions">
+        <LanguageSwitcher />
+        <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Menu">
+          {#if isMobileOpen}
+            <X size={22} />
+          {:else}
+            <Menu size={22} />
+          {/if}
+        </button>
+      </div>
     </header>
 
     <!-- Mobile overlay -->
@@ -110,53 +115,53 @@
       <nav class="nav-menu">
         <a href="#/dashboard" class="nav-item" class:active={$currentLocation === '/dashboard' || $currentLocation === '/dashboard/'} on:click={closeMobile}>
           <LayoutDashboard size={19} />
-          <span>Обзор</span>
+          <span>{m.nav_dashboard()}</span>
         </a>
         <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/schedule')} on:click={closeMobile}>
           <CalendarDays size={19} />
-          <span>Расписание</span>
+          <span>{m.nav_schedule()}</span>
         </a>
         <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/masters')} on:click={closeMobile}>
           <Users size={19} />
-          <span>Мастера</span>
+          <span>{m.nav_masters()}</span>
         </a>
         <a href="#/dashboard/clients" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/clients')} on:click={closeMobile}>
           <UserCheck size={19} />
-          <span>Клиенты</span>
+          <span>{m.nav_clients()}</span>
         </a>
         <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/services')} on:click={closeMobile}>
           <Scissors size={19} />
-          <span>Услуги</span>
+          <span>{m.nav_services()}</span>
         </a>
         <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/statistics')} on:click={closeMobile}>
           <BarChart3 size={19} />
-          <span>Статистика</span>
+          <span>{m.nav_analytics()}</span>
         </a>
         <a href="#/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/bot-setup')} on:click={closeMobile}>
           <Bot size={19} />
-          <span>Telegram Бот</span>
+          <span>{m.nav_bot_setup()}</span>
         </a>
         <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/settings')} on:click={closeMobile}>
           <Settings size={19} />
-          <span>Настройки</span>
+          <span>{m.nav_settings()}</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
         <div class="sidebar-actions-row">
-          <button class="theme-toggle-btn" on:click={toggleTheme} title="Переключить тему (Светлая / Темная)">
+          <button class="theme-toggle-btn" on:click={toggleTheme} title="Theme">
             {#if $theme === 'dark'}
               <Sun size={16} class="text-amber" />
-              <span>Светлая тема</span>
+              <span>Light</span>
             {:else}
               <Moon size={16} class="text-lavender" />
-              <span>Темная тема</span>
+              <span>Dark</span>
             {/if}
           </button>
 
-          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title="Связаться с поддержкой @Eyed_Graff">
+          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title="Support @Eyed_Graff">
             <Send size={14} />
-            <span>Поддержка</span>
+            <span>Support</span>
           </a>
         </div>
 
@@ -165,18 +170,21 @@
             {($profileStore.ownerName || $profileStore.barbershopName || $profileStore.email || 'B')[0].toUpperCase()}
           </div>
           <div class="user-info">
-            <span class="user-name">{$profileStore.ownerName || $profileStore.barbershopName || 'Владелец'}</span>
+            <span class="user-name">{$profileStore.ownerName || $profileStore.barbershopName || 'Owner'}</span>
             <span class="user-email">{$profileStore.email || 'master@shop.com'}</span>
           </div>
         </div>
-        <button class="logout-btn" on:click={handleLogout} title="Выйти из аккаунта">
+        <button class="logout-btn" on:click={handleLogout} title={m.nav_logout()}>
           <LogOut size={17} />
-          <span>Выйти</span>
+          <span>{m.nav_logout()}</span>
         </button>
       </div>
     </aside>
 
     <main class="main-content">
+      <div class="desktop-top-bar">
+        <LanguageSwitcher />
+      </div>
       <div class="content-wrapper">
         <slot></slot>
       </div>
@@ -233,6 +241,27 @@
     align-items: center;
     justify-content: space-between;
     z-index: 100;
+  }
+
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .desktop-top-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1.25rem 2rem 0;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 1024px) {
+    .desktop-top-bar {
+      display: none;
+    }
   }
 
   .mobile-brand {

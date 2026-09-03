@@ -2,6 +2,7 @@
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { hideMainButton, showBackButton, hideBackButton } from '../telegram';
   import Icon from './Icon.svelte';
+  import { m } from '../paraglide/messages.js';
   
   export let initialData: any = null;
   export let saving = false;
@@ -13,23 +14,23 @@
   let endTime = '18:00';
   let breakDurationMinutes = 0;
 
-  const daysOfWeekOptions = [
-    { value: 1, label: 'Понедельник' },
-    { value: 2, label: 'Вторник' },
-    { value: 3, label: 'Среда' },
-    { value: 4, label: 'Четверг' },
-    { value: 5, label: 'Пятница' },
-    { value: 6, label: 'Суббота' },
-    { value: 0, label: 'Воскресенье' }
+  $: daysOfWeekOptions = [
+    { value: 1, label: m.tma_day_mon() },
+    { value: 2, label: m.tma_day_tue() },
+    { value: 3, label: m.tma_day_wed() },
+    { value: 4, label: m.tma_day_thu() },
+    { value: 5, label: m.tma_day_fri() },
+    { value: 6, label: m.tma_day_sat() },
+    { value: 0, label: m.tma_day_sun() }
   ];
 
-  const breakOptions = [
-    { value: 0, label: 'Без перерыва' },
-    { value: 5, label: '5 минут' },
-    { value: 10, label: '10 минут' },
-    { value: 15, label: '15 минут' },
-    { value: 20, label: '20 минут' },
-    { value: 30, label: '30 минут' }
+  $: breakOptions = [
+    { value: 0, label: m.tma_break_none() },
+    { value: 5, label: m.tma_break_5() },
+    { value: 10, label: m.tma_break_10() },
+    { value: 15, label: m.tma_break_15() },
+    { value: 20, label: m.tma_break_20() },
+    { value: 30, label: m.tma_break_30() }
   ];
 
   onMount(() => {
@@ -78,14 +79,14 @@
 
 <div class="shift-form">
   <div class="form-header">
-    <h2>{initialData ? 'Редактирование смены' : 'Новая смена'}</h2>
-    <button class="close-btn" type="button" on:click={onCancel} aria-label="Закрыть">
+    <h2>{initialData ? m.tma_shift_edit_title() : m.tma_shift_new_title()}</h2>
+    <button class="close-btn" type="button" on:click={onCancel} aria-label={m.tma_close()}>
       <Icon name="x" size={18} />
     </button>
   </div>
   
   <div class="form-group">
-    <label for="dayOfWeek">День недели</label>
+    <label for="dayOfWeek">{m.tma_day_of_week()}</label>
     <select id="dayOfWeek" bind:value={dayOfWeek}>
       {#each daysOfWeekOptions as option}
         <option value={option.value}>{option.label}</option>
@@ -95,18 +96,18 @@
   
   <div class="time-inputs">
     <div class="form-group">
-      <label for="startTime">Начало</label>
+      <label for="startTime">{m.tma_start_time()}</label>
       <input type="time" id="startTime" bind:value={startTime} />
     </div>
     
     <div class="form-group">
-      <label for="endTime">Конец</label>
+      <label for="endTime">{m.tma_end_time()}</label>
       <input type="time" id="endTime" bind:value={endTime} />
     </div>
   </div>
   
   <div class="form-group">
-    <label for="breakDuration">Перерыв после каждой записи</label>
+    <label for="breakDuration">{m.tma_break_after_each()}</label>
     <select id="breakDuration" bind:value={breakDurationMinutes}>
       {#each breakOptions as opt}
         <option value={opt.value}>{opt.label}</option>
@@ -115,7 +116,7 @@
   </div>
   
   {#if startTime && endTime && startTime >= endTime}
-    <p class="error-msg">Время начала должно быть раньше времени окончания</p>
+    <p class="error-msg">{m.tma_time_order_error()}</p>
   {/if}
 
   <div class="form-actions">
@@ -125,7 +126,7 @@
       on:click={onSubmit} 
       disabled={!isValid || saving}
     >
-      {saving ? 'Сохранение...' : (initialData ? 'Сохранить изменения' : 'Добавить смену')}
+      {saving ? m.tma_saving() : (initialData ? m.tma_save_changes() : m.tma_shift_add_btn())}
     </button>
     <button 
       type="button" 
@@ -133,7 +134,7 @@
       on:click={onCancel}
       disabled={saving}
     >
-      Отмена
+      {m.tma_cancel()}
     </button>
   </div>
 </div>

@@ -2,9 +2,10 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
+  import { m } from '../lib/paraglide/messages.js';
+  import { currentLocale } from '../lib/locale.js';
   import { ChevronLeft, ChevronRight, Clock, User, Scissors, Calendar, RefreshCw } from 'lucide-svelte';
 
-  // Дата отображения (один день)
   let selectedDate = new Date();
   selectedDate.setHours(0, 0, 0, 0);
 
@@ -14,10 +15,9 @@
   let isLoading = false;
   let error = '';
 
-  // Временная шкала: 08:00 – 22:00, шаг 30 мин
   const HOUR_START = 8;
   const HOUR_END = 22;
-  const SLOT_HEIGHT_PX = 48; // px на 30 мин
+  const SLOT_HEIGHT_PX = 48; // px / 30 min
 
   function timeSlots() {
     const slots = [];
@@ -30,17 +30,16 @@
   const TIME_SLOTS = timeSlots();
 
   function slotTop(timeStr) {
-    // timeStr = "HH:mm"
-    const [h, m] = timeStr.split(':').map(Number);
-    const totalMins = (h - HOUR_START) * 60 + m;
+    const [h, min] = timeStr.split(':').map(Number);
+    const totalMins = (h - HOUR_START) * 60 + min;
     return (totalMins / 30) * SLOT_HEIGHT_PX;
   }
 
   function apptTop(appt) {
     const d = new Date(appt.appointmentDate);
     const h = d.getUTCHours();
-    const m = d.getUTCMinutes();
-    return slotTop(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    const min = d.getUTCMinutes();
+    return slotTop(`${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`);
   }
 
   function apptHeight(appt) {
@@ -55,7 +54,7 @@
   }
 
   function formatDate(d) {
-    return d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    return d.toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' });
   }
 
   function prevDay() {
@@ -103,7 +102,7 @@
       const allAppointments = await apiRequest('/api/Barber/admin-appointments/all');
       appointments = Array.isArray(allAppointments) ? allAppointments : [];
     } catch(e) {
-      error = e.message || 'Ошибка загрузки';
+      error = e.message || m.common_error();
     } finally {
       isLoading = false;
     }
@@ -113,7 +112,7 @@
 </script>
 
 <svelte:head>
-  <title>Шахматка записей</title>
+  <title>{m.timeline_title()}</title>
 </svelte:head>
 
 <DashboardLayout>
@@ -121,13 +120,13 @@
     <div class="page-header">
       <div class="header-left">
         <Calendar size={22} />
-        <h1>Шахматка записей</h1>
+        <h1>{m.timeline_title()}</h1>
       </div>
       <div class="date-nav">
         <button class="nav-btn" on:click={prevDay}><ChevronLeft size={18}/></button>
         <span class="date-label">{formatDate(selectedDate)}</span>
         <button class="nav-btn" on:click={nextDay}><ChevronRight size={18}/></button>
-        <button class="refresh-btn" on:click={loadData} title="Обновить"><RefreshCw size={16}/></button>
+        <button class="refresh-btn" on:click={loadData} title={m.common_refresh()}><RefreshCw size={16}/></button>
       </div>
     </div>
 
@@ -138,11 +137,10 @@
     {#if isLoading}
       <div class="loading-overlay">
         <div class="spinner"></div>
-        <span>Загрузка...</span>
+        <span>{m.common_loading()}</span>
       </div>
     {:else}
       <div class="timeline-container">
-        <!-- Левый столбец: временная шкала -->
         <div class="time-axis">
           <div class="col-header time-col-header"></div>
           <div class="time-rows" style="height:{totalGridHeight()}px; position:relative;">
@@ -154,7 +152,6 @@
           </div>
         </div>
 
-        <!-- Правый скроллящийся блок: колонки мастеров -->
         <div class="masters-scroll">
           {#each masters as master}
             <div class="master-col">
@@ -167,12 +164,11 @@
                 <div class="master-col-name">
                   <span class="master-name">{master.name}</span>
                   {#if master.isOnVacation}
-                    <span class="vacation-badge">В отпуске</span>
+                    <span class="vacation-badge">{m.masters_on_vacation()}</span>
                   {/if}
                 </div>
               </div>
 
-              <!-- Сетка слотов -->
               <div class="slots-grid" style="height:{totalGridHeight()}px; position:relative;">
                 {#each TIME_SLOTS as slot, i}
                   <div
@@ -181,12 +177,11 @@
                   ></div>
                 {/each}
 
-                <!-- Записи -->
                 {#each getMasterAppointments(master.id) as appt}
                   <div
                     class="appointment-block status-{appt.status?.toLowerCase()}"
                     style="top:{apptTop(appt)}px; height:{Math.max(apptHeight(appt), SLOT_HEIGHT_PX)}px;"
-                    title="{appt.clientName || 'Клиент'} — {appt.serviceName || 'услуга'}"
+                    title="{appt.clientName || m.schedule_client()} — {appt.serviceName || m.schedule_service()}"
                   >
                     <div class="appt-time">{formatTime(appt.appointmentDate)}</div>
                     <div class="appt-client">
@@ -202,7 +197,7 @@
           {/each}
 
           {#if masters.length === 0}
-            <div class="empty-state">Нет активных мастеров.</div>
+            <div class="empty-state">{m.timeline_no_masters()}</div>
           {/if}
         </div>
       </div>

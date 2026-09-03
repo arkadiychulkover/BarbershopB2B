@@ -3,6 +3,7 @@
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest, BASE_URL } from '../lib/api';
   import { authStore } from '../lib/store';
+  import { m } from '../lib/paraglide/messages.js';
   import { 
     Users, 
     Search, 
@@ -45,7 +46,7 @@
       const data = await apiRequest(url);
       clients = Array.isArray(data) ? data : [];
     } catch (e) {
-      errorMsg = 'Не удалось загрузить список клиентов: ' + (e.message || 'Ошибка сети');
+      errorMsg = m.clients_load_error() + (e.message || '');
       clients = [];
     } finally {
       isLoading = false;
@@ -72,7 +73,7 @@
       });
 
       if (!res.ok) {
-        throw new Error(`Ошибка экспорта: ${res.statusText}`);
+        throw new Error(`${m.clients_export_error()} ${res.statusText}`);
       }
 
       const blob = await res.blob();
@@ -85,10 +86,10 @@
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      successMsg = 'Таблица Excel успешно сформирована и скачана!';
+      successMsg = m.clients_export_success();
       setTimeout(() => { successMsg = ''; }, 4000);
     } catch (e) {
-      errorMsg = e.message || 'Ошибка выгрузки Excel';
+      errorMsg = e.message || m.clients_export_error();
     } finally {
       isExporting = false;
     }
@@ -131,16 +132,16 @@
 
   <div class="page-header">
     <div>
-      <h1>База клиентов заведения</h1>
-      <p class="subtitle">Полный список постоянных и новых клиентов, история визитов и экспорт в Excel</p>
+      <h1>{m.clients_heading()}</h1>
+      <p class="subtitle">{m.clients_sub()}</p>
     </div>
 
     <div class="header-actions">
       <button class="btn btn-primary" on:click={exportToExcel} disabled={isExporting}>
         <FileSpreadsheet size={17} />
-        <span>{isExporting ? 'Формирование Excel...' : 'Выгрузить в Excel'}</span>
+        <span>{isExporting ? m.clients_exporting() : m.clients_export_btn()}</span>
       </button>
-      <button class="btn btn-secondary" on:click={fetchClients} title="Обновить список">
+      <button class="btn btn-secondary" on:click={fetchClients} title="Refresh">
         <RefreshCw size={16} />
       </button>
     </div>
@@ -153,9 +154,9 @@
         <Users size={20} />
       </div>
       <div class="metric-content">
-        <span class="metric-label">Всего клиентов</span>
+        <span class="metric-label">{m.clients_total_metric()}</span>
         <div class="metric-value">{totalClientsCount}</div>
-        <div class="metric-sub">Зарегистрированы в Telegram-боте</div>
+        <div class="metric-sub">{m.clients_total_metric_sub()}</div>
       </div>
     </div>
 
@@ -164,9 +165,9 @@
         <UserCheck size={20} />
       </div>
       <div class="metric-content">
-        <span class="metric-label">Постоянные клиенты</span>
+        <span class="metric-label">{m.clients_regular_metric()}</span>
         <div class="metric-value">{regularClientsCount}</div>
-        <div class="metric-sub">2 и более визитов в салон</div>
+        <div class="metric-sub">{m.clients_regular_metric_sub()}</div>
       </div>
     </div>
 
@@ -175,9 +176,9 @@
         <TrendingUp size={20} />
       </div>
       <div class="metric-content">
-        <span class="metric-label">Общий оборот от базы</span>
+        <span class="metric-label">{m.clients_turnover_metric()}</span>
         <div class="metric-value">{formatCurrency(totalClientsTurnover)}</div>
-        <div class="metric-sub">Сумма всех завершенных визитов</div>
+        <div class="metric-sub">{m.clients_turnover_metric_sub()}</div>
       </div>
     </div>
   </div>
@@ -188,7 +189,7 @@
       <Search size={17} class="search-icon" />
       <input 
         type="text" 
-        placeholder="Поиск по имени клиента, номеру телефона или Telegram ID..." 
+        placeholder={m.clients_search_placeholder()} 
         bind:value={searchQuery}
         on:input={handleSearchInput}
       />
@@ -201,13 +202,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>№</th>
-            <th>Клиент</th>
-            <th>Телефон</th>
-            <th>Telegram ID</th>
-            <th>Визиты</th>
-            <th>Последний визит</th>
-            <th class="text-right">Сумма покупок</th>
+            <th>{m.clients_th_index()}</th>
+            <th>{m.clients_th_client()}</th>
+            <th>{m.clients_th_phone()}</th>
+            <th>{m.clients_th_tg_id()}</th>
+            <th>{m.clients_th_visits()}</th>
+            <th>{m.clients_th_last_visit()}</th>
+            <th class="text-right">{m.clients_th_total_spent()}</th>
           </tr>
         </thead>
         <tbody>
@@ -217,10 +218,10 @@
               <td>
                 <div class="client-name-wrap">
                   <div class="client-avatar">
-                    {(client.name || 'К')[0].toUpperCase()}
+                    {(client.name || 'C')[0].toUpperCase()}
                   </div>
                   <div>
-                    <div class="table-cell-bold">{client.name || 'Гость'}</div>
+                    <div class="table-cell-bold">{client.name || 'Guest'}</div>
                     {#if client.notes}
                       <div class="client-notes">{client.notes}</div>
                     {/if}
@@ -228,13 +229,13 @@
                 </div>
               </td>
               <td>
-                {#if client.phone && client.phone !== 'Не указан'}
+                {#if client.phone && client.phone !== '\u041d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d' && client.phone !== 'Not specified' && client.phone !== m.clients_not_specified()}
                   <div class="phone-cell">
                     <Phone size={13} class="text-muted" />
                     <span>{client.phone}</span>
                   </div>
                 {:else}
-                  <span class="text-muted text-xs">Не указан</span>
+                  <span class="text-muted text-xs">—</span>
                 {/if}
               </td>
               <td>
@@ -242,7 +243,7 @@
               </td>
               <td>
                 <span class="visits-badge" class:highlight={(client.totalVisits || 0) >= 2}>
-                  {client.totalVisits || 0} визитов
+                  {client.totalVisits || 0}
                 </span>
               </td>
               <td>
@@ -261,10 +262,10 @@
                 {#if isLoading}
                   <div class="loading-state">
                     <div class="spinner-sm"></div>
-                    <span>Загрузка базы клиентов...</span>
+                    <span>{m.common_loading()}</span>
                   </div>
                 {:else}
-                  Клиенты не найдены. Когда клиенты будут записываться через Telegram-бота, они автоматически появятся в этом списке.
+                  No clients found.
                 {/if}
               </td>
             </tr>

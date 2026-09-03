@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
+  import { currentLocale } from '../lib/locale.js';
+  import { m } from '../lib/paraglide/messages.js';
   import { 
     ChevronLeft, 
     ChevronRight, 
@@ -202,19 +204,19 @@
       showModal = false;
       await fetchData();
     } catch(e) {
-      alert("Ошибка: " + e.message);
+      alert(m.common_error() + ": " + e.message);
     }
   }
   
   async function deleteAppt() {
     if (!editingAppt) return;
-    if (!confirm('Удалить запись?')) return;
+    if (!confirm(m.schedule_delete_confirm())) return;
     try {
       await apiRequest(`/api/Barber/admin-appointments/delete/${editingAppt.id}`, { method: 'DELETE' });
       showModal = false;
       await fetchData();
     } catch(e) {
-      alert("Ошибка: " + e.message);
+      alert(m.common_error() + ": " + e.message);
     }
   }
 </script>
@@ -223,25 +225,25 @@
   <div class="schedule-page">
     <header class="page-header">
       <div class="header-left">
-        <h1>Расписание мастеров</h1>
+        <h1>{m.schedule_title()}</h1>
         <div class="controls">
           <div class="select-wrap">
             <User size={16} class="select-icon" />
             <select class="input master-select" bind:value={selectedMasterId}>
-              {#each masters as m}
-                <option value={m.id}>{m.name}</option>
+              {#each masters as master}
+                <option value={master.id}>{master.name}</option>
               {/each}
             </select>
           </div>
 
           <div class="week-nav">
-            <button class="nav-arrow-btn" on:click={prevWeek} title="Предыдущая неделя">
+            <button class="nav-arrow-btn" on:click={prevWeek} title="Previous week">
               <ChevronLeft size={18} />
             </button>
             <span class="week-label">
-              {days[0].toLocaleDateString('ru-RU', {day:'2-digit', month:'short'})} — {days[6].toLocaleDateString('ru-RU', {day:'2-digit', month:'short'})}
+              {days[0].toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {day:'2-digit', month:'short'})} — {days[6].toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {day:'2-digit', month:'short'})}
             </span>
-            <button class="nav-arrow-btn" on:click={nextWeek} title="Следующая неделя">
+            <button class="nav-arrow-btn" on:click={nextWeek} title="Next week">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -250,23 +252,23 @@
 
       <button class="btn btn-primary" on:click={() => openAddModal(new Date())}>
         <Plus size={18} />
-        <span>Новая запись</span>
+        <span>{m.schedule_add_appt()}</span>
       </button>
     </header>
 
     {#if isLoading}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Загрузка расписания...</p>
+        <p>{m.common_loading()}</p>
       </div>
     {:else}
       <div class="calendar-grid">
         {#each days as day}
           <div class="day-col" class:is-today={isToday(day)}>
             <div class="day-header">
-              <div class="day-name">{day.toLocaleDateString('ru-RU', {weekday: 'short'})}</div>
+              <div class="day-name">{day.toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {weekday: 'short'})}</div>
               <div class="day-date" class:today-pill={isToday(day)}>
-                {day.toLocaleDateString('ru-RU', {day:'numeric', month:'numeric'})}
+                {day.toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {day:'numeric', month:'numeric'})}
               </div>
             </div>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -283,7 +285,7 @@
                     </span>
                   </div>
                   <div class="appt-service">
-                    {services.find(s => s.serviceId === appt.serviceId)?.name || 'Услуга'}
+                    {services.find(s => s.serviceId === appt.serviceId)?.name || m.nav_services()}
                   </div>
                   {#if appt.clientName}
                     <div class="appt-client">
@@ -293,7 +295,7 @@
                 </div>
               {:else}
                 <div class="empty-slot">
-                  <span>+ Запись</span>
+                  <span>+ {m.schedule_add_appt()}</span>
                 </div>
               {/each}
             </div>
@@ -310,24 +312,24 @@
       <div class="modal-content card" on:click|stopPropagation>
         <div class="modal-header">
           <div class="modal-header-text">
-            <h2>{editingAppt ? 'Редактировать запись' : 'Новая запись'}</h2>
-            <p class="modal-subtitle">Заполните детали визита клиента к мастеру</p>
+            <h2>{editingAppt ? m.schedule_edit_appt() : m.schedule_add_appt()}</h2>
+            <p class="modal-subtitle">Appointment details</p>
           </div>
-          <button class="modal-close-btn" on:click={() => showModal = false} type="button" aria-label="Закрыть">
+          <button class="modal-close-btn" on:click={() => showModal = false} type="button" aria-label={m.common_close()}>
             <X size={18} />
           </button>
         </div>
         
         <div class="form-group">
-          <label for="modal-form-date">Дата</label>
+          <label for="modal-form-date">{m.common_date()}</label>
           <input id="modal-form-date" type="date" class="input" bind:value={formDate}>
         </div>
         <div class="form-group mt-2">
-          <label for="modal-form-time">Время</label>
+          <label for="modal-form-time">{m.common_time()}</label>
           <input id="modal-form-time" type="time" class="input" bind:value={formTime}>
         </div>
         <div class="form-group mt-2">
-          <label for="modal-form-service">Услуга</label>
+          <label for="modal-form-service">{m.nav_services()}</label>
           <select id="modal-form-service" class="input" bind:value={formServiceId}>
             {#each services as s}
               <option value={s.serviceId}>{s.name} ({s.price} ₴)</option>
@@ -335,24 +337,24 @@
           </select>
         </div>
         <div class="form-group mt-2">
-          <label for="modal-form-status">Статус</label>
+          <label for="modal-form-status">{m.common_status()}</label>
           <select id="modal-form-status" class="input" bind:value={formStatus}>
-            <option value="0">Запланировано</option>
-            <option value="1">Выполнено</option>
-            <option value="2">Отменено</option>
-            <option value="3">Не явился</option>
+            <option value="0">{m.status_scheduled()}</option>
+            <option value="1">{m.status_completed()}</option>
+            <option value="2">{m.status_cancelled()}</option>
+            <option value="3">No Show</option>
           </select>
         </div>
         
         <div class="modal-actions mt-4">
-          <button class="btn btn-primary flex-1" on:click={saveAppt}>Сохранить</button>
+          <button class="btn btn-primary flex-1" on:click={saveAppt}>{m.common_save()}</button>
           {#if editingAppt}
             <button class="btn btn-danger" on:click={deleteAppt}>
               <Trash2 size={16} />
-              <span>Удалить</span>
+              <span>{m.common_delete()}</span>
             </button>
           {/if}
-          <button class="btn btn-secondary" on:click={() => showModal = false}>Отмена</button>
+          <button class="btn btn-secondary" on:click={() => showModal = false}>{m.common_cancel()}</button>
         </div>
       </div>
     </div>

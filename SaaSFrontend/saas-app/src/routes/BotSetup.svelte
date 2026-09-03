@@ -3,6 +3,7 @@
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { profileStore } from '../lib/store';
   import { apiRequest } from '../lib/api';
+  import { m } from '../lib/paraglide/messages.js';
   import { 
     Bot, 
     Smartphone, 
@@ -60,30 +61,30 @@
   <div class="bot-setup-page">
     <header class="page-header">
       <div class="header-left">
-        <h1>Настройка Telegram-бота</h1>
-        <p class="header-subtitle">Инструкция по подключению Telegram Mini App для онлайн-записи клиентов</p>
+        <h1>{m.bot_setup_title()}</h1>
+        <p class="header-subtitle">{m.bot_setup_subtitle()}</p>
       </div>
       <div class="header-badge">
         <Sparkles size={15} />
-        <span>3 простых шага</span>
+        <span>{m.bot_setup_steps_badge()}</span>
       </div>
     </header>
 
     <!-- Quick Copy Banner -->
     <div class="quick-copy-card card mb-4">
       <div class="quick-copy-body">
-        <div class="quick-copy-label">Ссылка для бота в @BotFather (/setmenubutton):</div>
+        <div class="quick-copy-label">{m.bot_setup_quick_copy_label()}</div>
         <div class="quick-copy-url">
           <code>{tmaLink}</code>
         </div>
       </div>
-      <button class="btn-copy-main" on:click={copyLink} title="Скопировать ссылку">
+      <button class="btn-copy-main" on:click={copyLink} title={m.bot_setup_copy_btn()}>
         {#if copied}
           <Check size={18} class="check-icon" />
-          <span>Скопировано!</span>
+          <span>{m.bot_setup_copied()}</span>
         {:else}
           <Copy size={18} />
-          <span>Скопировать ссылку</span>
+          <span>{m.bot_setup_copy_btn()}</span>
         {/if}
       </button>
     </div>
@@ -92,17 +93,17 @@
       <div class="alert-box warning-box mb-4">
         <AlertCircle size={20} class="alert-icon" />
         <div class="alert-body">
-          <strong>Telegram-бот еще не привязан к заведению</strong>
-          <p>Укажите полученный токен и юзернейм бота в <a href="#/dashboard/settings" class="inline-link">настройках заведения</a>.</p>
+          <strong>{m.bot_setup_not_connected_title()}</strong>
+          <p>{m.bot_setup_not_connected_desc()} <a href="#/dashboard/settings" class="inline-link">{m.settings_title()}</a>.</p>
         </div>
       </div>
     {:else}
       <div class="alert-box success-box mb-4">
         <CheckCircle2 size={20} class="alert-icon" />
         <div class="alert-body">
-          <strong>Бот подключен: @{effectiveBotUser}</strong>
+          <strong>{m.bot_setup_connected_title()}{effectiveBotUser}</strong>
           <p>
-            Прямая ссылка: 
+            {m.bot_setup_direct_link()} 
             <a href="https://t.me/{effectiveBotUser}" target="_blank" rel="noreferrer" class="inline-link">
               t.me/{effectiveBotUser} <ExternalLink size={12} />
             </a>
@@ -118,57 +119,55 @@
         <div class="step-content">
           <div class="step-head">
             <Bot size={22} class="step-icon rose" />
-            <h3>Шаг 1: Создание бота в Telegram (через @BotFather)</h3>
+            <h3>{m.bot_setup_step1_title()}</h3>
           </div>
           <p class="step-intro">
-            Вам не нужно уметь программировать. Telegram предоставляет официального бота <strong>@BotFather</strong>, который создает ботов за 1 минуту по текстовым подсказкам:
+            {m.bot_setup_step1_intro()}
           </p>
 
           <ol class="action-steps-list">
             <li>
               <span class="action-num">1.1</span>
               <div>
-                Перейдите по ссылке в официального бота 
+                {m.bot_setup_step1_1()} 
                 <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" class="ext-link">
                   @BotFather <ExternalLink size={13} />
                 </a> 
-                и нажмите <strong>«Запустить» (Start)</strong>.
+                {m.bot_setup_step1_1_end()}
               </div>
             </li>
             <li>
               <span class="action-num">1.2</span>
               <div>
-                Отправьте команду <code>/newbot</code> в чат с @BotFather.
+                {m.bot_setup_step1_2()}
               </div>
             </li>
             <li>
               <span class="action-num">1.3</span>
               <div>
-                Бот спросит: <em>«Alright, a new bot. How are we going to call it?»</em>.
+                {m.bot_setup_step1_3_ask()}
                 <br />
-                Напишите <strong>название вашего заведения</strong>, которое увидят клиенты (например: <code>Барбершоп Бородач</code> или <code>Top Gun Тверь</code>).
+                {m.bot_setup_step1_3_action()}
               </div>
             </li>
             <li>
               <span class="action-num">1.4</span>
               <div>
-                Далее бот попросит username: <em>«Now let's choose a username for your bot. It must end in `bot`»</em>.
+                {m.bot_setup_step1_4_ask()}
                 <br />
-                Введите английскими буквами уникальный логин, обязательно заканчивающийся на <code>bot</code>.
-                <br />
-                Например: <code>borodach_barber_bot</code> или <code>my_salon123_bot</code>.
+                {m.bot_setup_step1_4_action()}
               </div>
             </li>
             <li>
               <span class="action-num">1.5</span>
               <div>
-                В ответ @BotFather пришлет поздравительное сообщение со строкой:
+                {m.bot_setup_step1_5_text()}
                 <br />
                 <strong>Use this token to access the HTTP API:</strong>
                 <br />
                 <span class="token-example"><code>1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ...</code></span>
                 <br />
-                Нажмите на этот длинный токен, чтобы скопировать его в буфер обмена.
+                {m.bot_setup_step1_5_sub()}
               </div>
             </li>
           </ol>
@@ -181,41 +180,41 @@
         <div class="step-content">
           <div class="step-head">
             <KeyRound size={22} class="step-icon amber" />
-            <h3>Шаг 2: Вставка токена и юзернейма в панель управления</h3>
+            <h3>{m.bot_setup_step2_title()}</h3>
           </div>
           <p class="step-intro">
-            Чтобы наша система могла присылать клиентам подтверждения и напоминания о записях, сохраните полученные данные:
+            {m.bot_setup_step2_intro()}
           </p>
 
           <ol class="action-steps-list">
             <li>
               <span class="action-num">2.1</span>
               <div>
-                Откройте раздел <a href="#/dashboard/settings" class="inline-link">«Настройки заведения» <ExternalLink size={12} /></a> в левом боковом меню.
+                {m.bot_setup_step2_1()} <a href="#/dashboard/settings" class="inline-link">«{m.settings_title()}» <ExternalLink size={12} /></a> {m.bot_setup_step2_1_end()}
               </div>
             </li>
             <li>
               <span class="action-num">2.2</span>
               <div>
-                Пролистайте до блока <strong>«Telegram-бот заведения»</strong>.
+                {m.bot_setup_step2_2()}
               </div>
             </li>
             <li>
               <span class="action-num">2.3</span>
               <div>
-                В поле <strong>«HTTP API Token бота»</strong> вставьте скопированный токен из Шага 1.5.
+                {m.bot_setup_step2_3()}
               </div>
             </li>
             <li>
               <span class="action-num">2.4</span>
               <div>
-                В поле <strong>«Username бота в Telegram»</strong> введите логин бота без символа @ (например: <code>borodach_barber_bot</code>).
+                {m.bot_setup_step2_4()}
               </div>
             </li>
             <li>
               <span class="action-num">2.5</span>
               <div>
-                Нажмите зеленую кнопку <strong>«Сохранить настройки»</strong> внизу страницы.
+                {m.bot_setup_step2_5()}
               </div>
             </li>
           </ol>
@@ -228,26 +227,26 @@
         <div class="step-content">
           <div class="step-head">
             <Smartphone size={22} class="step-icon sage" />
-            <h3>Шаг 3: Включение кнопки «Онлайн-запись» в Telegram-боте</h3>
+            <h3>{m.bot_setup_step3_title()}</h3>
           </div>
           <p class="step-intro">
-            Настройте кнопку Mini App прямо в меню бота, чтобы клиенты открывали расписание в один клик:
+            {m.bot_setup_step3_intro()}
           </p>
           
           <ol class="action-steps-list">
             <li>
               <span class="action-num">3.1</span>
               <div>
-                Скопируйте персональную ссылку для вашего барбершопа:
+                {m.bot_setup_step3_1()}
                 <div class="code-box mt-2">
                   <code>{tmaLink}</code>
-                  <button class="copy-btn" on:click={copyLink} title="Скопировать ссылку">
+                  <button class="copy-btn" on:click={copyLink} title={m.bot_setup_copy_btn()}>
                     {#if copied}
                       <Check size={16} class="check-icon" />
-                      <span>Скопировано!</span>
+                      <span>{m.bot_setup_copied()}</span>
                     {:else}
                       <Copy size={16} />
-                      <span>Копировать</span>
+                      <span>{m.common_copy()}</span>
                     {/if}
                   </button>
                 </div>
@@ -256,39 +255,35 @@
             <li>
               <span class="action-num">3.2</span>
               <div>
-                Снова откройте бота 
+                {m.bot_setup_step3_2()} 
                 <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" class="ext-link">
                   @BotFather <ExternalLink size={13} />
                 </a> 
-                и отправьте команду <code>/setmenubutton</code>.
+                (/setmenubutton).
               </div>
             </li>
             <li>
               <span class="action-num">3.3</span>
               <div>
-                @BotFather покажет список ваших ботов. Нажмите на имя вашего бота (например, <code>@{effectiveBotUser || 'ваш_бот'}</code>).
+                {m.bot_setup_step3_3()}
               </div>
             </li>
             <li>
               <span class="action-num">3.4</span>
               <div>
-                @BotFather напишет: <em>«Please send the URL of your Web App...»</em>.
-                <br />
-                <strong>Вставьте и отправьте ссылку</strong>, которую вы скопировали в пункте 3.1.
+                {m.bot_setup_step3_4()}
               </div>
             </li>
             <li>
               <span class="action-num">3.5</span>
               <div>
-                @BotFather напишет: <em>«Please send the title for the button...»</em>.
-                <br />
-                Отправьте текст для кнопки, например: <code>Онлайн-запись</code> или <code>Записаться</code>.
+                {m.bot_setup_step3_5()}
               </div>
             </li>
           </ol>
 
           <div class="hint-card mt-3">
-            <span class="hint-title">Готово!</span> @BotFather ответит: <em>«Success! Menu button updated.»</em>
+            <span class="hint-title">{m.bot_setup_step3_done_title()}</span> {m.bot_setup_step3_done_sub()}
           </div>
         </div>
       </div>
@@ -299,10 +294,10 @@
         <div class="step-content">
           <div class="step-head">
             <CheckCircle2 size={22} class="step-icon lavender" />
-            <h3>Шаг 4: Проверка работы (как клиент)</h3>
+            <h3>{m.bot_setup_step4_title()}</h3>
           </div>
           <p class="step-intro">
-            Убедитесь, что все подключено корректно:
+            {m.bot_setup_step4_intro()}
           </p>
 
           <ol class="action-steps-list">
@@ -310,32 +305,32 @@
               <span class="action-num">4.1</span>
               <div>
                 {#if effectiveBotUser}
-                  Откройте вашего бота по прямой ссылке:
+                  {m.bot_setup_step4_1_open()}
                   <a href="https://t.me/{effectiveBotUser}" target="_blank" rel="noreferrer" class="bot-open-btn">
-                    <span>Открыть @{effectiveBotUser} в Telegram</span>
+                    <span>{m.bot_setup_step4_1_btn()}</span>
                     <ExternalLink size={14} />
                   </a>
                 {:else}
-                  Найдите вашего созданного бота в поиске Telegram и откройте диалог с ним.
+                  {m.bot_setup_step4_1_search()}
                 {/if}
               </div>
             </li>
             <li>
               <span class="action-num">4.2</span>
               <div>
-                Нажмите <strong>«Запустить» (Start)</strong>.
+                {m.bot_setup_step4_2()}
               </div>
             </li>
             <li>
               <span class="action-num">4.3</span>
               <div>
-                В нижнем левом углу возле поля ввода текста появится кнопка <strong>«Онлайн-запись»</strong> (или синяя кнопка меню). Нажмите на нее.
+                {m.bot_setup_step4_3()}
               </div>
             </li>
             <li>
               <span class="action-num">4.4</span>
               <div>
-                Внутри Telegram откроется стильный интерфейс вашего барбершопа: с каталогом услуг, мастерами и календарем доступных слотов для записи!
+                {m.bot_setup_step4_4()}
               </div>
             </li>
           </ol>
@@ -343,11 +338,11 @@
           <div class="support-box mt-3">
             <HelpCircle size={20} class="support-icon" />
             <div class="support-text">
-              <strong>Не получается или возникли вопросы?</strong>
-              <p>Наша заботливая поддержка бесплатно поможет вам подключить и протестировать бота за 5 минут:</p>
+              <strong>{m.bot_setup_support_title()}</strong>
+              <p>{m.bot_setup_support_desc()}</p>
             </div>
             <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link-btn">
-              <span>Написать в поддержку @Eyed_Graff</span>
+              <span>{m.bot_setup_support_btn()}</span>
               <ExternalLink size={14} />
             </a>
           </div>

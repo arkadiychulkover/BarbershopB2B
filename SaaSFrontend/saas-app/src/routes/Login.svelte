@@ -3,6 +3,8 @@
   import { apiRequest } from '../lib/api';
   import { setAuthToken, profileStore } from '../lib/store';
   import { Mail, Lock, AlertCircle, ArrowRight, X, ArrowLeft } from 'lucide-svelte';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
 
   let email = '';
   let password = '';
@@ -48,7 +50,7 @@
         }
       }
     } catch (err) {
-      errorMsg = err.message || 'Неверный email или пароль';
+      errorMsg = err.message || m.auth_invalid_credentials();
     } finally {
       isLoading = false;
     }
@@ -56,20 +58,24 @@
 </script>
 
 <div class="auth-container">
+  <div class="auth-top-actions">
+    <LanguageSwitcher />
+  </div>
+
   <div class="card auth-card">
-    <a href="#/" class="btn-close-auth" title="Вернуться на главную" aria-label="Вернуться на главную">
+    <a href="#/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
       <X size={18} />
     </a>
 
-    <a href="#/" class="brand-header-link" title="На главную">
+    <a href="#/" class="brand-header-link" title="ARCH SYSTEM">
       <div class="brand-header">
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
       </div>
     </a>
 
-    <h2>Вход в кабинет</h2>
-    <p class="subtitle">Управляйте заведением и онлайн-записями</p>
+    <h2>{m.auth_login_title()}</h2>
+    <p class="subtitle">{m.auth_login_subtitle()}</p>
     
     {#if errorMsg}
       <div class="alert alert-danger">
@@ -80,7 +86,7 @@
 
     <form on:submit|preventDefault={handleLogin}>
       <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">{m.auth_email_label()}</label>
         <div class="input-icon-wrap">
           <Mail size={17} class="input-icon" />
           <input 
@@ -96,8 +102,8 @@
 
       <div class="form-group">
         <div class="label-row">
-          <label for="password">Пароль</label>
-          <a href="#/forgot-password" class="forgot-pwd-link" tabindex="-1">Забыли пароль?</a>
+          <label for="password">{m.auth_password_label()}</label>
+          <a href="#/forgot-password" class="forgot-pwd-link" tabindex="-1">{m.auth_forgot_password()}</a>
         </div>
         <div class="input-icon-wrap">
           <Lock size={17} class="input-icon" />
@@ -113,7 +119,7 @@
       </div>
 
       <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading}>
-        <span>{isLoading ? 'Проверка...' : 'Войти в систему'}</span>
+        <span>{isLoading ? m.common_loading() : m.auth_login_title()}</span>
         {#if !isLoading}
           <ArrowRight size={17} />
         {/if}
@@ -121,14 +127,14 @@
     </form>
     
     <div class="auth-links">
-      <span>Еще нет аккаунта?</span>
-      <a href="#/register">Зарегистрироваться</a>
+      <span>{m.auth_dont_have_account()}</span>
+      <a href="#/register">{m.nav_register()}</a>
     </div>
 
     <div class="back-home-wrap">
       <a href="#/" class="back-home-link">
         <ArrowLeft size={15} />
-        <span>Вернуться на главную страницу</span>
+        <span>{m.common_back()}</span>
       </a>
     </div>
   </div>
@@ -136,6 +142,7 @@
 
 <style>
   .auth-container {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -145,6 +152,13 @@
     background-image: 
       radial-gradient(ellipse 60% 50% at 50% 20%, rgba(223, 158, 142, 0.08), transparent 70%),
       radial-gradient(ellipse 40% 40% at 80% 80%, rgba(179, 183, 219, 0.05), transparent 70%);
+  }
+
+  .auth-top-actions {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
   }
   
   .auth-card {

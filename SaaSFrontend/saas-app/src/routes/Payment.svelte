@@ -3,6 +3,8 @@
   import { push } from 'svelte-spa-router';
   import { apiRequest } from '../lib/api';
   import { profileStore } from '../lib/store';
+  import { m } from '../lib/paraglide/messages.js';
+  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
   import QRCode from 'qrcode';
   import { 
     Copy, 
@@ -45,7 +47,7 @@
       subscriptionAmount = priceRes.price || '10';
       platformWalletAddress = priceRes.platformWalletAddress || '';
     } catch (e) {
-      errorMsg = 'Не удалось загрузить данные для оплаты';
+      errorMsg = m.payment_load_error();
     } finally {
       isLoading = false;
       if (userWalletAddress) {
@@ -58,41 +60,40 @@
     setTimeout(() => {
       if (canvas && platformWalletAddress) {
         QRCode.toCanvas(canvas, paymentLink, {
-          width: 220,
+          width: 190,
           margin: 1,
           color: {
-            dark: '#0c0e12',
-            light: '#ffffff'
+            dark: '#2A2421',
+            light: '#FAF7F5'
           }
-        }, (error) => {
-          if (error) console.error(error);
         });
       }
-    }, 0);
+    }, 50);
   }
 
   function copyAddress() {
     if (!platformWalletAddress) return;
     navigator.clipboard.writeText(platformWalletAddress);
     copied = true;
-    setTimeout(() => copied = false, 2500);
+    setTimeout(() => copied = false, 2000);
   }
 
   async function handleSaveWallet() {
+    if (!userWalletAddress) return;
     isSaving = true;
     errorMsg = '';
-    successMsg = '';
+    
     try {
       await apiRequest('/api/Settings/wallet', {
         method: 'PUT',
         body: JSON.stringify({ walletAddress: userWalletAddress })
       });
       settings.walletAddress = userWalletAddress;
-      successMsg = 'Кошелек сохранен. Теперь вы можете оплатить подписку.';
+      successMsg = m.payment_wallet_saved();
       renderQR();
       setTimeout(() => successMsg = '', 4000);
     } catch(e) {
-      errorMsg = e.message || 'Ошибка сохранения кошелька';
+      errorMsg = e.message || m.payment_wallet_save_error();
     } finally {
       isSaving = false;
     }
@@ -111,7 +112,7 @@
         body: JSON.stringify(txHash)
       });
       
-      successMsg = 'Оплата успешно подтверждена! Добро пожаловать!';
+      successMsg = m.payment_success();
       profileStore.update(s => ({ ...s, status: 'Active' }));
       
       setTimeout(() => {
@@ -119,7 +120,7 @@
       }, 2000);
       
     } catch (err) {
-      errorMsg = err.message || 'Ошибка проверки транзакции. Убедитесь, что платеж прошел в сети TON.';
+      errorMsg = err.message || m.payment_verify_error();
     } finally {
       isLoading = false;
     }
@@ -127,6 +128,10 @@
 </script>
 
 <div class="payment-container">
+  <div class="payment-top-actions">
+    <LanguageSwitcher />
+  </div>
+
   <div class="card payment-card">
     <div class="brand-header">
       <span class="brand-dot"></span>
@@ -134,14 +139,14 @@
     </div>
 
     <div class="header-center">
-      <h2>Активация подписки</h2>
-      <p class="subtitle">Полный доступ к Telegram Mini App, управлению мастерами и финансовой аналитике</p>
+      <h2>{m.payment_title()}</h2>
+      <p class="subtitle">{m.payment_subtitle()}</p>
     </div>
     
     {#if isLoading && !settings}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Загрузка данных...</p>
+        <p>{m.payment_loading()}</p>
       </div>
     {:else}
       {#if errorMsg}
@@ -162,12 +167,12 @@
         <div class="wallet-setup">
           <div class="notice-box">
             <Wallet size={20} class="notice-icon" />
-            <p>Укажите ваш TON-кошелек перед оплатой. С него платформа будет автоматически сопоставлять входящие транзакции.</p>
+            <p>{m.payment_wallet_notice()}</p>
           </div>
 
           <form on:submit|preventDefault={handleSaveWallet} class="verify-form">
             <div class="form-group">
-              <label for="userWalletAddress">Ваш TON-кошелек</label>
+              <label for="userWalletAddress">{m.payment_wallet_label()}</label>
               <div class="input-icon-wrap">
                 <Wallet size={16} class="input-icon" />
                 <input 
@@ -176,13 +181,13 @@
                   class="input has-icon" 
                   bind:value={userWalletAddress} 
                   required 
-                  placeholder="EQ... или UQ..." 
+                  placeholder={m.payment_wallet_placeholder()} 
                 />
               </div>
             </div>
 
             <button type="submit" class="btn btn-primary submit-btn" disabled={isSaving || !userWalletAddress}>
-              <span>{isSaving ? 'Сохранение...' : 'Сохранить и перейти к оплате'}</span>
+              <span>{isSaving ? m.common_loading() : m.payment_wallet_save_btn()}</span>
               <ArrowRight size={17} />
             </button>
           </form>
@@ -192,12 +197,12 @@
         <div class="connected-wallet-strip">
           <div class="strip-left">
             <Wallet size={16} class="strip-icon" />
-            <span>Оплата с кошелька:</span>
+            <span>{m.payment_paying_from()}</span>
             <strong>{settings.walletAddress.substring(0, 6)}...{settings.walletAddress.substring(settings.walletAddress.length - 4)}</strong>
           </div>
           <button class="edit-link" on:click={() => settings.walletAddress = ''}>
             <Edit3 size={13} />
-            <span>Изменить</span>
+            <span>{m.payment_change_wallet()}</span>
           </button>
         </div>
 
@@ -210,13 +215,13 @@
           <div class="details">
             <div class="amount-badge">
               <Coins size={16} />
-              <span>Сумма к оплате: <strong>{subscriptionAmount} TON</strong></span>
+              <span>{m.payment_amount_to_pay()} <strong>{subscriptionAmount} TON</strong></span>
             </div>
             
-            <p class="address-label">Адрес для перевода:</p>
+            <p class="address-label">{m.payment_address_to_send()}</p>
             <div class="wallet-address-box">
               <code>{platformWalletAddress}</code>
-              <button class="copy-btn" on:click={copyAddress} title="Скопировать адрес">
+              <button class="copy-btn" on:click={copyAddress} title={m.payment_copy_address()}>
                 {#if copied}
                   <Check size={16} class="check-icon" />
                 {:else}
@@ -225,26 +230,26 @@
               </button>
             </div>
             
-            <p class="hint">Отсканируйте QR-код в кошельке (Tonkeeper, MyTonWallet, Tonhub) или отправьте средства вручную.</p>
+            <p class="hint">{m.payment_hint_qr()}</p>
           </div>
         </div>
 
         <!-- Transaction Hash Form -->
         <form on:submit|preventDefault={handleVerify} class="verify-form">
           <div class="form-group">
-            <label for="txHash">Хэш транзакции (Transaction Hash или BOC)</label>
+            <label for="txHash">{m.payment_tx_hash_label()}</label>
             <input 
               id="txHash" 
               type="text" 
               class="input" 
               bind:value={txHash} 
               required 
-              placeholder="Вставьте хэш отправленной транзакции" 
+              placeholder={m.payment_tx_hash_placeholder()} 
             />
           </div>
 
           <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading || !txHash}>
-            <span>{isLoading ? 'Проверка блокчейна...' : 'Подтвердить оплату'}</span>
+            <span>{isLoading ? m.payment_verifying_blockchain() : m.payment_confirm_btn()}</span>
             {#if !isLoading}
               <ShieldCheck size={18} />
             {/if}
@@ -252,7 +257,7 @@
         </form>
 
         <div class="payment-support-hint">
-          <span>Возникли вопросы по оплате или активации? Поддержка: </span>
+          <span>{m.payment_support_questions()}</span>
           <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link">
             <span>@Eyed_Graff</span>
             <ExternalLink size={13} />

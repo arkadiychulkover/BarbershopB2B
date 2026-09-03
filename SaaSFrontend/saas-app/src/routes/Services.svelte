@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest } from '../lib/api';
+  import { m } from '../lib/paraglide/messages.js';
   import { 
     Scissors, 
     Plus, 
@@ -33,7 +34,7 @@
     try {
       services = await apiRequest('/api/ServiceNames');
     } catch (e) {
-      errorMsg = 'Не удалось загрузить список услуг';
+      errorMsg = m.services_load_error();
     } finally {
       isLoading = false;
     }
@@ -52,21 +53,21 @@
       showAddForm = false;
       newServiceName = '';
     } catch (e) {
-      alert('Ошибка добавления: ' + (e.message || 'Неизвестная ошибка'));
+      alert(m.services_save_error() + ' ' + (e.message || ''));
     } finally {
       isSaving = false;
     }
   }
 
   async function deleteService(id) {
-    if (!confirm('Вы уверены, что хотите удалить эту услугу? Это также удалит её у всех мастеров!')) return;
+    if (!confirm(m.services_delete_confirm())) return;
     try {
       await apiRequest(`/api/ServiceNames/${id}`, {
         method: 'DELETE'
       });
       services = services.filter(s => s.id !== id);
     } catch (e) {
-      alert('Ошибка удаления: ' + e.message);
+      alert(m.services_delete_error() + ' ' + e.message);
     }
   }
 
@@ -94,7 +95,7 @@
       }
       cancelEdit();
     } catch (e) {
-      alert('Ошибка обновления: ' + e.message);
+      alert(m.services_save_error() + ' ' + e.message);
     }
   }
 </script>
@@ -103,16 +104,16 @@
   <div class="services-page">
     <header class="page-header">
       <div class="header-left">
-        <h1>Каталог услуг</h1>
-        <p class="header-subtitle">Базовые наименования услуг. Каждый мастер может задавать для них свою цену и время выполнения.</p>
+        <h1>{m.services_catalog_title()}</h1>
+        <p class="header-subtitle">{m.services_catalog_subtitle()}</p>
       </div>
       <button class="btn btn-primary" on:click={() => showAddForm = !showAddForm}>
         {#if showAddForm}
           <X size={18} />
-          <span>Скрыть форму</span>
+          <span>{m.services_hide_form()}</span>
         {:else}
           <Plus size={18} />
-          <span>Добавить услугу</span>
+          <span>{m.services_add_btn()}</span>
         {/if}
       </button>
     </header>
@@ -120,13 +121,13 @@
     {#if showAddForm}
       <div class="card add-card mb-4">
         <div class="card-head">
-          <h3>Создание услуги</h3>
-          <p>Введите общее название (например: Классическая услуга, Комплексный уход, Моделирование)</p>
+          <h3>{m.services_create_title()}</h3>
+          <p>{m.services_create_desc()}</p>
         </div>
 
         <form on:submit|preventDefault={addService}>
           <div class="form-group">
-            <label for="newService">Название услуги</label>
+            <label for="newService">{m.services_name_label()}</label>
             <div class="input-icon-wrap">
               <Scissors size={16} class="input-icon" />
               <input 
@@ -134,7 +135,7 @@
                 type="text" 
                 class="input has-icon" 
                 bind:value={newServiceName} 
-                placeholder="Основная услуга или процедура" 
+                placeholder={m.services_name_placeholder()} 
                 required 
               />
             </div>
@@ -142,10 +143,10 @@
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" disabled={isSaving || !newServiceName.trim()}>
-              {isSaving ? 'Сохранение...' : 'Создать услугу'}
+              {isSaving ? m.common_loading() : m.services_create_submit()}
             </button>
             <button type="button" class="btn btn-secondary" on:click={() => showAddForm = false}>
-              Отмена
+              {m.common_cancel()}
             </button>
           </div>
         </form>
@@ -155,7 +156,7 @@
     {#if isLoading}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Загрузка каталога услуг...</p>
+        <p>{m.services_catalog_loading()}</p>
       </div>
     {:else if errorMsg}
       <div class="alert alert-danger">
@@ -167,11 +168,11 @@
         <div class="empty-icon-circle">
           <Scissors size={32} />
         </div>
-        <h3>Услуги пока не созданы</h3>
-        <p>Добавьте первые базовые услуги заведения, чтобы мастера могли прикрепить к ним прайс-лист.</p>
+        <h3>{m.services_empty_title()}</h3>
+        <p>{m.services_empty_desc()}</p>
         <button class="btn btn-primary mt-2" on:click={() => showAddForm = true}>
           <Plus size={17} />
-          <span>Создать первую услугу</span>
+          <span>{m.services_create_first()}</span>
         </button>
       </div>
     {:else}
@@ -180,15 +181,15 @@
           <div class="card service-card">
             {#if editingServiceId === service.id}
               <div class="edit-mode">
-                <label class="edit-label">Редактирование названия</label>
-                <input type="text" class="input" bind:value={editingServiceName} />
+                <label for="edit-service-input" class="edit-label">{m.services_edit_title()}</label>
+                <input id="edit-service-input" type="text" class="input" bind:value={editingServiceName} />
                 <div class="actions mt-3">
                   <button class="btn btn-primary btn-sm" on:click={saveEdit}>
                     <Check size={15} />
-                    <span>Сохранить</span>
+                    <span>{m.common_save()}</span>
                   </button>
                   <button class="btn btn-secondary btn-sm" on:click={cancelEdit}>
-                    <span>Отмена</span>
+                    <span>{m.common_cancel()}</span>
                   </button>
                 </div>
               </div>
@@ -200,18 +201,18 @@
                   </div>
                   <div class="service-info">
                     <h3>{service.name}</h3>
-                    <span class="service-status">В каталоге заведения</span>
+                    <span class="service-status">{m.services_in_catalog()}</span>
                   </div>
                 </div>
 
                 <div class="actions">
                   <button class="btn btn-secondary btn-sm" on:click={() => startEdit(service)}>
                     <Edit2 size={14} />
-                    <span>Изменить</span>
+                    <span>{m.common_edit()}</span>
                   </button>
                   <button class="btn btn-danger btn-sm" on:click={() => deleteService(service.id)}>
                     <Trash2 size={14} />
-                    <span>Удалить</span>
+                    <span>{m.common_delete()}</span>
                   </button>
                 </div>
               </div>

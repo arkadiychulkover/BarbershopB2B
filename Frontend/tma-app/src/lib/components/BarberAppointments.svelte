@@ -10,6 +10,7 @@
   } from "../telegram";
   import SecureImage from "./SecureImage.svelte";
   import Icon from "./Icon.svelte";
+  import { m } from "../paraglide/messages.js";
 
   const dispatch = createEventDispatcher();
 
@@ -135,7 +136,7 @@
       services = servicesData.filter((s) => s.serviceId && s.isActive);
     } catch (error) {
       console.error(error);
-      showAlert("Ошибка при загрузке данных");
+      showAlert(m.tma_error_server());
     } finally {
       loading = false;
     }
@@ -219,12 +220,12 @@
     if (saving) return;
 
     if (!formServiceId) {
-      showAlert("Выберите услугу!");
+      showAlert(m.tma_select_service_err());
       return;
     }
 
     if (!formDateStr || !formTime) {
-      showAlert("Укажите дату и время!");
+      showAlert(m.tma_select_datetime_err());
       return;
     }
 
@@ -279,9 +280,9 @@
     } catch (e: any) {
       hapticError();
       if (e.status === 409) {
-        showAlert("Это время пересекается с другой записью!");
+        showAlert(m.tma_overlap_err());
       } else {
-        showAlert("Ошибка: " + (e.message || "не удалось сохранить запись"));
+        showAlert(m.tma_save_error() + ": " + (e.message || ""));
       }
     } finally {
       saving = false;
@@ -291,7 +292,7 @@
   function deleteAppt() {
     hapticWarning();
     showConfirm(
-      "Вы уверены, что хотите удалить эту запись?",
+      m.tma_delete_appt_confirm(),
       async (confirmed) => {
         if (confirmed && editingAppt) {
           try {
@@ -306,7 +307,7 @@
             await loadData();
           } catch (error) {
             hapticError();
-            showAlert("Не удалось удалить запись");
+            showAlert(m.tma_delete_appt_err());
           }
         }
       },
@@ -316,7 +317,7 @@
   function cancelAppointment(apptId: string) {
     hapticWarning();
     showConfirm(
-      "Вы действительно хотите отменить эту запись?",
+      m.tma_cancel_appt_confirm(),
       async (confirmed) => {
         if (!confirmed) return;
         try {
@@ -324,7 +325,7 @@
             method: "PUT",
           });
           hapticSuccess();
-          showAlert("Запись успешно отменена");
+          showAlert(m.tma_appt_cancelled_success());
           await loadData();
           if (selectedDetailAppt && selectedDetailAppt.id === apptId) {
             selectedDetailAppt.status = 2;
@@ -332,7 +333,7 @@
           }
         } catch (error: any) {
           hapticError();
-          showAlert("Не удалось отменить запись: " + (error.message || "ошибка"));
+          showAlert(m.tma_cancel_error() + (error.message || ""));
         }
       },
     );
@@ -344,7 +345,7 @@
       (selectedDetailAppt?.id === apptId ? selectedDetailAppt : null);
     if (targetAppt && targetAppt.status !== 1) {
       showAlert(
-        "Фото результата можно прикрепить только к выполненным записям.",
+        m.tma_photo_only_completed(),
       );
       return;
     }
@@ -377,7 +378,7 @@
       }
     } catch (e: any) {
       hapticError();
-      showAlert("Ошибка загрузки фото: " + (e?.message || "неизвестная ошибка"));
+      showAlert(m.tma_photo_upload_err() + (e?.message || ""));
     } finally {
       uploadingId = null;
       pendingPhotoApptId = null;
@@ -385,9 +386,9 @@
   }
 
   function statusLabel(status: number): string {
-    if (status === 1) return "Выполнено";
-    if (status === 2) return "Отменено";
-    return "Запланировано";
+    if (status === 1) return m.tma_status_done();
+    if (status === 2) return m.tma_status_cancelled();
+    return m.tma_status_scheduled();
   }
 
   // --- Comment Logic ---
@@ -423,12 +424,12 @@
     } catch (e) {
       console.error(e);
       hapticError();
-      showAlert("Ошибка при сохранении комментария");
+      showAlert(m.tma_comment_save_error());
     }
   }
 
   async function deleteComment(apptId: string) {
-    showConfirm("Удалить комментарий?", async (confirmed) => {
+    showConfirm(m.tma_delete_comment_confirm(), async (confirmed) => {
       if (!confirmed) return;
       try {
         await apiFetch(`/api/Barber/appointment-comment/${apptId}`, {
@@ -447,7 +448,7 @@
       } catch (e) {
         console.error(e);
         hapticError();
-        showAlert("Ошибка при удалении комментария");
+        showAlert(m.tma_delete_comment_error());
       }
     });
   }
@@ -483,12 +484,11 @@
           <button class="nav-btn" on:click={nextWeek}>&rarr;</button>
         </div>
         <button class="primary-btn" on:click={() => openNewForm(new Date())}
-          >Новая запись</button
-        >
+          >{m.tma_new_appt()}</button>
       </div>
 
       {#if loading}
-        <div class="loading">Загрузка расписания...</div>
+        <div class="loading">{m.tma_loading_schedule()}</div>
       {:else}
         <div class="calendar-grid">
           {#each days as day}
@@ -528,15 +528,15 @@
                           {appt.serviceName ||
                             services.find((s) => s.serviceId === appt.serviceId)
                               ?.name ||
-                            "Услуга"}
+                            m.tma_service()}
                         </div>
                         <div class="client-name">
-                          {#if appt.clientName && appt.clientName !== "Гость"}
+                          {#if appt.clientName && appt.clientName !== "\u0413\u043e\u0441\u0442\u044c"}
                             {appt.clientName}
                           {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
-                            {appt.clientName || "Клиент"}
+                            {appt.clientName || m.tma_client()}
                           {:else}
-                            Гость (Вручную)
+                            {m.tma_walkin_guest()}
                           {/if}
                         </div>
                       </div>
@@ -615,18 +615,18 @@
                 <!-- Service & Client Info Grid -->
                 <div class="detail-info-grid">
                   <div class="detail-info-box">
-                    <span class="detail-box-label">Услуга</span>
+                    <span class="detail-box-label">{m.tma_service()}</span>
                     <span class="detail-box-value highlight"
                       >{selectedDetailAppt.serviceName ||
                         services.find(
                           (s) => s.serviceId === selectedDetailAppt.serviceId,
                         )?.name ||
-                        "Услуга"}</span
+                        m.tma_service()}</span
                     >
                     <span class="detail-box-sub">
                       {services.find(
                         (s) => s.serviceId === selectedDetailAppt.serviceId,
-                      )?.duration || 30} мин •
+                      )?.duration || 30} {m.tma_min_dot()}
                       {services.find(
                         (s) => s.serviceId === selectedDetailAppt.serviceId,
                       )?.price ||
@@ -636,7 +636,7 @@
                   </div>
 
                   <div class="detail-info-box">
-                    <span class="detail-box-label">Клиент</span>
+                    <span class="detail-box-label">{m.tma_client()}</span>
                     {#if selectedDetailAppt.clientId}
                       <!-- svelte-ignore a11y-click-events-have-key-events -->
                       <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -647,12 +647,12 @@
                           selectedDetailAppt = null;
                           dispatch("openClientHistory", cId);
                         }}
-                        title="Открыть историю клиента"
+                        title={m.tma_client_history_title()}
                       >
                         <span class="detail-box-value"
-                          >{selectedDetailAppt.clientName && selectedDetailAppt.clientName !== "Гость"
+                          >{selectedDetailAppt.clientName && selectedDetailAppt.clientName !== "\u0413\u043e\u0441\u0442\u044c"
                             ? selectedDetailAppt.clientName
-                            : (selectedDetailAppt.clientTelegramId === "WALKIN" ? "Гость (Вручную)" : "Клиент")}</span
+                            : (selectedDetailAppt.clientTelegramId === "WALKIN" ? "{m.tma_walkin_guest()}" : m.tma_client())}</span
                         >
                         {#if selectedDetailAppt.clientPhone}
                           <a 
@@ -683,15 +683,15 @@
                           {/if}
                         {:else}
                           <span class="detail-client-handle"
-                            >История визитов &rarr;</span
+                            >{m.tma_visit_history_arrow()}</span
                           >
                         {/if}
                       </div>
                     {:else}
                       <span class="detail-box-value"
-                        >{selectedDetailAppt.clientName && selectedDetailAppt.clientName !== "Гость"
+                        >{selectedDetailAppt.clientName && selectedDetailAppt.clientName !== "\u0413\u043e\u0441\u0442\u044c"
                           ? selectedDetailAppt.clientName
-                          : "Гость (Вручную)"}</span
+                          : "{m.tma_walkin_guest()}"}</span
                       >
                     {/if}
                   </div>
@@ -701,12 +701,12 @@
                 {#if selectedDetailAppt.photoResultUrl}
                   <div class="detail-section">
                     <span class="detail-section-label"
-                      >Фото результата работы</span
+                      >{m.tma_photo_result()}</span
                     >
                     <div class="detail-photo-card">
                       <SecureImage
                         src={selectedDetailAppt.photoResultUrl}
-                        alt="Результат"
+                        alt={m.tma_result()}
                         className="detail-photo-img"
                         style="width:100%;max-height:280px;object-fit:contain;border-radius:12px;background:#111;"
                       />
@@ -718,10 +718,10 @@
                           disabled={uploadingId === selectedDetailAppt.id}
                         >
                           {#if uploadingId === selectedDetailAppt.id}
-                            <span class="spinner"></span> Загрузка...
+                            <span class="spinner"></span> {m.tma_loading()}
                           {:else}
                             <Icon name="refresh" size={14} />
-                            <span>Заменить фото</span>
+                            <span>{m.tma_replace_photo()}</span>
                           {/if}
                         </button>
                       {/if}
@@ -730,7 +730,7 @@
                 {:else if selectedDetailAppt.status === 1}
                   <div class="detail-section">
                     <span class="detail-section-label"
-                      >Фото результата работы</span
+                      >{m.tma_photo_result()}</span
                     >
                     <button
                       class="attach-photo-btn"
@@ -738,10 +738,10 @@
                       disabled={uploadingId === selectedDetailAppt.id}
                     >
                       {#if uploadingId === selectedDetailAppt.id}
-                        <span class="spinner"></span> Загрузка...
+                        <span class="spinner"></span> {m.tma_loading()}
                       {:else}
                         <Icon name="paperclip" size={16} />
-                        <span>Прикрепить фото результата</span>
+                        <span>{m.tma_attach_result_photo()}</span>
                       {/if}
                     </button>
                   </div>
@@ -750,23 +750,21 @@
                 <!-- Notes / Comments Section -->
                 <div class="detail-section">
                   <span class="detail-section-label"
-                    >Комментарий / Заметка мастера</span
+                    >{m.tma_master_note_title()}</span
                   >
                   {#if editingCommentId === selectedDetailAppt.id}
                     <textarea
                       class="comment-input"
                       bind:value={commentText}
-                      placeholder="Введите заметку о предпочтениях клиента, деталях услуги и т.д..."
+                      placeholder={m.tma_master_note_placeholder()}
                     ></textarea>
                     <div class="comment-actions">
                       <button
                         class="btn-save"
                         on:click={() => saveComment(selectedDetailAppt.id)}
-                        >Сохранить</button
-                      >
+                        >{m.tma_save()}</button>
                       <button class="btn-cancel" on:click={cancelCommentEdit}
-                        >Отмена</button
-                      >
+                        >{m.tma_cancel()}</button>
                     </div>
                   {:else if selectedDetailAppt.resultNote}
                     <div class="comment-display">
@@ -781,13 +779,11 @@
                       <div class="comment-actions-sm">
                         <button
                           on:click={() => openCommentEdit(selectedDetailAppt)}
-                          >Редактировать</button
-                        >
+                          >{m.tma_edit()}</button>
                         <button
                           class="text-danger"
                           on:click={() => deleteComment(selectedDetailAppt.id)}
-                          >Удалить</button
-                        >
+                          >{m.tma_delete()}</button>
                       </div>
                     </div>
                   {:else}
@@ -796,7 +792,7 @@
                       on:click={() => openCommentEdit(selectedDetailAppt)}
                     >
                       <Icon name="plus" size={14} />
-                      <span>Добавить заметку о записи</span>
+                      <span>{m.tma_add_note()}</span>
                     </button>
                   {/if}
                 </div>
@@ -813,7 +809,7 @@
                   }}
                 >
                   <Icon name="edit" size={15} />
-                  <span>Редактировать</span>
+                  <span>{m.tma_edit()}</span>
                 </button>
                 {#if selectedDetailAppt.status !== 2}
                   <button
@@ -821,15 +817,13 @@
                     on:click={() => cancelAppointment(selectedDetailAppt.id)}
                   >
                     <Icon name="x" size={15} />
-                    <span>Отменить запись</span>
+                    <span>{m.tma_cancel_appt_btn()}</span>
                   </button>
                 {/if}
                 <button
                   class="secondary-btn flex-1"
                   on:click={() => (selectedDetailAppt = null)}
-                >
-                  Закрыть
-                </button>
+                >{m.tma_close()}</button>
               </div>
             </div>
           </div>
@@ -850,16 +844,15 @@
       </div>
 
       {#if loading}
-        <div class="loading">Загрузка расписания...</div>
+        <div class="loading">{m.tma_loading_schedule()}</div>
       {:else if currentDayAppts.length === 0}
         <div class="empty-state">
           <div class="icon">
             <Icon name="empty-calendar" size={44} color="var(--pastel-rose)" />
           </div>
-          <p>На этот день записей нет.</p>
+          <p>{m.tma_no_appts_today()}</p>
           <button class="primary-btn" on:click={() => openNewForm(currentDate)}
-            >Добавить запись</button
-          >
+            >{m.tma_add_appt_btn()}</button>
         </div>
       {:else}
         <!-- hidden photo file input -->
@@ -891,15 +884,15 @@
                     {appt.serviceName ||
                       services.find((s) => s.serviceId === appt.serviceId)
                         ?.name ||
-                      "Услуга"}
+                      m.tma_service()}
                   </div>
                   <div class="client-name">
-                    {#if appt.clientName && appt.clientName !== "Гость"}
+                    {#if appt.clientName && appt.clientName !== "\u0413\u043e\u0441\u0442\u044c"}
                       {appt.clientName}
                     {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
-                      {appt.clientName || "Клиент"}
+                      {appt.clientName || m.tma_client()}
                     {:else}
-                      Гость (Вручную)
+                      {m.tma_walkin_guest()}
                     {/if}
                   </div>
                 </div>
@@ -931,7 +924,7 @@
                         on:click={() => openEditForm(appt)}
                       >
                         <Icon name="edit" size={13} />
-                        <span>Редактировать</span>
+                        <span>{m.tma_edit()}</span>
                       </button>
                       {#if appt.status !== 2}
                         <button
@@ -939,7 +932,7 @@
                           on:click={() => cancelAppointment(appt.id)}
                         >
                           <Icon name="x" size={13} />
-                          <span>Отменить</span>
+                          <span>{m.tma_cancel()}</span>
                         </button>
                       {/if}
                     </div>
@@ -947,14 +940,14 @@
 
                   {#if appt.clientId}
                     <div class="client-tg-row">
-                      <span class="client-tg-label">Клиент:</span>
+                      <span class="client-tg-label">{m.tma_client()}:</span>
                       <!-- svelte-ignore a11y-click-events-have-key-events -->
                       <!-- svelte-ignore a11y-no-static-element-interactions -->
                       <span
                         class="client-tg-id"
                         on:click={() =>
                           dispatch("openClientHistory", appt.clientId)}
-                        title="Открыть историю клиента"
+                        title={m.tma_client_history_title()}
                       >
                         <Icon
                           name="user"
@@ -981,7 +974,7 @@
                           </span>
                         {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
                           {#if isPureNumeric(appt.clientTelegramId)}
-                            <span>{appt.clientName || "Клиент"} · ID: {appt.clientTelegramId}{#if appt.clientPhone} · <a class="tg-chat-link" href="tel:{appt.clientPhone}" on:click|stopPropagation>{appt.clientPhone}</a>{/if}</span>
+                            <span>{appt.clientName || m.tma_client()} · ID: {appt.clientTelegramId}{#if appt.clientPhone} · <a class="tg-chat-link" href="tel:{appt.clientPhone}" on:click|stopPropagation>{appt.clientPhone}</a>{/if}</span>
                           {:else}
                             <span class="client-handle-text">
                               {appt.clientName || appt.clientTelegramId} · 
@@ -1002,7 +995,7 @@
                             </span>
                           {/if}
                         {:else}
-                          <span>{appt.clientName && appt.clientName !== "Гость" ? appt.clientName : "Гость (Вручную)"}{#if appt.clientPhone} · <a class="tg-chat-link" href="tel:{appt.clientPhone}" on:click|stopPropagation>{appt.clientPhone}</a>{/if}</span>
+                          <span>{appt.clientName && appt.clientName !== "\u0413\u043e\u0441\u0442\u044c" ? appt.clientName : "{m.tma_walkin_guest()}"}{#if appt.clientPhone} · <a class="tg-chat-link" href="tel:{appt.clientPhone}" on:click|stopPropagation>{appt.clientPhone}</a>{/if}</span>
                         {/if}
                         <Icon name="chevron-right" size={12} />
                       </span>
@@ -1013,7 +1006,7 @@
                     <div class="photo-preview-wrap">
                       <SecureImage
                         src={appt.photoResultUrl}
-                        alt="Результат"
+                        alt={m.tma_result()}
                         className="photo-preview"
                         style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;"
                       />
@@ -1024,10 +1017,10 @@
                           disabled={uploadingId === appt.id}
                         >
                           {#if uploadingId === appt.id}
-                            <span class="spinner"></span> Загрузка...
+                            <span class="spinner"></span> {m.tma_loading()}
                           {:else}
                             <Icon name="refresh" size={13} />
-                            <span>заменить фото</span>
+                            <span>{m.tma_replace_photo()}</span>
                           {/if}
                         </button>
                       {/if}
@@ -1039,10 +1032,10 @@
                       disabled={uploadingId === appt.id}
                     >
                       {#if uploadingId === appt.id}
-                        <span class="spinner"></span> Загрузка...
+                        <span class="spinner"></span> {m.tma_loading()}
                       {:else}
                         <Icon name="paperclip" size={15} />
-                        <span>Прикрепить результат</span>
+                        <span>{m.tma_attach_result_photo()}</span>
                       {/if}
                     </button>
                   {/if}
@@ -1053,18 +1046,16 @@
                       <textarea
                         class="comment-input"
                         bind:value={commentText}
-                        placeholder="Комментарий / Заметка..."
+                        placeholder={m.tma_comment_placeholder()}
                         on:click|stopPropagation
                       ></textarea>
                       <div class="comment-actions" on:click|stopPropagation>
                         <button
                           class="btn-save"
                           on:click={() => saveComment(appt.id)}
-                          >Сохранить</button
-                        >
+                          >{m.tma_save()}</button>
                         <button class="btn-cancel" on:click={cancelCommentEdit}
-                          >Отмена</button
-                        >
+                          >{m.tma_cancel()}</button>
                       </div>
                     {:else if appt.resultNote}
                       <div class="comment-display" on:click|stopPropagation>
@@ -1078,21 +1069,18 @@
                         </div>
                         <div class="comment-actions-sm">
                           <button on:click={() => openCommentEdit(appt)}
-                            >Ред.</button
-                          >
+                            >{m.tma_edit_short()}</button>
                           <button
                             class="text-danger"
                             on:click={() => deleteComment(appt.id)}
-                            >Удал.</button
-                          >
+                            >{m.tma_delete_short()}</button>
                         </div>
                       </div>
                     {:else}
                       <button
                         class="btn-add-comment"
                         on:click|stopPropagation={() => openCommentEdit(appt)}
-                        >+ Добавить комментарий</button
-                      >
+                        >{m.tma_add_comment()}</button>
                     {/if}
                   </div>
                 </div>
@@ -1118,12 +1106,12 @@
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div class="form-modal-card" on:click|stopPropagation>
         <div class="modal-header">
-          <h2>{editingAppt ? "Изменение записи" : "Новая запись"}</h2>
+          <h2>{editingAppt ? m.tma_edit_appt() : m.tma_new_appt()}</h2>
           <button
             class="modal-close-btn"
             on:click={cancelForm}
             type="button"
-            aria-label="Закрыть"
+            aria-label={m.tma_close()}
           >
             <Icon name="x" size={18} />
           </button>
@@ -1134,35 +1122,34 @@
             class="services-empty-warning"
             style="margin-bottom:16px;padding:12px;border-radius:10px;background:rgba(235,160,50,0.12);color:var(--pastel-peach);font-size:13px;border:1px solid rgba(235,160,50,0.25);"
           >
-            ⚠️ У вас еще нет настроенных активных услуг. Пожалуйста, включите и
-            настройте услуги во вкладке «Услуги».
+            ⚠️ No active services configured yet. Please configure services in the Services tab.
           </div>
         {/if}
 
         <div class="form-group">
-          <label for="barber-form-client">Имя клиента (необязательно)</label>
+          <label for="barber-form-client">{m.tma_client_name_opt()}</label>
           <input
             id="barber-form-client"
             type="text"
             class="input"
             bind:value={formClientName}
-            placeholder="Гость / Имя клиента"
+            placeholder={m.tma_guest_walkin()}
           />
         </div>
 
         <div class="form-group">
-          <label for="barber-form-phone">Телефон (необязательно)</label>
+          <label for="barber-form-phone">{m.tma_client_phone_opt()}</label>
           <input
             id="barber-form-phone"
             type="tel"
             class="input"
             bind:value={formClientPhone}
-            placeholder="+7 (999) 000-00-00"
+            placeholder="+1 555 000-0000"
           />
         </div>
 
         <div class="form-group">
-          <label for="barber-form-date">Дата</label>
+          <label for="barber-form-date">{m.tma_date()}</label>
           <input
             id="barber-form-date"
             type="date"
@@ -1172,7 +1159,7 @@
         </div>
 
         <div class="form-group">
-          <label for="barber-form-time">Время</label>
+          <label for="barber-form-time">{m.tma_time()}</label>
           <input
             id="barber-form-time"
             type="time"
@@ -1182,7 +1169,7 @@
         </div>
 
         <div class="form-group">
-          <label for="barber-form-service">Услуга</label>
+          <label for="barber-form-service">{m.tma_service()}</label>
           <select
             id="barber-form-service"
             class="input"
@@ -1195,21 +1182,21 @@
         </div>
 
         <div class="form-group">
-          <label for="barber-form-status">Статус</label>
+          <label for="barber-form-status">{m.tma_status()}</label>
           <select id="barber-form-status" class="input" bind:value={formStatus}>
-            <option value={0}>Запланировано</option>
-            <option value={1}>Выполнено</option>
-            <option value={2}>Отменено</option>
+            <option value={0}>{m.tma_scheduled()}</option>
+            <option value={1}>{m.tma_completed()}</option>
+            <option value={2}>{m.tma_cancelled()}</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="barber-form-comment">Заметка / Комментарий</label>
+          <label for="barber-form-comment">{m.tma_master_note()}</label>
           <textarea
             id="barber-form-comment"
             class="input"
             bind:value={formComment}
-            placeholder="Заметка к записи..."
+            placeholder="Note..."
             rows="2"
             style="resize:vertical;"
           ></textarea>
@@ -1221,7 +1208,7 @@
             on:click={saveAppt}
             disabled={saving || services.length === 0}
           >
-            {saving ? "Сохранение..." : "Сохранить"}
+            {saving ? m.tma_loading() : m.tma_save()}
           </button>
           {#if editingAppt && editingAppt.status !== 2}
             <button
@@ -1234,20 +1221,20 @@
               }}
               disabled={saving}
             >
-              Отменить запись
+              {m.tma_cancel_appt()}
             </button>
           {/if}
           {#if editingAppt}
             <button
               class="danger-btn flex-1"
               on:click={deleteAppt}
-              disabled={saving}>Удалить</button
+              disabled={saving}>{m.tma_delete_appt()}</button
             >
           {/if}
           <button
             class="secondary-btn flex-1"
             on:click={cancelForm}
-            disabled={saving}>Отмена</button
+            disabled={saving}>{m.tma_cancel()}</button
           >
         </div>
       </div>

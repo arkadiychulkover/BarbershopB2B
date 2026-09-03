@@ -3,6 +3,8 @@
   import DashboardLayout from '../components/DashboardLayout.svelte';
   import { apiRequest, BASE_URL } from '../lib/api';
   import { authStore } from '../lib/store';
+  import { m } from '../lib/paraglide/messages.js';
+  import { currentLocale } from '../lib/locale.js';
   import { 
     Wallet, 
     Coins, 
@@ -106,7 +108,7 @@
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!res.ok) throw new Error('Ошибка формирования Excel');
+      if (!res.ok) throw new Error(m.stats_excel_create_error());
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -118,10 +120,10 @@
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      exportSuccessMsg = 'Excel файл успешно сформирован и скачан!';
+      exportSuccessMsg = m.stats_excel_download_success();
       setTimeout(() => { exportSuccessMsg = ''; }, 4000);
     } catch (e) {
-      exportErrorMsg = e.message || 'Не удалось выгрузить Excel';
+      exportErrorMsg = e.message || m.stats_excel_export_error();
       setTimeout(() => { exportErrorMsg = ''; }, 4000);
     } finally {
       isExporting = false;
@@ -221,15 +223,15 @@
     <!-- Header -->
     <header class="page-header">
       <div class="header-left">
-        <h1>Финансовая аналитика & Графики</h1>
-        <p class="header-subtitle">Наглядная динамика выручки, посещений клиентов и выгрузка отчетов в Excel</p>
+        <h1>{m.stats_title()}</h1>
+        <p class="header-subtitle">{m.stats_subtitle()}</p>
       </div>
 
       <div class="header-actions">
         <!-- Excel Export Button -->
-        <button class="btn btn-secondary" on:click={exportToExcel} disabled={isExporting} title="Скачать базу клиентов в Excel">
+        <button class="btn btn-secondary" on:click={exportToExcel} disabled={isExporting} title={m.stats_export_tooltip()}>
           <FileSpreadsheet size={16} />
-          <span>{isExporting ? 'Формирование...' : 'Выгрузить в Excel'}</span>
+          <span>{isExporting ? m.common_loading() : m.stats_export_btn()}</span>
         </button>
 
         <!-- Period Tabs -->
@@ -239,28 +241,28 @@
             class:active={selectedPeriod === '7d'} 
             on:click={() => setPeriod('7d')}
           >
-            <span>7 дней</span>
+            <span>{m.stats_range_7d()}</span>
           </button>
           <button 
             class="period-tab" 
             class:active={selectedPeriod === '30d'} 
             on:click={() => setPeriod('30d')}
           >
-            <span>30 дней</span>
+            <span>{m.stats_range_30d()}</span>
           </button>
           <button 
             class="period-tab" 
             class:active={selectedPeriod === '90d'} 
             on:click={() => setPeriod('90d')}
           >
-            <span>3 месяца</span>
+            <span>{m.stats_range_3m()}</span>
           </button>
           <button 
             class="period-tab" 
             class:active={selectedPeriod === 'year'} 
             on:click={() => setPeriod('year')}
           >
-            <span>12 месяцев</span>
+            <span>{m.stats_range_12m()}</span>
           </button>
           <button 
             class="period-tab" 
@@ -268,7 +270,7 @@
             on:click={() => setPeriod('custom')}
           >
             <CalendarRange size={14} />
-            <span>Свой период</span>
+            <span>{m.stats_range_custom()}</span>
           </button>
         </div>
       </div>
@@ -280,12 +282,12 @@
         <div class="custom-range-inner">
           <div class="custom-range-title">
             <CalendarRange size={18} class="text-rose" />
-            <span>Укажите произвольный интервал дат:</span>
+            <span>{m.stats_custom_hint()}</span>
           </div>
 
           <div class="custom-range-inputs">
             <div class="date-input-group">
-              <label for="ownerCustomStart">От:</label>
+              <label for="ownerCustomStart">{m.stats_from()}</label>
               <input 
                 id="ownerCustomStart" 
                 type="date" 
@@ -295,7 +297,7 @@
             </div>
 
             <div class="date-input-group">
-              <label for="ownerCustomEnd">До:</label>
+              <label for="ownerCustomEnd">{m.stats_to()}</label>
               <input 
                 id="ownerCustomEnd" 
                 type="date" 
@@ -305,7 +307,7 @@
             </div>
 
             <button class="btn btn-primary btn-sm" on:click={fetchChartAnalytics} disabled={isLoading}>
-              <span>{isLoading ? 'Загрузка...' : 'Применить'}</span>
+              <span>{isLoading ? m.common_loading() : m.stats_apply()}</span>
             </button>
           </div>
         </div>
@@ -315,14 +317,14 @@
     {#if isLoading}
       <div class="loading-wrap">
         <div class="spinner-sm"></div>
-        <p>Формирование интерактивных графиков...</p>
+        <p>{m.stats_building_charts()}</p>
       </div>
     {:else}
       <!-- Key Metric Cards -->
       <div class="stats-grid">
         <div class="stat-card stat-rose">
           <div class="stat-top">
-            <span class="stat-title">Общий оборот за период</span>
+            <span class="stat-title">{m.stats_total_revenue()}</span>
             <div class="stat-icon-wrap rose">
               <TrendingUp size={20} />
             </div>
@@ -331,13 +333,13 @@
             {formatCurrency(chartData.totalRevenue)}
           </div>
           <div class="stat-footer">
-            <span>Среднесуточный оборот: <strong>{formatCurrency(chartData.averageDailyRevenue)}</strong></span>
+            <span>{m.stats_avg_daily_revenue()}: <strong>{formatCurrency(chartData.averageDailyRevenue)}</strong></span>
           </div>
         </div>
 
         <div class="stat-card stat-sage">
           <div class="stat-top">
-            <span class="stat-title">Посещений клиентов</span>
+            <span class="stat-title">{m.stats_total_visits()}</span>
             <div class="stat-icon-wrap sage">
               <Users size={20} />
             </div>
@@ -346,13 +348,13 @@
             {chartData.totalVisits}
           </div>
           <div class="stat-footer">
-            <span>В среднем: <strong>{chartData.averageDailyVisits}</strong> визитов в день</span>
+            <span>{m.stats_avg_daily_visits_prefix()} <strong>{chartData.averageDailyVisits}</strong> {m.stats_avg_daily_visits_suffix()}</span>
           </div>
         </div>
 
         <div class="stat-card stat-lavender">
           <div class="stat-top">
-            <span class="stat-title">Пиковый день выручки</span>
+            <span class="stat-title">{m.stats_peak_day()}</span>
             <div class="stat-icon-wrap lavender">
               <Sparkles size={20} />
             </div>
@@ -361,7 +363,7 @@
             {formatCurrency(chartData.peakRevenue)}
           </div>
           <div class="stat-footer">
-            <span>Дата рекорда: <strong>{chartData.peakDate}</strong></span>
+            <span>{m.stats_peak_date()}: <strong>{chartData.peakDate}</strong></span>
           </div>
         </div>
       </div>
@@ -376,14 +378,14 @@
               <TrendingUp size={18} />
             </div>
             <div>
-              <h3>График денежного оборота</h3>
-              <p>Динамика поступления средств за оказанные услуги</p>
+              <h3>{m.stats_chart_rev_title()}</h3>
+              <p>{m.stats_chart_rev_desc()}</p>
             </div>
           </div>
 
           <div class="chart-legend">
             <span class="legend-indicator rose"></span>
-            <span class="legend-text">Оборот (₴)</span>
+            <span class="legend-text">{m.stats_legend_rev()}</span>
           </div>
         </div>
 
@@ -498,14 +500,14 @@
               <Users size={18} />
             </div>
             <div>
-              <h3>График посещений клиентов</h3>
-              <p>Количество обслуженных клиентов по дням / месяцам</p>
+              <h3>{m.stats_chart_vis_title()}</h3>
+              <p>{m.stats_chart_vis_desc()}</p>
             </div>
           </div>
 
           <div class="chart-legend">
             <span class="legend-indicator sage"></span>
-            <span class="legend-text">Визиты (чел.)</span>
+            <span class="legend-text">{m.stats_legend_vis()}</span>
           </div>
         </div>
 
@@ -600,7 +602,7 @@
                   {hoveredPoint.label}
                 </text>
                 <text x="0" y="-10" text-anchor="middle" fill="#A8C69B" font-size="12" font-weight="700">
-                  {hoveredPoint.visits} визитов
+                  {hoveredPoint.visits} {m.stats_visits_unit()}
                 </text>
               </g>
             {/if}
@@ -616,8 +618,8 @@
           <div class="head-title-wrap">
             <Wallet size={20} class="title-icon" />
             <div>
-              <h3>История транзакций</h3>
-              <p>Поступления выручки и транзакции подписки в сети TON</p>
+              <h3>{m.stats_tx_history_title()}</h3>
+              <p>{m.stats_tx_history_desc()}</p>
             </div>
           </div>
         </div>
@@ -626,26 +628,26 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Дата и время</th>
-                <th>Назначение</th>
-                <th>Сумма</th>
-                <th>Хэш транзакции (TON)</th>
+                <th>{m.stats_col_datetime()}</th>
+                <th>{m.stats_col_purpose()}</th>
+                <th>{m.stats_col_amount()}</th>
+                <th>{m.stats_col_txhash()}</th>
               </tr>
             </thead>
             <tbody>
               {#each transactions as tx}
                 <tr>
-                  <td class="cell-date">{new Date(tx.time).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                  <td class="cell-date">{new Date(tx.time).toLocaleString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
                   <td>
                     {#if tx.txhHash}
                       <span class="tx-badge sub">
                         <Wallet size={13} />
-                        <span>Подписка SaaS</span>
+                        <span>{m.stats_tx_sub()}</span>
                       </span>
                     {:else}
                       <span class="tx-badge rev">
                         <Coins size={13} />
-                        <span>Выручка</span>
+                        <span>{m.stats_tx_rev()}</span>
                       </span>
                     {/if}
                   </td>
@@ -660,7 +662,7 @@
                     {#if tx.txhHash}
                       <!-- svelte-ignore a11y-click-events-have-key-events -->
                       <!-- svelte-ignore a11y-no-static-element-interactions -->
-                      <div class="hash-tag" on:click={() => copyTx(tx.txhHash)} title="Скопировать хэш">
+                      <div class="hash-tag" on:click={() => copyTx(tx.txhHash)} title={m.stats_copy_hash()}>
                         <code>{tx.txhHash.substring(0, 8)}...{tx.txhHash.substring(tx.txhHash.length - 6)}</code>
                         {#if copiedHash === tx.txhHash}
                           <Check size={12} class="copy-icon check" />
@@ -676,7 +678,7 @@
               {/each}
               {#if transactions.length === 0}
                 <tr>
-                  <td colspan="4" class="empty-cell">История транзакций пуста</td>
+                  <td colspan="4" class="empty-cell">{m.stats_tx_empty()}</td>
                 </tr>
               {/if}
             </tbody>

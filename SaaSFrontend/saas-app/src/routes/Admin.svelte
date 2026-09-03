@@ -3,6 +3,8 @@
   import AdminLayout from "../components/AdminLayout.svelte";
   import { apiRequest, BASE_URL } from "../lib/api";
   import { authStore } from "../lib/store";
+  import { m } from "../lib/paraglide/messages.js";
+  import { currentLocale } from "../lib/locale.js";
   import {
     Building2,
     Users,
@@ -204,7 +206,7 @@
         url += `status=${encodeURIComponent(ownerStatusFilter)}&`;
       owners = await apiRequest(url);
     } catch (e) {
-      showError("Ошибка загрузки заведений: " + e.message);
+      showError(m.admin_err_load_owners() + e.message);
     } finally {
       isOwnersLoading = false;
     }
@@ -217,7 +219,7 @@
       if (masterSearch) url += `search=${encodeURIComponent(masterSearch)}&`;
       masters = await apiRequest(url);
     } catch (e) {
-      showError("Ошибка загрузки мастеров: " + e.message);
+      showError(m.admin_err_load_masters() + e.message);
     } finally {
       isMastersLoading = false;
     }
@@ -230,7 +232,7 @@
       if (clientSearch) url += `search=${encodeURIComponent(clientSearch)}&`;
       clients = await apiRequest(url);
     } catch (e) {
-      showError("Ошибка загрузки клиентов: " + e.message);
+      showError(m.admin_err_load_clients() + e.message);
     } finally {
       isClientsLoading = false;
     }
@@ -244,7 +246,7 @@
         url += `status=${encodeURIComponent(appointmentStatusFilter)}&`;
       appointments = await apiRequest(url);
     } catch (e) {
-      showError("Ошибка загрузки записей: " + e.message);
+      showError(m.admin_err_load_appts() + e.message);
     } finally {
       isAppointmentsLoading = false;
     }
@@ -255,7 +257,7 @@
     try {
       admins = await apiRequest("/api/Admin/admins");
     } catch (e) {
-      showError("Ошибка загрузки администраторов: " + e.message);
+      showError(m.admin_err_load_admins() + e.message);
     } finally {
       isAdminsLoading = false;
     }
@@ -287,7 +289,7 @@
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) throw new Error("Ошибка генерации Excel файла");
+      if (!res.ok) throw new Error(m.admin_err_excel_gen());
 
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
@@ -299,9 +301,9 @@
       window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
 
-      showSuccess("База клиентов успешно выгружена в Excel!");
+      showSuccess(m.admin_success_excel_export());
     } catch (e) {
-      showError(e.message || "Ошибка выгрузки Excel");
+      showError(e.message || m.admin_err_excel_export());
     } finally {
       isExporting = false;
     }
@@ -321,12 +323,12 @@
         body: JSON.stringify({ isActive: !isCurrentlyActive }),
       });
       showSuccess(
-        `Подписка "${owner.barbershopName}" ${!isCurrentlyActive ? "активирована" : "заморожена"}`,
+        `${m.admin_sub_status_changed()}: ${owner.barbershopName}`,
       );
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка изменения подписки: " + e.message);
+      showError(m.admin_err_change_sub() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -349,12 +351,12 @@
           body: JSON.stringify({ extendDays: parseInt(extendDaysInput, 10) }),
         },
       );
-      showSuccess(`Подписка продлена на ${extendDaysInput} дн.`);
+      showSuccess(m.admin_sub_extended_days({ days: extendDaysInput }));
       showExtendModal = false;
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка продления: " + e.message);
+      showError(m.admin_err_extend_sub() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -375,7 +377,7 @@
       const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
       if (!phoneRegex.test(cleaned)) {
         showError(
-          "Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, 1-3 цифры кода, 9 цифр номера)",
+          m.admin_phone_format_error(),
         );
         return;
       }
@@ -399,11 +401,11 @@
             : undefined,
         }),
       });
-      showSuccess("Данные заведения успешно обновлены");
+      showSuccess(m.admin_owner_data_updated());
       showEditOwnerModal = false;
       await fetchOwners();
     } catch (e) {
-      showError("Ошибка обновления: " + e.message);
+      showError(m.admin_err_update_owner() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -417,9 +419,9 @@
         method: "POST",
         body: JSON.stringify({ email: email.trim() }),
       });
-      showSuccess(`Ссылка для сброса пароля отправлена на ${email}`);
+      showSuccess(`${m.admin_reset_link_sent()} ${email}`);
     } catch (e) {
-      showError("Ошибка отправки: " + e.message);
+      showError(m.admin_err_send_reset() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -428,7 +430,7 @@
   async function deleteOwner(owner) {
     if (
       !confirm(
-        `Вы действительно хотите удалить заведение "${owner.barbershopName}" и ВСЕ связанные данные (мастеров, записи, клиентов)? Это действие необратимо!`,
+        m.admin_delete_owner_warning(),
       )
     ) {
       return;
@@ -436,11 +438,11 @@
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/owners/${owner.id}`, { method: "DELETE" });
-      showSuccess(`Заведение "${owner.barbershopName}" удалено`);
+      showSuccess(`${m.admin_owner_deleted_msg()}: ${owner.barbershopName}`);
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка удаления: " + e.message);
+      showError(m.admin_err_delete() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -467,12 +469,12 @@
           isActive: editingMaster.isActive,
         }),
       });
-      showSuccess("Данные мастера успешно обновлены");
+      showSuccess(m.admin_master_data_updated());
       showEditMasterModal = false;
       await fetchMasters();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка обновления мастера: " + e.message);
+      showError(m.admin_err_update_master() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -485,26 +487,26 @@
         method: "PUT",
         body: JSON.stringify({ isActive: !master.isActive }),
       });
-      showSuccess(`Статус мастера "${master.name}" изменен`);
+      showSuccess(`${m.admin_master_status_changed()}: ${master.name}`);
       await fetchMasters();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка изменения статуса: " + e.message);
+      showError(m.admin_err_change_master_status() + e.message);
     } finally {
       actionLoading = false;
     }
   }
 
   async function deleteMaster(master) {
-    if (!confirm(`Удалить мастера "${master.name}"?`)) return;
+    if (!confirm(`${m.admin_delete_master_prompt()} ${master.name}`)) return;
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/masters/${master.id}`, { method: "DELETE" });
-      showSuccess(`Мастер "${master.name}" удален`);
+      showSuccess(`${m.admin_master_deleted_msg()}: ${master.name}`);
       await fetchMasters();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка удаления: " + e.message);
+      showError(m.admin_err_delete() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -513,15 +515,15 @@
   // ─── Client Actions ─────────────────────────────────────────────────────────
 
   async function deleteClient(client) {
-    if (!confirm(`Удалить клиента "${client.name}"?`)) return;
+    if (!confirm(`${m.admin_delete_client_prompt()} ${client.name}`)) return;
     actionLoading = true;
     try {
       await apiRequest(`/api/Admin/clients/${client.id}`, { method: "DELETE" });
-      showSuccess(`Клиент "${client.name}" удален`);
+      showSuccess(`${m.admin_client_deleted_msg()}: ${client.name}`);
       await fetchClients();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка удаления: " + e.message);
+      showError(m.admin_err_delete() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -532,7 +534,7 @@
   async function deleteAppointment(appt) {
     if (
       !confirm(
-        `Удалить запись клиента "${appt.clientName}" к "${appt.masterName}"?`,
+        `${m.admin_delete_appt_prompt()}: ${appt.clientName} -> ${appt.masterName}`,
       )
     )
       return;
@@ -541,11 +543,11 @@
       await apiRequest(`/api/Admin/appointments/${appt.id}`, {
         method: "DELETE",
       });
-      showSuccess("Запись успешно удалена");
+      showSuccess(m.admin_appt_deleted_msg());
       await fetchAppointments();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка удаления записи: " + e.message);
+      showError(m.admin_err_delete_appt() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -555,7 +557,7 @@
 
   async function submitCreateAdmin() {
     if (!newAdminEmail || !newAdminPassword) {
-      showError("Заполните email и пароль");
+      showError(m.admin_fill_email_pwd());
       return;
     }
     actionLoading = true;
@@ -567,13 +569,13 @@
           password: newAdminPassword,
         }),
       });
-      showSuccess("Новый администратор успешно зарегистрирован");
+      showSuccess(m.admin_new_admin_registered());
       newAdminEmail = "";
       newAdminPassword = "";
       showCreateAdminModal = false;
       await fetchAdmins();
     } catch (e) {
-      showError("Ошибка создания администратора: " + e.message);
+      showError(m.admin_err_create_admin() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -600,12 +602,12 @@
 
   async function submitCreateOwner() {
     if (!newOwner.email || !newOwner.password) {
-      showError("Заполните Email и пароль (минимум 6 символов)");
+      showError(m.admin_fill_email_pwd_min6());
       return;
     }
     const days = parseInt(newOwner.subscriptionDays, 10);
     if (isNaN(days) || days < 1) {
-      showError("Укажите корректное количество дней подписки (минимум 1)");
+      showError(m.admin_fill_valid_sub_days());
       return;
     }
 
@@ -614,7 +616,7 @@
       const phoneRegex = /^\+[0-9]{1,3}[0-9]{9}$/;
       if (!phoneRegex.test(cleaned)) {
         showError(
-          "Некорректный номер телефона. Формат: +380991234567 или +79991234567 (+, код страны, 9 цифр)",
+          m.admin_phone_format_error(),
         );
         return;
       }
@@ -640,13 +642,13 @@
           timeZone: newOwner.timeZone || "Europe/Kyiv",
         }),
       });
-      showSuccess(`Заведение ${newOwner.email} успешно создано на ${days} дн.`);
+      showSuccess(`${m.admin_salon_created_msg()}: ${newOwner.email}`);
       resetNewOwnerForm();
       showCreateOwnerModal = false;
       await fetchOwners();
       await fetchStats();
     } catch (e) {
-      showError("Ошибка создания заведения: " + e.message);
+      showError(m.admin_err_create_salon() + e.message);
     } finally {
       actionLoading = false;
     }
@@ -758,10 +760,10 @@
   }
 
   function getStatusLabel(status) {
-    if (status === 0) return "Ожидает";
-    if (status === 1) return "Завершено";
-    if (status === 2) return "Отменено";
-    return "Неизвестно";
+    if (status === 0) return m.schedule_status_pending();
+    if (status === 1) return m.schedule_status_completed();
+    if (status === 2) return m.schedule_status_cancelled();
+    return m.common_unknown();
   }
 </script>
 
@@ -785,26 +787,20 @@
   <div class="page-header">
     <div>
       <h1>
-        {#if activeSection === "overview"}Панель управления платформой{/if}
-        {#if activeSection === "owners"}Управление заведениями{/if}
-        {#if activeSection === "masters"}Мастера платформы{/if}
-        {#if activeSection === "clients"}База клиентов{/if}
-        {#if activeSection === "appointments"}Все записи системы{/if}
-        {#if activeSection === "admins"}Администраторы системы{/if}
+        {#if activeSection === "overview"}{m.admin_tab_overview()}{/if}
+        {#if activeSection === "owners"}{m.admin_tab_owners()}{/if}
+        {#if activeSection === "masters"}{m.admin_tab_masters()}{/if}
+        {#if activeSection === "clients"}{m.admin_header_clients_base()}{/if}
+        {#if activeSection === "appointments"}{m.admin_header_all_appts()}{/if}
+        {#if activeSection === "admins"}{m.admin_header_admins()}{/if}
       </h1>
       <p class="subtitle">
-        {#if activeSection === "overview"}Глобальная статистика, интерактивные
-          графики и состояние экосистемы ARCH SYSTEM{/if}
-        {#if activeSection === "owners"}Управление филиалами, подписками и
-          интеграциями Telegram-ботов{/if}
-        {#if activeSection === "masters"}Мониторинг специалистов, рейтингов и
-          Telegram-контактов{/if}
-        {#if activeSection === "clients"}Клиентская база во всех подключенных
-          салонах с выгрузкой в Excel{/if}
-        {#if activeSection === "appointments"}Журнал всех бронирований и
-          финансовых операций в реальном времени{/if}
-        {#if activeSection === "admins"}Управление учетными записями с правами
-          доступа Superadmin{/if}
+        {#if activeSection === "overview"}{m.admin_header_overview_desc()}{/if}
+        {#if activeSection === "owners"}{m.admin_header_owners_desc()}{/if}
+        {#if activeSection === "masters"}{m.admin_header_masters_desc()}{/if}
+        {#if activeSection === "clients"}{m.admin_header_clients_desc()}{/if}
+        {#if activeSection === "appointments"}{m.admin_header_appts_desc()}{/if}
+        {#if activeSection === "admins"}{m.admin_header_admins_desc()}{/if}
       </p>
     </div>
 
@@ -814,13 +810,12 @@
         class="btn btn-secondary"
         on:click={() => exportAllClientsToExcel()}
         disabled={isExporting}
-        title="Выгрузить всех клиентов платформы в Excel"
+        title={m.admin_export_all_clients_tooltip()}
       >
         <FileSpreadsheet size={16} class="text-rose" />
         <span
           >{isExporting
-            ? "Формирование..."
-            : "Выгрузить клиентов в Excel"}</span
+            ? m.common_loading() : m.admin_export_clients_btn()}</span
         >
       </button>
 
@@ -830,7 +825,7 @@
           on:click={() => (showCreateOwnerModal = true)}
         >
           <Plus size={16} />
-          <span>Создать заведение</span>
+          <span>{m.admin_create_owner_btn()}</span>
         </button>
       {:else if activeSection === "admins"}
         <button
@@ -838,16 +833,16 @@
           on:click={() => (showCreateAdminModal = true)}
         >
           <Plus size={16} />
-          <span>Добавить админа</span>
+          <span>{m.admin_add_admin_btn()}</span>
         </button>
       {/if}
       <button
         class="btn btn-secondary"
         on:click={() => handleSectionChange(activeSection)}
-        title="Обновить данные"
+        title={m.common_refresh()}
       >
         <RefreshCw size={16} />
-        <span>Обновить</span>
+        <span>{m.common_refresh()}</span>
       </button>
     </div>
   </div>
@@ -862,11 +857,11 @@
           <Building2 size={22} />
         </div>
         <div class="metric-content">
-          <span class="metric-label">Всего заведений</span>
+          <span class="metric-label">{m.admin_total_salons()}</span>
           <div class="metric-value">{stats.totalOwners}</div>
           <div class="metric-sub">
-            <span class="active-pill">{stats.activeOwners} активных</span>
-            <span class="inactive-pill">{stats.inactiveOwners} неактивных</span>
+            <span class="active-pill">{m.admin_active_count({ count: stats.activeOwners })}</span>
+            <span class="inactive-pill">{m.admin_inactive_count({ count: stats.inactiveOwners })}</span>
           </div>
         </div>
       </div>
@@ -876,10 +871,10 @@
           <DollarSign size={22} />
         </div>
         <div class="metric-content">
-          <span class="metric-label">Оборот платформы</span>
+          <span class="metric-label">{m.admin_platform_turnover()}</span>
           <div class="metric-value">{formatCurrency(stats.totalRevenue)}</div>
           <div class="metric-sub">
-            <span>{stats.completedAppointments} завершенных визитов</span>
+            <span>{m.admin_completed_visits({ count: stats.completedAppointments })}</span>
           </div>
         </div>
       </div>
@@ -889,10 +884,10 @@
           <UserCheck size={22} />
         </div>
         <div class="metric-content">
-          <span class="metric-label">Мастера</span>
+          <span class="metric-label">{m.admin_barbers_count()}</span>
           <div class="metric-value">{stats.totalMasters}</div>
           <div class="metric-sub">
-            <span class="active-pill">{stats.activeMasters} активных</span>
+            <span class="active-pill">{m.admin_active_count({ count: stats.activeMasters })}</span>
           </div>
         </div>
       </div>
@@ -902,10 +897,10 @@
           <Users size={22} />
         </div>
         <div class="metric-content">
-          <span class="metric-label">Клиенты Telegram</span>
+          <span class="metric-label">{m.admin_clients_telegram()}</span>
           <div class="metric-value">{stats.totalClients}</div>
           <div class="metric-sub">
-            <span>{stats.totalAppointments} всего записей</span>
+            <span>{m.admin_total_records({ count: stats.totalAppointments })}</span>
           </div>
         </div>
       </div>
@@ -918,14 +913,14 @@
       <div class="chart-panel-left">
         <div class="chart-panel-title">
           <BarChart3 size={18} class="text-rose" />
-          <span>Глобальная динамика платформы</span>
+          <span>{m.admin_global_dynamics()}</span>
         </div>
 
         <!-- Salon Filter -->
         <div class="filter-select-wrap chart-select">
           <Building2 size={15} />
           <select bind:value={chartOwnerFilter} on:change={fetchAdminChartData}>
-            <option value="">Все заведения платформы</option>
+            <option value="">{m.admin_all_salons_option()}</option>
             {#each owners as o}
               <option value={o.id}>{o.barbershopName} ({o.ownerName})</option>
             {/each}
@@ -940,28 +935,28 @@
           class:active={chartPeriod === "7d"}
           on:click={() => setChartPeriod("7d")}
         >
-          <span>7 дней</span>
+          <span>{m.stats_range_7d()}</span>
         </button>
         <button
           class="period-tab"
           class:active={chartPeriod === "30d"}
           on:click={() => setChartPeriod("30d")}
         >
-          <span>30 дней</span>
+          <span>{m.stats_range_30d()}</span>
         </button>
         <button
           class="period-tab"
           class:active={chartPeriod === "90d"}
           on:click={() => setChartPeriod("90d")}
         >
-          <span>3 месяца</span>
+          <span>{m.stats_range_3m()}</span>
         </button>
         <button
           class="period-tab"
           class:active={chartPeriod === "year"}
           on:click={() => setChartPeriod("year")}
         >
-          <span>12 месяцев</span>
+          <span>{m.stats_range_12m()}</span>
         </button>
         <button
           class="period-tab"
@@ -969,7 +964,7 @@
           on:click={() => setChartPeriod("custom")}
         >
           <CalendarRange size={13} />
-          <span>Свой период</span>
+          <span>{m.stats_range_custom()}</span>
         </button>
       </div>
     </div>
@@ -980,12 +975,12 @@
         <div class="custom-range-inner">
           <div class="custom-range-title">
             <CalendarRange size={18} class="text-rose" />
-            <span>Интервал дат для глобальной аналитики:</span>
+            <span>{m.admin_custom_analytics_hint()}</span>
           </div>
 
           <div class="custom-range-inputs">
             <div class="date-input-group">
-              <label for="adminCustomStart">От:</label>
+              <label for="adminCustomStart">{m.stats_from()}</label>
               <input
                 id="adminCustomStart"
                 type="date"
@@ -995,7 +990,7 @@
             </div>
 
             <div class="date-input-group">
-              <label for="adminCustomEnd">До:</label>
+              <label for="adminCustomEnd">{m.stats_to()}</label>
               <input
                 id="adminCustomEnd"
                 type="date"
@@ -1009,7 +1004,7 @@
               on:click={fetchAdminChartData}
               disabled={isChartLoading}
             >
-              <span>{isChartLoading ? "Загрузка..." : "Применить"}</span>
+              <span>{isChartLoading ? m.common_loading() : m.stats_apply()}</span>
             </button>
           </div>
         </div>
@@ -1022,14 +1017,14 @@
         <div class="section-title-wrap">
           <TrendingUp size={20} class="text-rose" />
           <div>
-            <h2>График денежного оборота платформы</h2>
+            <h2>{m.admin_turnover_chart_title()}</h2>
             <p class="section-desc">
-              Сумма всех завершенных заказов по выбранным филиалам
+              {m.admin_turnover_chart_desc()}
             </p>
           </div>
         </div>
         <div class="chart-badge-tag rose">
-          Объем: {formatCurrency(adminChartData.totalRevenue)}
+          {m.admin_volume()} {formatCurrency(adminChartData.totalRevenue)}
         </div>
       </div>
 
@@ -1153,14 +1148,14 @@
         <div class="section-title-wrap">
           <Users size={20} class="text-sage" />
           <div>
-            <h2>График посещений клиентов</h2>
+            <h2>{m.admin_visits_chart_title()}</h2>
             <p class="section-desc">
-              Количество клиентов и бронирований за период
+              {m.admin_visits_chart_desc()}
             </p>
           </div>
         </div>
         <div class="chart-badge-tag sage">
-          Всего визитов: {adminChartData.totalVisits}
+          {m.admin_total_visits_count()} {adminChartData.totalVisits}
         </div>
       </div>
 
@@ -1269,7 +1264,7 @@
                 text-anchor="middle"
                 fill="#A8C69B"
                 font-size="12"
-                font-weight="700">{hoveredChartPoint.visits} визитов</text
+                font-weight="700">{hoveredChartPoint.visits} {m.stats_visits_unit()}</text
               >
             </g>
           {/if}
@@ -1282,13 +1277,13 @@
       <div class="section-header">
         <div class="section-title-wrap">
           <Building2 size={20} />
-          <h2>Недавно подключенные заведения</h2>
+          <h2>{m.admin_recently_added_salons()}</h2>
         </div>
         <button
           class="btn btn-sm btn-secondary"
           on:click={() => handleSectionChange("owners")}
         >
-          Все заведения ({owners.length})
+          {m.admin_all_salons_count({ count: owners.length })}
         </button>
       </div>
 
@@ -1296,13 +1291,13 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Заведение</th>
-              <th>Владелец</th>
-              <th>Подписка до</th>
-              <th>Статус</th>
-              <th>Мастеров</th>
-              <th>Оборот</th>
-              <th>Действия</th>
+              <th>{m.admin_col_salon()}</th>
+              <th>{m.admin_col_owner()}</th>
+              <th>{m.admin_col_sub_until()}</th>
+              <th>{m.admin_col_status()}</th>
+              <th>{m.admin_col_barbers()}</th>
+              <th>{m.admin_col_turnover()}</th>
+              <th>{m.admin_col_actions()}</th>
             </tr>
           </thead>
           <tbody>
@@ -1311,7 +1306,7 @@
                 <td>
                   <div class="table-cell-bold">{owner.barbershopName}</div>
                   <div class="table-cell-sub">
-                    @{owner.botUsername || "бот не указан"}
+                    @{owner.botUsername || m.admin_bot_not_specified()}
                   </div>
                 </td>
                 <td>
@@ -1323,9 +1318,9 @@
                 </td>
                 <td>
                   {#if isOwnerSubActive(owner)}
-                    <span class="badge badge-active">Активна</span>
+                    <span class="badge badge-active">{m.admin_sub_active()}</span>
                   {:else}
-                    <span class="badge badge-inactive">Неактивна</span>
+                    <span class="badge badge-inactive">{m.admin_sub_inactive()}</span>
                   {/if}
                 </td>
                 <td>{owner.mastersCount}</td>
@@ -1334,14 +1329,14 @@
                   <button
                     class="btn-icon"
                     on:click={() => openExtendModal(owner)}
-                    title="Продлить подписку"
+                    title={m.admin_extend()}
                   >
                     <Clock size={15} />
                   </button>
                   <button
                     class="btn-icon"
                     on:click={() => openEditOwnerModal(owner)}
-                    title="Редактировать"
+                    title={m.admin_edit_tooltip()}
                   >
                     <Edit2 size={15} />
                   </button>
@@ -1350,7 +1345,7 @@
             {:else}
               <tr>
                 <td colspan="7" class="text-center py-4 text-muted"
-                  >Нет подключенных заведений</td
+                  >{m.admin_no_salons_connected()}</td
                 >
               </tr>
             {/each}
@@ -1369,7 +1364,7 @@
         <Search size={17} class="search-icon" />
         <input
           type="text"
-          placeholder="Поиск по названию, владельцу, email или боту..."
+          placeholder={m.admin_search_owners()}
           bind:value={ownerSearch}
           on:input={() => fetchOwners()}
         />
@@ -1378,10 +1373,10 @@
       <div class="filter-select-wrap">
         <Filter size={16} />
         <select bind:value={ownerStatusFilter} on:change={() => fetchOwners()}>
-          <option value="">Все статусы</option>
-          <option value="Active">Только активные</option>
-          <option value="Frozen">Замороженные / истекшие</option>
-          <option value="Pending">Ожидающие</option>
+          <option value="">{m.admin_filter_all_salons_status()}</option>
+          <option value="Active">{m.admin_filter_active_only()}</option>
+          <option value="Frozen">{m.admin_filter_frozen_only()}</option>
+          <option value="Pending">{m.admin_filter_pending_only()}</option>
         </select>
       </div>
 
@@ -1390,7 +1385,7 @@
         on:click={() => (showCreateOwnerModal = true)}
       >
         <Plus size={16} />
-        <span>Создать заведение</span>
+        <span>{m.admin_create_owner_btn()}</span>
       </button>
     </div>
 
@@ -1399,12 +1394,12 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Салон & Бот</th>
-              <th>Владелец / Контакты</th>
-              <th>Подписка</th>
-              <th>Показатели</th>
-              <th>Статус</th>
-              <th class="text-right">Управление</th>
+              <th>{m.admin_th_salon_bot()}</th>
+              <th>{m.admin_th_owner_contacts()}</th>
+              <th>{m.admin_th_subscription()}</th>
+              <th>{m.admin_th_metrics()}</th>
+              <th>{m.admin_col_status()}</th>
+              <th class="text-right">{m.admin_th_management()}</th>
             </tr>
           </thead>
           <tbody>
@@ -1413,7 +1408,7 @@
                 <td>
                   <div class="table-cell-bold">{owner.barbershopName}</div>
                   <div class="table-cell-sub">
-                    {owner.barbershopAddress || "Адрес не указан"}
+                    {owner.barbershopAddress || m.admin_address_not_specified()}
                   </div>
                   {#if owner.botUsername}
                     <a
@@ -1439,20 +1434,18 @@
                     <button
                       class="btn btn-xs btn-outline"
                       on:click={() => openExtendModal(owner)}
-                    >
-                      Продлить
-                    </button>
+                    >{m.admin_extend()}</button>
                   </div>
                 </td>
                 <td>
                   <div class="stats-mini-grid">
-                    <span>Мастера: <strong>{owner.mastersCount}</strong></span>
-                    <span>Клиенты: <strong>{owner.clientsCount}</strong></span>
+                    <span>{m.admin_metric_barbers()} <strong>{owner.mastersCount}</strong></span>
+                    <span>{m.admin_metric_clients()} <strong>{owner.clientsCount}</strong></span>
                     <span
-                      >Записи: <strong>{owner.appointmentsCount}</strong></span
+                      >{m.admin_metric_appts()} <strong>{owner.appointmentsCount}</strong></span
                     >
                     <span
-                      >Оборот: <strong>{formatCurrency(owner.turnover)}</strong
+                      >{m.admin_metric_turnover()} <strong>{formatCurrency(owner.turnover)}</strong
                       ></span
                     >
                   </div>
@@ -1463,14 +1456,14 @@
                     class:active={isOwnerSubActive(owner)}
                     on:click={() => toggleOwnerSubscription(owner)}
                     disabled={actionLoading}
-                    title="Нажмите для переключения подписки"
+                    title={m.admin_toggle_sub_tooltip()}
                   >
                     {#if isOwnerSubActive(owner)}
                       <CheckCircle2 size={14} />
-                      <span>Активна</span>
+                      <span>{m.admin_sub_active()}</span>
                     {:else}
                       <XCircle size={14} />
-                      <span>Заморожена</span>
+                      <span>{m.admin_sub_frozen()}</span>
                     {/if}
                   </button>
                 </td>
@@ -1479,14 +1472,14 @@
                     <button
                       class="btn-icon"
                       on:click={() => openEditOwnerModal(owner)}
-                      title="Редактировать"
+                      title={m.admin_edit_tooltip()}
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       class="btn-icon danger"
                       on:click={() => deleteOwner(owner)}
-                      title="Удалить заведение"
+                      title={m.admin_delete_salon_tooltip()}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -1496,8 +1489,7 @@
             {:else}
               <tr>
                 <td colspan="6" class="text-center py-5 text-muted">
-                  {#if isOwnersLoading}Загрузка заведений...{:else}Заведения не
-                    найдены{/if}
+                  {#if isOwnersLoading}{m.admin_loading_salons()}{:else}{m.admin_no_owners_found()}{/if}
                 </td>
               </tr>
             {/each}
@@ -1516,7 +1508,7 @@
         <Search size={17} class="search-icon" />
         <input
           type="text"
-          placeholder="Поиск по имени мастера, заведению или @username..."
+          placeholder={m.admin_search_masters()}
           bind:value={masterSearch}
           on:input={() => fetchMasters()}
         />
@@ -1528,13 +1520,13 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Мастер</th>
-              <th>Заведение</th>
-              <th>Telegram Связь</th>
-              <th>Рейтинг & Отзывы</th>
-              <th>Записей</th>
-              <th>Статус</th>
-              <th class="text-right">Действия</th>
+              <th>{m.admin_th_barber()}</th>
+              <th>{m.admin_col_salon()}</th>
+              <th>{m.admin_th_telegram_contact()}</th>
+              <th>{m.admin_th_rating_reviews()}</th>
+              <th>{m.admin_th_appts_count()}</th>
+              <th>{m.admin_col_status()}</th>
+              <th class="text-right">{m.admin_col_actions()}</th>
             </tr>
           </thead>
           <tbody>
@@ -1548,7 +1540,7 @@
                     <div>
                       <div class="table-cell-bold">{master.name}</div>
                       <div class="table-cell-sub">
-                        {master.description || "Без описания"}
+                        {master.description || m.admin_no_description()}
                       </div>
                     </div>
                   </div>
@@ -1572,7 +1564,7 @@
                       <span>@{master.telegramUsername.replace(/^@/, "")}</span>
                     </a>
                   {:else}
-                    <span class="text-muted text-xs">Юзернейм не указан</span>
+                    <span class="text-muted text-xs">{m.admin_username_not_specified()}</span>
                   {/if}
                   {#if master.telegramId}
                     <div class="table-cell-sub">ID: {master.telegramId}</div>
@@ -1590,12 +1582,12 @@
                     class="status-toggle-btn sm"
                     class:active={master.isActive}
                     on:click={() => toggleMasterActive(master)}
-                    title="Переключить активность"
+                    title={m.admin_toggle_activity()}
                   >
                     {#if master.isActive}
-                      <span>Активен</span>
+                      <span>{m.admin_status_active()}</span>
                     {:else}
-                      <span>Отключен</span>
+                      <span>{m.admin_status_disabled()}</span>
                     {/if}
                   </button>
                 </td>
@@ -1604,14 +1596,14 @@
                     <button
                       class="btn-icon"
                       on:click={() => openEditMasterModal(master)}
-                      title="Редактировать"
+                      title={m.admin_edit_tooltip()}
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       class="btn-icon danger"
                       on:click={() => deleteMaster(master)}
-                      title="Удалить мастера"
+                      title={m.admin_delete_barber_tooltip()}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -1621,8 +1613,7 @@
             {:else}
               <tr>
                 <td colspan="7" class="text-center py-5 text-muted">
-                  {#if isMastersLoading}Загрузка мастеров...{:else}Мастера не
-                    найдены{/if}
+                  {#if isMastersLoading}{m.admin_loading_barbers()}{:else}{m.admin_no_masters_found()}{/if}
                 </td>
               </tr>
             {/each}
@@ -1641,7 +1632,7 @@
         <Search size={17} class="search-icon" />
         <input
           type="text"
-          placeholder="Поиск по имени клиента, телефону, Telegram ID или салону..."
+          placeholder={m.admin_search_clients()}
           bind:value={clientSearch}
           on:input={() => fetchClients()}
         />
@@ -1653,7 +1644,7 @@
         disabled={isExporting}
       >
         <FileSpreadsheet size={16} />
-        <span>{isExporting ? "Экспорт..." : "Выгрузить в Excel"}</span>
+        <span>{isExporting ? m.common_loading() : m.admin_export_excel()}</span>
       </button>
     </div>
 
@@ -1662,29 +1653,29 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Клиент</th>
-              <th>Заведение</th>
-              <th>Телефон</th>
+              <th>{m.admin_th_client()}</th>
+              <th>{m.admin_col_salon()}</th>
+              <th>{m.admin_th_phone()}</th>
               <th>Telegram ID</th>
-              <th>Всего записей</th>
-              <th class="text-right">Действия</th>
+              <th>{m.admin_th_total_appts()}</th>
+              <th class="text-right">{m.admin_col_actions()}</th>
             </tr>
           </thead>
           <tbody>
             {#each clients as client}
               <tr>
                 <td>
-                  <div class="table-cell-bold">{client.name || "Гость"}</div>
+                  <div class="table-cell-bold">{client.name || m.admin_guest()}</div>
                 </td>
                 <td>{client.barbershopName}</td>
-                <td>{client.phone || "Не указан"}</td>
+                <td>{client.phone || "\u041d\u0435 \u0443\u043a\u0430\u0437\u0430\u043d"}</td>
                 <td><code>{client.telegramId}</code></td>
                 <td><strong>{client.appointmentsCount}</strong></td>
                 <td class="text-right">
                   <button
                     class="btn-icon danger"
                     on:click={() => deleteClient(client)}
-                    title="Удалить клиента"
+                    title={m.admin_delete_client_tooltip()}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -1693,8 +1684,7 @@
             {:else}
               <tr>
                 <td colspan="6" class="text-center py-5 text-muted">
-                  {#if isClientsLoading}Загрузка клиентов...{:else}Клиенты не
-                    найдены{/if}
+                  {#if isClientsLoading}{m.admin_loading_clients()}{:else}{m.admin_no_clients_found()}{/if}
                 </td>
               </tr>
             {/each}
@@ -1715,10 +1705,10 @@
           bind:value={appointmentStatusFilter}
           on:change={() => fetchAppointments()}
         >
-          <option value="">Все статусы записей</option>
-          <option value="0">Ожидающие (Pending)</option>
-          <option value="1">Завершенные (Completed)</option>
-          <option value="2">Отмененные (Cancelled)</option>
+          <option value="">{m.admin_filter_all_statuses()}</option>
+          <option value="0">{m.admin_filter_pending()}</option>
+          <option value="1">{m.admin_filter_completed()}</option>
+          <option value="2">{m.admin_filter_cancelled()}</option>
         </select>
       </div>
     </div>
@@ -1728,13 +1718,13 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Дата и Время</th>
-              <th>Заведение</th>
-              <th>Мастер</th>
-              <th>Клиент</th>
-              <th>Услуга & Цена</th>
-              <th>Статус</th>
-              <th class="text-right">Управление</th>
+              <th>{m.admin_th_datetime()}</th>
+              <th>{m.admin_col_salon()}</th>
+              <th>{m.admin_th_barber()}</th>
+              <th>{m.admin_th_client()}</th>
+              <th>{m.admin_th_service_price()}</th>
+              <th>{m.admin_col_status()}</th>
+              <th class="text-right">{m.admin_th_management()}</th>
             </tr>
           </thead>
           <tbody>
@@ -1767,7 +1757,7 @@
                   <button
                     class="btn-icon danger"
                     on:click={() => deleteAppointment(appt)}
-                    title="Удалить запись"
+                    title={m.admin_delete_appt_tooltip()}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -1776,8 +1766,7 @@
             {:else}
               <tr>
                 <td colspan="7" class="text-center py-5 text-muted">
-                  {#if isAppointmentsLoading}Загрузка записей...{:else}Записи не
-                    найдены{/if}
+                  {#if isAppointmentsLoading}{m.admin_loading_appts()}{:else}{m.admin_no_appts_found()}{/if}
                 </td>
               </tr>
             {/each}
@@ -1795,14 +1784,14 @@
       <div class="section-header">
         <div class="section-title-wrap">
           <Shield size={20} class="text-rose" />
-          <h2>Учетные записи Superadmin</h2>
+          <h2>{m.admin_superadmin_accounts()}</h2>
         </div>
         <button
           class="btn btn-primary"
           on:click={() => (showCreateAdminModal = true)}
         >
           <Plus size={16} />
-          <span>Создать администратора</span>
+          <span>{m.admin_create_admin_btn()}</span>
         </button>
       </div>
 
@@ -1811,9 +1800,9 @@
           <thead>
             <tr>
               <th>Email</th>
-              <th>Роль</th>
-              <th>Дата регистрации</th>
-              <th>Статус</th>
+              <th>{m.admin_th_role()}</th>
+              <th>{m.admin_th_reg_date()}</th>
+              <th>{m.admin_col_status()}</th>
             </tr>
           </thead>
           <tbody>
@@ -1828,14 +1817,13 @@
                 </td>
                 <td>{formatDateTime(admin.createdAt)}</td>
                 <td>
-                  <span class="badge badge-active">Активен</span>
+                  <span class="badge badge-active">{m.admin_status_active()}</span>
                 </td>
               </tr>
             {:else}
               <tr>
                 <td colspan="4" class="text-center py-5 text-muted">
-                  {#if isAdminsLoading}Загрузка администраторов...{:else}Администраторы
-                    не найдены{/if}
+                  {#if isAdminsLoading}{m.admin_loading_admins()}{:else}{m.admin_no_admins_found()}{/if}
                 </td>
               </tr>
             {/each}
@@ -1856,49 +1844,49 @@
     <div class="modal-backdrop" on:click={() => (showExtendModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
-          <h3>Продлить подписку</h3>
+          <h3>{m.admin_extend_sub_title()}</h3>
           <button class="modal-close" on:click={() => (showExtendModal = false)}
             >&times;</button
           >
         </div>
         <div class="modal-body">
           <p class="modal-info-text">
-            Заведение: <strong>{selectedOwnerForSub.barbershopName}</strong>
+            {m.admin_extend_salon()} <strong>{selectedOwnerForSub.barbershopName}</strong>
             ({selectedOwnerForSub.ownerName})
           </p>
           <p class="modal-info-text">
-            Текущее окончание: <strong
+            {m.admin_current_expiry()} <strong
               >{formatDate(selectedOwnerForSub.nextPayment)}</strong
             >
           </p>
 
           <div class="form-group mt-3">
-            <label for="extendDays">Количество дней продления</label>
+            <label for="extendDays">{m.admin_extend_days_label()}</label>
             <div class="quick-days-presets">
               <button
                 type="button"
                 class="btn btn-xs {extendDaysInput === 14 ? 'btn-primary' : 'btn-outline'}"
-                on:click={() => (extendDaysInput = 14)}>+14 дн. (триал)</button
+                on:click={() => (extendDaysInput = 14)}>{m.admin_days_14()}</button
               >
               <button
                 type="button"
                 class="btn btn-xs {extendDaysInput === 30 ? 'btn-primary' : 'btn-outline'}"
-                on:click={() => (extendDaysInput = 30)}>+30 дн.</button
+                on:click={() => (extendDaysInput = 30)}>{m.admin_days_30()}</button
               >
               <button
                 type="button"
                 class="btn btn-xs {extendDaysInput === 90 ? 'btn-primary' : 'btn-outline'}"
-                on:click={() => (extendDaysInput = 90)}>+90 дн.</button
+                on:click={() => (extendDaysInput = 90)}>{m.admin_days_90()}</button
               >
               <button
                 type="button"
                 class="btn btn-xs {extendDaysInput === 180 ? 'btn-primary' : 'btn-outline'}"
-                on:click={() => (extendDaysInput = 180)}>+180 дн.</button
+                on:click={() => (extendDaysInput = 180)}>{m.admin_days_180()}</button
               >
               <button
                 type="button"
                 class="btn btn-xs {extendDaysInput === 365 ? 'btn-primary' : 'btn-outline'}"
-                on:click={() => (extendDaysInput = 365)}>+1 год</button
+                on:click={() => (extendDaysInput = 365)}>{m.admin_days_365()}</button
               >
             </div>
             <input
@@ -1914,14 +1902,13 @@
         <div class="modal-footer">
           <button
             class="btn btn-secondary"
-            on:click={() => (showExtendModal = false)}>Отмена</button
-          >
+            on:click={() => (showExtendModal = false)}>{m.common_cancel()}</button>
           <button
             class="btn btn-primary"
             on:click={submitExtendSubscription}
             disabled={actionLoading}
           >
-            <span>{actionLoading ? "Продление..." : "Продлить подписку"}</span>
+            <span>{actionLoading ? m.common_loading() : m.admin_extend_btn()}</span>
           </button>
         </div>
       </div>
@@ -1935,7 +1922,7 @@
     <div class="modal-backdrop" on:click={() => (showEditOwnerModal = false)}>
       <div class="modal-card modal-lg" on:click|stopPropagation>
         <div class="modal-header">
-          <h3>Редактировать заведение</h3>
+          <h3>{m.admin_edit_owner_title()}</h3>
           <button
             class="modal-close"
             on:click={() => (showEditOwnerModal = false)}>&times;</button
@@ -1944,7 +1931,7 @@
         <form on:submit|preventDefault={submitEditOwner}>
           <div class="modal-body modal-grid-2">
             <div class="form-group">
-              <label for="eoName">Имя владельца</label>
+              <label for="eoName">{m.admin_owner_name_label()}</label>
               <input
                 id="eoName"
                 type="text"
@@ -1955,7 +1942,7 @@
             </div>
 
             <div class="form-group">
-              <label for="eoPhone">Телефон</label>
+              <label for="eoPhone">{m.admin_phone_label()}</label>
               <input
                 id="eoPhone"
                 type="text"
@@ -1965,7 +1952,7 @@
             </div>
 
             <div class="form-group">
-              <label for="eoShopName">Название заведения</label>
+              <label for="eoShopName">{m.admin_salon_name_label()}</label>
               <input
                 id="eoShopName"
                 type="text"
@@ -1976,7 +1963,7 @@
             </div>
 
             <div class="form-group">
-              <label for="eoBotUsername">Telegram Bot Username (без @)</label>
+              <label for="eoBotUsername">{m.admin_bot_username_label()}</label>
               <input
                 id="eoBotUsername"
                 type="text"
@@ -1987,13 +1974,13 @@
             </div>
 
             <div class="form-group full-width">
-              <label for="eoAddress">Адрес заведения</label>
+              <label for="eoAddress">{m.admin_salon_address_label()}</label>
               <input
                 id="eoAddress"
                 type="text"
                 class="input"
                 bind:value={editingOwner.barbershopAddress}
-                placeholder="ул. Примерная, 10"
+                placeholder={m.admin_address_placeholder()}
               />
             </div>
 
@@ -2010,20 +1997,19 @@
 
             <div class="form-group full-width">
               <label for="eoNewPassword"
-                >Новый пароль (оставьте пустым, если не нужно менять)</label
-              >
+                >{m.admin_new_password_label()}</label>
               <input
                 id="eoNewPassword"
                 type="password"
                 class="input"
                 bind:value={editingOwner.newPassword}
-                placeholder="•••••••• (минимум 6 символов)"
+                placeholder={m.admin_password_placeholder()}
                 minlength="6"
               />
             </div>
 
             <div class="form-group full-width">
-              <label for="eoDesc">Описание заведения</label>
+              <label for="eoDesc">{m.admin_salon_desc_label()}</label>
               <textarea
                 id="eoDesc"
                 class="input textarea"
@@ -2039,23 +2025,22 @@
                 class="btn btn-secondary mr-auto"
                 disabled={actionLoading}
                 on:click={() => sendOwnerResetPasswordEmail(editingOwner.email)}
-                title="Отправить ссылку для восстановления пароля на почту владельца"
+                title={m.admin_reset_pwd_email_tooltip()}
               >
-                Сбросить пароль по Email
+                {m.admin_reset_pwd_email_btn()}
               </button>
             {/if}
             <button
               type="button"
               class="btn btn-secondary"
-              on:click={() => (showEditOwnerModal = false)}>Отмена</button
-            >
+              on:click={() => (showEditOwnerModal = false)}>{m.common_cancel()}</button>
             <button
               type="submit"
               class="btn btn-primary"
               disabled={actionLoading}
             >
               <span
-                >{actionLoading ? "Сохранение..." : "Сохранить изменения"}</span
+                >{actionLoading ? m.common_loading() : m.common_save()}</span
               >
             </button>
           </div>
@@ -2071,7 +2056,7 @@
     <div class="modal-backdrop" on:click={() => (showEditMasterModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
-          <h3>Редактировать мастера</h3>
+          <h3>{m.admin_edit_master_title()}</h3>
           <button
             class="modal-close"
             on:click={() => (showEditMasterModal = false)}>&times;</button
@@ -2080,7 +2065,7 @@
         <form on:submit|preventDefault={submitEditMaster}>
           <div class="modal-body">
             <div class="form-group">
-              <label for="emName">Имя мастера</label>
+              <label for="emName">{m.admin_barber_name_label()}</label>
               <input
                 id="emName"
                 type="text"
@@ -2113,7 +2098,7 @@
             </div>
 
             <div class="form-group">
-              <label for="emDesc">Квалификация / Описание</label>
+              <label for="emDesc">{m.admin_barber_desc_label()}</label>
               <input
                 id="emDesc"
                 type="text"
@@ -2126,7 +2111,7 @@
             <div class="form-checkbox-wrap mt-2">
               <label class="checkbox-label">
                 <input type="checkbox" bind:checked={editingMaster.isActive} />
-                <span>Мастер активен и доступен для записи</span>
+                <span>{m.admin_barber_active_checkbox()}</span>
               </label>
             </div>
           </div>
@@ -2134,14 +2119,13 @@
             <button
               type="button"
               class="btn btn-secondary"
-              on:click={() => (showEditMasterModal = false)}>Отмена</button
-            >
+              on:click={() => (showEditMasterModal = false)}>{m.common_cancel()}</button>
             <button
               type="submit"
               class="btn btn-primary"
               disabled={actionLoading}
             >
-              <span>{actionLoading ? "Сохранение..." : "Сохранить"}</span>
+              <span>{actionLoading ? m.common_loading() : m.common_save()}</span>
             </button>
           </div>
         </form>
@@ -2156,7 +2140,7 @@
     <div class="modal-backdrop" on:click={() => (showCreateAdminModal = false)}>
       <div class="modal-card" on:click|stopPropagation>
         <div class="modal-header">
-          <h3>Создать Superadmin аккаунт</h3>
+          <h3>{m.admin_create_admin_title()}</h3>
           <button
             class="modal-close"
             on:click={() => (showCreateAdminModal = false)}>&times;</button
@@ -2165,7 +2149,7 @@
         <form on:submit|preventDefault={submitCreateAdmin}>
           <div class="modal-body">
             <div class="form-group">
-              <label for="naEmail">Email администратора</label>
+              <label for="naEmail">{m.admin_admin_email_label()}</label>
               <input
                 id="naEmail"
                 type="email"
@@ -2177,7 +2161,7 @@
             </div>
 
             <div class="form-group">
-              <label for="naPassword">Пароль</label>
+              <label for="naPassword">{m.admin_password_label()}</label>
               <input
                 id="naPassword"
                 type="password"
@@ -2192,8 +2176,7 @@
             <button
               type="button"
               class="btn btn-secondary"
-              on:click={() => (showCreateAdminModal = false)}>Отмена</button
-            >
+              on:click={() => (showCreateAdminModal = false)}>{m.common_cancel()}</button>
             <button
               type="submit"
               class="btn btn-primary"
@@ -2201,8 +2184,7 @@
             >
               <span
                 >{actionLoading
-                  ? "Создание..."
-                  : "Создать администратора"}</span
+                  ? m.common_loading() : m.admin_create_admin_btn()}</span
               >
             </button>
           </div>
@@ -2217,7 +2199,7 @@
     <div class="modal-backdrop" on:click={() => (showCreateOwnerModal = false)}>
       <div class="modal-card modal-lg" on:click|stopPropagation>
         <div class="modal-header">
-          <h3>Создать заведение</h3>
+          <h3>{m.admin_create_owner_title()}</h3>
           <button
             class="modal-close"
             on:click={() => (showCreateOwnerModal = false)}>&times;</button
@@ -2225,13 +2207,13 @@
         </div>
         <form on:submit|preventDefault={submitCreateOwner}>
           <div class="modal-body modal-grid-2">
-            <!-- Секция 1: Доступ и подписка -->
+            <!-- Section 1 -->
             <div class="form-section-title full-width">
-              <span>1. Доступ и подписка</span>
+              <span>{m.admin_sec1_title()}</span>
             </div>
 
             <div class="form-group">
-              <label for="noEmail">Email заведения *</label>
+              <label for="noEmail">{m.admin_salon_email_label()}</label>
               <div class="input-icon-wrap">
                 <Mail size={16} class="input-icon" />
                 <input
@@ -2246,7 +2228,7 @@
             </div>
 
             <div class="form-group">
-              <label for="noPassword">Пароль *</label>
+              <label for="noPassword">{m.admin_password_label()} *</label>
               <div class="input-icon-wrap">
                 <Lock size={16} class="input-icon" />
                 <input
@@ -2254,7 +2236,7 @@
                   type="password"
                   class="input has-icon"
                   bind:value={newOwner.password}
-                  placeholder="Минимум 6 символов"
+                  placeholder={m.settings_new_pwd_placeholder()}
                   minlength="6"
                   required
                 />
@@ -2262,7 +2244,7 @@
             </div>
 
             <div class="form-group full-width">
-              <label for="noDuration">Длительность подписки (дней)</label>
+              <label for="noDuration">{m.admin_sub_duration_label()}</label>
               <div class="quick-days-presets">
                 <button
                   type="button"
@@ -2270,7 +2252,7 @@
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   on:click={() => (newOwner.subscriptionDays = 14)}
-                  >14 дн. (триал)</button
+                  >{m.admin_dur_14()}</button
                 >
                 <button
                   type="button"
@@ -2278,7 +2260,7 @@
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   on:click={() => (newOwner.subscriptionDays = 30)}
-                  >1 мес (30 дн.)</button
+                  >{m.admin_dur_30()}</button
                 >
                 <button
                   type="button"
@@ -2286,7 +2268,7 @@
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   on:click={() => (newOwner.subscriptionDays = 90)}
-                  >3 мес (90 дн.)</button
+                  >{m.admin_dur_90()}</button
                 >
                 <button
                   type="button"
@@ -2294,7 +2276,7 @@
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   on:click={() => (newOwner.subscriptionDays = 180)}
-                  >6 мес (180 дн.)</button
+                  >{m.admin_dur_180()}</button
                 >
                 <button
                   type="button"
@@ -2302,7 +2284,7 @@
                     ? 'btn-primary'
                     : 'btn-outline'}"
                   on:click={() => (newOwner.subscriptionDays = 365)}
-                  >1 год (365 дн.)</button
+                  >{m.admin_dur_365()}</button
                 >
               </div>
               <input
@@ -2316,13 +2298,13 @@
               />
             </div>
 
-            <!-- Секция 2: Личные данные владельца -->
+            <!-- Section 2 -->
             <div class="form-section-title full-width">
-              <span>2. Данные владельца</span>
+              <span>{m.admin_sec2_title()}</span>
             </div>
 
             <div class="form-group">
-              <label for="noOwnerName">Имя владельца</label>
+              <label for="noOwnerName">{m.admin_owner_name_label()}</label>
               <div class="input-icon-wrap">
                 <User size={16} class="input-icon" />
                 <input
@@ -2330,13 +2312,13 @@
                   type="text"
                   class="input has-icon"
                   bind:value={newOwner.ownerName}
-                  placeholder="Александр"
+                  placeholder={m.admin_owner_name_placeholder()}
                 />
               </div>
             </div>
 
             <div class="form-group">
-              <label for="noPhone">Номер телефона</label>
+              <label for="noPhone">{m.admin_owner_phone_label()}</label>
               <div class="input-icon-wrap">
                 <Phone size={16} class="input-icon" />
                 <input
@@ -2350,7 +2332,7 @@
             </div>
 
             <div class="form-group full-width">
-              <label for="noTgId">Telegram ID владельца (для уведомлений)</label>
+              <label for="noTgId">{m.admin_owner_tgid_label()}</label>
               <div class="input-icon-wrap">
                 <Send size={16} class="input-icon" />
                 <input
@@ -2358,18 +2340,18 @@
                   type="text"
                   class="input has-icon"
                   bind:value={newOwner.telegramId}
-                  placeholder="123456789 или username"
+                  placeholder={m.admin_owner_tgid_placeholder()}
                 />
               </div>
             </div>
 
-            <!-- Секция 3: Заведение -->
+            <!-- Section 3 -->
             <div class="form-section-title full-width">
-              <span>3. Заведение</span>
+              <span>{m.admin_sec3_title()}</span>
             </div>
 
             <div class="form-group">
-              <label for="noBarbershopName">Название заведения</label>
+              <label for="noBarbershopName">{m.admin_salon_name_label()}</label>
               <div class="input-icon-wrap">
                 <Building2 size={16} class="input-icon" />
                 <input
@@ -2377,26 +2359,26 @@
                   type="text"
                   class="input has-icon"
                   bind:value={newOwner.barbershopName}
-                  placeholder="Chop-Chop или Салон красоты"
+                  placeholder={m.admin_salon_name_placeholder()}
                 />
               </div>
             </div>
 
             <div class="form-group">
-              <label for="noTimeZone">Часовой пояс</label>
+              <label for="noTimeZone">{m.admin_timezone_label()}</label>
               <div class="input-icon-wrap">
                 <Globe size={16} class="input-icon" />
                 <select id="noTimeZone" class="input has-icon" bind:value={newOwner.timeZone}>
-                  <option value="Europe/Kyiv">Киев (UTC+2/3)</option>
-                  <option value="Europe/Warsaw">Варшава (UTC+1/2)</option>
-                  <option value="Europe/London">Лондон (UTC+0/1)</option>
-                  <option value="Europe/Moscow">Москва (UTC+3)</option>
+                  <option value="Europe/Kyiv">Kyiv (UTC+2/3)</option>
+                  <option value="Europe/Warsaw">Warsaw (UTC+1/2)</option>
+                  <option value="Europe/London">London (UTC+0/1)</option>
+                  <option value="Europe/Moscow">Moscow (UTC+3)</option>
                 </select>
               </div>
             </div>
 
             <div class="form-group full-width">
-              <label for="noAddress">Адрес заведения</label>
+              <label for="noAddress">{m.admin_salon_address_label()}</label>
               <div class="input-icon-wrap">
                 <MapPin size={16} class="input-icon" />
                 <input
@@ -2404,29 +2386,29 @@
                   type="text"
                   class="input has-icon"
                   bind:value={newOwner.barbershopAddress}
-                  placeholder="ул. Центральная, 10"
+                  placeholder={m.admin_salon_address_placeholder()}
                 />
               </div>
             </div>
 
             <div class="form-group full-width">
-              <label for="noDesc">Описание заведения (для бота)</label>
+              <label for="noDesc">{m.admin_salon_desc_for_bot()}</label>
               <textarea
                 id="noDesc"
                 class="input textarea"
                 bind:value={newOwner.barbershopDescription}
                 rows="2"
-                placeholder="Стильное заведение с опытными мастерами..."
+                placeholder={m.admin_salon_desc_placeholder()}
               ></textarea>
             </div>
 
-            <!-- Секция 4: Telegram Бот -->
+            <!-- Section 4 -->
             <div class="form-section-title full-width">
-              <span>4. Telegram-бот записи</span>
+              <span>{m.admin_sec4_title()}</span>
             </div>
 
             <div class="form-group">
-              <label for="noBotUsername">Username бота (без @)</label>
+              <label for="noBotUsername">{m.admin_bot_username_field()}</label>
               <div class="input-icon-wrap">
                 <Bot size={16} class="input-icon" />
                 <input
@@ -2440,7 +2422,7 @@
             </div>
 
             <div class="form-group">
-              <label for="noBotToken">Токен бота (от @BotFather)</label>
+              <label for="noBotToken">{m.admin_bot_token_field()}</label>
               <div class="input-icon-wrap">
                 <Bot size={16} class="input-icon" />
                 <input
@@ -2458,14 +2440,13 @@
             <button
               type="button"
               class="btn btn-secondary"
-              on:click={() => (showCreateOwnerModal = false)}>Отмена</button
-            >
+              on:click={() => (showCreateOwnerModal = false)}>{m.common_cancel()}</button>
             <button
               type="submit"
               class="btn btn-primary"
               disabled={actionLoading}
             >
-              <span>{actionLoading ? "Создание..." : "Создать заведение"}</span>
+              <span>{actionLoading ? m.common_loading() : m.admin_create_owner_btn()}</span>
             </button>
           </div>
         </form>

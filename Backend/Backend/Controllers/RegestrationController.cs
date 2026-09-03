@@ -175,16 +175,18 @@ namespace Backend.Controllers
             try
             {
                 string platformBotToken = _configuration["TelegramBotToken"] ?? "";
-                var botService = HttpContext.RequestServices.GetRequiredService<BotService>();
+                var botService = HttpContext.RequestServices?.GetService<BotService>();
+                if (botService != null)
+                {
+                    string tgMessage = $"🔐 *Восстановление пароля*\n\n" +
+                        $"Здравствуйте, {recipientName}!\n\n" +
+                        $"Поступил запрос на сброс пароля для вашей панели ARCH SYSTEM\\.\n\n" +
+                        $"Для создания нового пароля перейдите по ссылке (действительна 2 часа):\n" +
+                        $"{resetLink}\n\n" +
+                        $"Если вы не запрашивали сброс — проигнорируйте это сообщение\\.";
 
-                string tgMessage = $"🔐 *Восстановление пароля*\n\n" +
-                    $"Здравствуйте, {recipientName}!\n\n" +
-                    $"Вы запросили сброс пароля для аккаунта на платформе BarbershopB2B\\.\n\n" +
-                    $"👉 [Нажмите здесь, чтобы сбросить пароль]({resetLink})\n\n" +
-                    $"⏱ Ссылка действительна 2 часа\\.\n\n" +
-                    $"Если вы не запрашивали сброс — проигнорируйте это сообщение\\.";
-
-                await botService.SendMessageAsync(platformBotToken, chatId, tgMessage);
+                    await botService.SendMessageAsync(platformBotToken, chatId, tgMessage);
+                }
             }
             catch (Exception ex)
             {
