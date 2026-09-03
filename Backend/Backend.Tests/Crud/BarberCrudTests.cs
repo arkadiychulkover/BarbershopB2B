@@ -212,5 +212,85 @@ namespace Backend.Tests.Crud
             Assert.Empty(await context.Shifts.Where(s => s.MasterId == master.Id).ToListAsync());
             Assert.Empty(await context.Services.Where(s => s.MasterId == master.Id).ToListAsync());
         }
+
+        [Fact]
+        public async Task UpdateMyAppointment_ExistingTelegramClient_PreservesClientAndUpdatesPhone()
+        {
+            // Arrange
+            using var context = TestDbContextHelper.CreateInMemoryDbContext();
+            var ownerId = Guid.NewGuid();
+            var owner = TestDbContextHelper.CreateValidOwner(
+                id: ownerId,
+                email: "owner@test.com",
+                status: OwnerStatus.Active,
+                nextPayment: DateTime.UtcNow.AddDays(30)
+            );
+            var master = new Master { Id = Guid.NewGuid(), OwnerId = ownerId, Name = "Master John", Ip = System.Net.IPAddress.Loopback };
+            var serviceName = new ServiceName { Id = Guid.NewGuid(), OwnerId = ownerId, Name = "Стрижка" };
+            var service = new Service { Id = Guid.NewGuid(), MasterId = master.Id, ServiceNameId = serviceName.Id, Price = 500, Duration = 60, IsActive = true };
+            var client = new Client
+            {
+                Id = Guid.NewGuid(),
+                OwnerId = ownerId,
+                Name = "Graff",
+                TelegramId = "998877",
+                TelegramUsername = "Eyed_graff",
+                Phone = null
+            };
+            var apptDate = DateTime.UtcNow.AddDays(1);
+            var appointment = new Appointment
+            {
+                Id = Guid.NewGuid(),
+                MasterId = master.Id,
+                ClientId = client.Id,
+                ServiceId = service.Id,
+                AppointmentDate = apptDate,
+                AppointmentEndDate = apptDate.AddMinutes(60),
+                Status = AppointmentStatus.Scheduled
+            };
+
+            context.BarbershopOwners.Add(owner);
+            context.Masters.Add(master);
+            context.ServiceNames.Add(serviceName);
+            context.Services.Add(service);
+            context.Clients.Add(client);
+            context.Appointments.Add(appointment);
+            await context.SaveChangesAsync();
+
+            var controller = new BarberController(context, _botService);
+            controller.ControllerContext = TestDbContextHelper.CreateControllerContextWithUser(master.Id, "Master");
+
+            var request = new BarberController.BarberAppointmentRequest
+            {
+                ClientId = client.Id,
+                ServiceId = service.Id,
+                AppointmentDate = apptDate,
+                ClientName = "Graff",
+                ClientPhone = "+380501234567",
+                Status = AppointmentStatus.Scheduled
+            };
+
+            // Act
+            var result = await controller.UpdateMyAppointment(appointment.Id, request);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            var updatedAppt = await context.Appointments.Include(a => a.Client).FirstOrDefaultAsync(a => a.Id == appointment.Id);
+            Assert.NotNull(updatedAppt);
+            Assert.Equal(client.Id, updatedAppt.ClientId);
+            Assert.Equal("Graff", updatedAppt.Client.Name);
+            Assert.Equal("998877", updatedAppt.Client.TelegramId);
+            Assert.Equal("Eyed_graff", updatedAppt.Client.TelegramUsername);
+            Assert.Equal("+380501234567", updatedAppt.Client.Phone);
+
+            // Also check GetMasterAppointments returns ClientPhone
+            var getResult = await controller.GetMasterAppointments();
+            var okGetResult = Assert.IsType<OkObjectResult>(getResult);
+            var dtoList = Assert.IsAssignableFrom<IEnumerable<AppointmentDto>>(okGetResult.Value);
+            var apptDto = dtoList.FirstOrDefault(a => a.Id == appointment.Id);
+            Assert.NotNull(apptDto);
+            Assert.Equal("+380501234567", apptDto.ClientPhone);
+            Assert.Equal("Eyed_graff", apptDto.ClientTelegramUsername);
+        }
     }
 }

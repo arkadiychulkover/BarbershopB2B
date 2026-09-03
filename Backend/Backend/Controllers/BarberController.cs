@@ -809,6 +809,7 @@ namespace Backend.Controllers
                 Id = a.Id,
                 ClientId = a.ClientId,
                 ClientName = a.Client?.Name,
+                ClientPhone = a.Client?.Phone,
                 ClientTelegramId = a.Client?.TelegramId,
                 ClientTelegramUsername = a.Client?.TelegramUsername,
                 MasterId = a.MasterId,
@@ -925,6 +926,7 @@ namespace Backend.Controllers
             var appointment = await _context.Appointments
                 .Include(a => a.Master)
                     .ThenInclude(m => m.Owner)
+                .Include(a => a.Client)
                 .FirstOrDefaultAsync(a => a.Id == appointmentId && a.MasterId == masterId);
             if (appointment == null) return NotFound(new { message = "Запись не найдена" });
 
@@ -936,26 +938,66 @@ namespace Backend.Controllers
                 return NotFound(new { message = "Услуга не найдена или не активна" });
 
             Guid finalClientId;
-            if (request.ClientId.HasValue && request.ClientId.Value != Guid.Empty)
+            var targetClientId = (request.ClientId.HasValue && request.ClientId.Value != Guid.Empty)
+                ? request.ClientId.Value
+                : appointment.ClientId;
+
+            var client = await _context.Clients.FirstOrDefaultAsync(c => c.Id == targetClientId && c.OwnerId == appointment.Master.OwnerId);
+            if (client != null)
             {
-                var client = await _context.Clients.FindAsync(request.ClientId.Value);
-                if (client == null || client.OwnerId != appointment.Master.OwnerId)
-                    return NotFound(new { message = "Клиент не найден" });
-                finalClientId = client.Id;
+                var clientPhone = string.IsNullOrWhiteSpace(request.ClientPhone) ? null : request.ClientPhone.Trim();
+
+                if (client.TelegramId == "WALKIN" && !string.IsNullOrEmpty(clientPhone))
+                {
+                    var existingClientWithPhone = await _context.Clients.FirstOrDefaultAsync(c =>
+                        c.OwnerId == appointment.Master.OwnerId
+                        && c.Phone == clientPhone
+                        && c.Id != client.Id);
+
+                    if (existingClientWithPhone != null)
+                    {
+                        finalClientId = existingClientWithPhone.Id;
+                        if (!string.IsNullOrWhiteSpace(request.ClientName))
+                        {
+                            existingClientWithPhone.Name = request.ClientName.Trim();
+                        }
+                    }
+                    else
+                    {
+                        finalClientId = client.Id;
+                        if (!string.IsNullOrWhiteSpace(request.ClientName))
+                        {
+                            client.Name = request.ClientName.Trim();
+                        }
+                        client.Phone = clientPhone;
+                    }
+                }
+                else
+                {
+                    finalClientId = client.Id;
+                    if (!string.IsNullOrWhiteSpace(request.ClientName))
+                    {
+                        client.Name = request.ClientName.Trim();
+                    }
+                    if (request.ClientPhone != null)
+                    {
+                        client.Phone = clientPhone;
+                    }
+                }
             }
             else if (!string.IsNullOrWhiteSpace(request.ClientName) || !string.IsNullOrWhiteSpace(request.ClientPhone))
             {
                 var clientName = string.IsNullOrWhiteSpace(request.ClientName) ? "Гость" : request.ClientName.Trim();
                 var clientPhone = string.IsNullOrWhiteSpace(request.ClientPhone) ? null : request.ClientPhone.Trim();
 
-                Client? client = null;
+                Client? foundClient = null;
                 if (!string.IsNullOrEmpty(clientPhone))
                 {
-                    client = await _context.Clients.FirstOrDefaultAsync(c => c.OwnerId == appointment.Master.OwnerId && c.Phone == clientPhone);
+                    foundClient = await _context.Clients.FirstOrDefaultAsync(c => c.OwnerId == appointment.Master.OwnerId && c.Phone == clientPhone);
                 }
-                if (client == null)
+                if (foundClient == null)
                 {
-                    client = new Client
+                    foundClient = new Client
                     {
                         Id = Guid.NewGuid(),
                         OwnerId = appointment.Master.OwnerId,
@@ -963,15 +1005,14 @@ namespace Backend.Controllers
                         TelegramId = "WALKIN",
                         Phone = clientPhone
                     };
-                    _context.Clients.Add(client);
+                    _context.Clients.Add(foundClient);
                     await _context.SaveChangesAsync();
                 }
                 else
                 {
-                    client.Name = clientName;
-                    await _context.SaveChangesAsync();
+                    foundClient.Name = clientName;
                 }
-                finalClientId = client.Id;
+                finalClientId = foundClient.Id;
             }
             else
             {
@@ -1049,6 +1090,7 @@ namespace Backend.Controllers
                     Id = a.Id,
                     ClientId = a.ClientId,
                     ClientName = client.Name,
+                    ClientPhone = client.Phone,
                     ClientTelegramId = client.TelegramId,
                     ClientTelegramUsername = client.TelegramUsername,
                     MasterId = a.MasterId,
@@ -1164,7 +1206,9 @@ namespace Backend.Controllers
                     Id = a.Id,
                     ClientId = a.ClientId,
                     ClientName = a.Client != null ? a.Client.Name : null,
+                    ClientPhone = a.Client != null ? a.Client.Phone : null,
                     ClientTelegramId = a.Client != null ? a.Client.TelegramId : null,
+                    ClientTelegramUsername = a.Client != null ? a.Client.TelegramUsername : null,
                     MasterId = a.MasterId,
                     AppointmentDate = a.AppointmentDate,
                     AppointmentEndDate = a.AppointmentEndDate,
@@ -1410,7 +1454,9 @@ namespace Backend.Controllers
                     Id = a.Id,
                     ClientId = a.ClientId,
                     ClientName = client.Name,
+                    ClientPhone = client.Phone,
                     ClientTelegramId = client.TelegramId,
+                    ClientTelegramUsername = client.TelegramUsername,
                     MasterId = a.MasterId,
                     AppointmentDate = a.AppointmentDate,
                     AppointmentEndDate = a.AppointmentEndDate,

@@ -132,3 +132,6 @@ d:\BarbershopB2B\Backend\Backend.Tests\obj\Debug\net10.0\refint\Backend.Tests.dl
 d:\BarbershopB2B\Backend\Backend.Tests\obj\Debug\net10.0\Backend.Tests.pdb
 d:\BarbershopB2B\Backend\Backend.Tests\obj\Debug\net10.0\Backend.Tests.genruntimeconfig.cache
 d:\BarbershopB2B\Backend\Backend.Tests\obj\Debug\net10.0\ref\Backend.Tests.dll
+D:\BarbershopB2B\Backend\Backend.Tests\bin\Debug\net10.0\BouncyCastle.Cryptography.dll
+D:\BarbershopB2B\Backend\Backend.Tests\bin\Debug\net10.0\MailKit.dll
+D:\BarbershopB2B\Backend\Backend.Tests\bin\Debug\net10.0\MimeKit.dll

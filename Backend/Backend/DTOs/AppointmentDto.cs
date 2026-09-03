@@ -7,6 +7,7 @@ namespace Backend.DTOs
         public Guid Id { get; set; }
         public Guid ClientId { get; set; }
         public string? ClientName { get; set; }
+        public string? ClientPhone { get; set; }
         public string? ClientTelegramId { get; set; }
         public string? ClientTelegramUsername { get; set; }
         public Guid MasterId { get; set; }

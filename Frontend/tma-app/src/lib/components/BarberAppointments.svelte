@@ -235,6 +235,7 @@
     const appointmentDate = `${formDateStr}T${formTime}:00Z`;
 
     const body: any = {
+      clientId: editingAppt ? (editingAppt.clientId || null) : null,
       serviceId: formServiceId,
       appointmentDate: appointmentDate,
       status: parseInt(String(formStatus), 10) || 0,
@@ -530,8 +531,10 @@
                             "Услуга"}
                         </div>
                         <div class="client-name">
-                          {#if appt.clientName && appt.clientTelegramId !== "WALKIN"}
+                          {#if appt.clientName && appt.clientName !== "Гость"}
                             {appt.clientName}
+                          {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
+                            {appt.clientName || "Клиент"}
                           {:else}
                             Гость (Вручную)
                           {/if}
@@ -647,8 +650,17 @@
                         title="Открыть историю клиента"
                       >
                         <span class="detail-box-value"
-                          >{selectedDetailAppt.clientName || "Клиент"}</span
+                          >{selectedDetailAppt.clientName && selectedDetailAppt.clientName !== "Гость"
+                            ? selectedDetailAppt.clientName
+                            : (selectedDetailAppt.clientTelegramId === "WALKIN" ? "Гость (Вручную)" : "Клиент")}</span
                         >
+                        {#if selectedDetailAppt.clientPhone}
+                          <a 
+                            class="detail-client-handle-link"
+                            href="tel:{selectedDetailAppt.clientPhone}"
+                            on:click|stopPropagation
+                          >{selectedDetailAppt.clientPhone}</a>
+                        {/if}
                         {#if selectedDetailAppt.clientTelegramUsername}
                           <a 
                             class="detail-client-handle-link"
@@ -677,8 +689,9 @@
                       </div>
                     {:else}
                       <span class="detail-box-value"
-                        >{selectedDetailAppt.clientName ||
-                          "Гость (Вручную)"}</span
+                        >{selectedDetailAppt.clientName && selectedDetailAppt.clientName !== "Гость"
+                          ? selectedDetailAppt.clientName
+                          : "Гость (Вручную)"}</span
                       >
                     {/if}
                   </div>
@@ -881,8 +894,10 @@
                       "Услуга"}
                   </div>
                   <div class="client-name">
-                    {#if appt.clientName && appt.clientTelegramId !== "WALKIN"}
+                    {#if appt.clientName && appt.clientName !== "Гость"}
                       {appt.clientName}
+                    {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
+                      {appt.clientName || "Клиент"}
                     {:else}
                       Гость (Вручную)
                     {/if}
@@ -956,10 +971,17 @@
                               rel="noopener noreferrer"
                               on:click|stopPropagation
                             >@{appt.clientTelegramUsername}</a>
+                            {#if appt.clientPhone}
+                              <a 
+                                class="tg-chat-link" 
+                                href="tel:{appt.clientPhone}" 
+                                on:click|stopPropagation
+                              >· {appt.clientPhone}</a>
+                            {/if}
                           </span>
                         {:else if appt.clientTelegramId && appt.clientTelegramId !== "WALKIN"}
                           {#if isPureNumeric(appt.clientTelegramId)}
-                            <span>{appt.clientName || "Клиент"} · ID: {appt.clientTelegramId}</span>
+                            <span>{appt.clientName || "Клиент"} · ID: {appt.clientTelegramId}{#if appt.clientPhone} · <a class="tg-chat-link" href="tel:{appt.clientPhone}" on:click|stopPropagation>{appt.clientPhone}</a>{/if}</span>
                           {:else}
                             <span class="client-handle-text">
                               {appt.clientName || appt.clientTelegramId} · 
@@ -970,10 +992,17 @@
                                 rel="noopener noreferrer"
                                 on:click|stopPropagation
                               >@{appt.clientTelegramId.replace(/^@/, '')}</a>
+                              {#if appt.clientPhone}
+                                <a 
+                                  class="tg-chat-link" 
+                                  href="tel:{appt.clientPhone}" 
+                                  on:click|stopPropagation
+                                >· {appt.clientPhone}</a>
+                              {/if}
                             </span>
                           {/if}
                         {:else}
-                          <span>{appt.clientName || "Гость (Вручную)"}</span>
+                          <span>{appt.clientName && appt.clientName !== "Гость" ? appt.clientName : "Гость (Вручную)"}{#if appt.clientPhone} · <a class="tg-chat-link" href="tel:{appt.clientPhone}" on:click|stopPropagation>{appt.clientPhone}</a>{/if}</span>
                         {/if}
                         <Icon name="chevron-right" size={12} />
                       </span>
