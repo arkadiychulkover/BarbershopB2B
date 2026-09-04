@@ -39,7 +39,7 @@ test.describe('Services Management (CRUD) Flow', () => {
   });
 
   test('should display list of existing services', async ({ page }) => {
-    await page.goto('/#/dashboard/services');
+    await page.goto('/dashboard/services');
 
     await expect(page.locator('text=Мужская стрижка')).toBeVisible();
     await expect(page.locator('text=Моделирование бороды')).toBeVisible();
@@ -70,7 +70,7 @@ test.describe('Services Management (CRUD) Flow', () => {
       }
     });
 
-    await page.goto('/#/dashboard/services');
+    await page.goto('/dashboard/services');
 
     // Click "Добавить услугу" button in the header
     const addButton = page.locator('button:has-text("Добавить услугу")');
@@ -102,11 +102,11 @@ test.describe('Services Management (CRUD) Flow', () => {
       }
     });
 
-    await page.goto('/#/dashboard/services');
+    await page.goto('/dashboard/services');
     await expect(page.locator('text=Мужская стрижка')).toBeVisible();
 
-    // Click edit button "Изменить" on the service card
-    const editBtn = page.locator('.service-card button:has-text("Изменить")').first();
+    // Click edit button on the service card
+    const editBtn = page.locator('.service-card button:has-text("Редактировать"), .service-card button:has-text("Изменить")').first();
     await editBtn.click();
 
     // Edit input in edit-mode
@@ -138,7 +138,7 @@ test.describe('Services Management (CRUD) Flow', () => {
       await dialog.accept();
     });
 
-    await page.goto('/#/dashboard/services');
+    await page.goto('/dashboard/services');
     await expect(page.locator('text=Мужская стрижка')).toBeVisible();
 
     // Click delete button "Удалить"

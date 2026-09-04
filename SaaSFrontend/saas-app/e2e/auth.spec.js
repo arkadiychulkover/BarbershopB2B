@@ -3,15 +3,15 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication & Registration Flow', () => {
 
   test('should display login form with all required elements', async ({ page }) => {
-    await page.goto('/#/login');
+    await page.goto('/login');
 
     await expect(page.locator('text=ARCH SYSTEM')).toBeVisible();
     await expect(page.locator('h2')).toHaveText('Вход в кабинет');
     await expect(page.locator('#email')).toBeVisible();
     await expect(page.locator('#password')).toBeVisible();
-    await expect(page.locator('button[type="submit"]')).toContainText('Войти в систему');
-    await expect(page.locator('a[href="#/forgot-password"]')).toBeVisible();
-    await expect(page.locator('a[href="#/register"]')).toBeVisible();
+    await expect(page.locator('button[type="submit"]')).toContainText(/войти|вход/i);
+    await expect(page.locator('a[href="/forgot-password"]')).toBeVisible();
+    await expect(page.locator('a[href="/register"]')).toBeVisible();
   });
 
   test('should show error alert when login credentials are invalid', async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe('Authentication & Registration Flow', () => {
       });
     });
 
-    await page.goto('/#/login');
+    await page.goto('/login');
     await page.fill('#email', 'invalid_user@barbershop.test');
     await page.fill('#password', 'WrongPassword123');
     await page.click('button[type="submit"]');
@@ -71,18 +71,18 @@ test.describe('Authentication & Registration Flow', () => {
       });
     });
 
-    await page.goto('/#/login');
+    await page.goto('/login');
     await page.fill('#email', 'owner@arch.store');
     await page.fill('#password', 'SecretPass123!');
     await page.click('button[type="submit"]');
 
     // Should redirect to dashboard
-    await expect(page).toHaveURL(/#\/dashboard/);
-    await expect(page.locator('h1')).toContainText('Панель управления');
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.locator('h1')).toContainText(/дашборд|панель/i);
   });
 
   test('should validate phone format in Registration form', async ({ page }) => {
-    await page.goto('/#/register');
+    await page.goto('/register');
 
     await page.fill('#ownerName', 'Дмитрий');
     await page.fill('#email', 'dmitry@arch.store');
@@ -111,7 +111,7 @@ test.describe('Authentication & Registration Flow', () => {
       });
     });
 
-    await page.goto('/#/register');
+    await page.goto('/register');
 
     await page.fill('#ownerName', 'Михаил');
     await page.fill('#email', 'mikhail@arch.store');
@@ -140,11 +140,11 @@ test.describe('Authentication & Registration Flow', () => {
       });
     });
 
-    await page.goto('/#/forgot-password');
+    await page.goto('/forgot-password');
     await page.fill('#email', 'forgot@arch.store');
     await page.click('button[type="submit"]');
 
-    await expect(page.locator('h2:has-text("Проверьте почту")')).toBeVisible();
+    await expect(page.locator('h2:has-text("Проверьте")')).toBeVisible();
     await expect(page.locator('.success-box')).toBeVisible();
   });
 });

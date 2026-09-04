@@ -94,7 +94,7 @@
         <AlertCircle size={20} class="alert-icon" />
         <div class="alert-body">
           <strong>{m.bot_setup_not_connected_title()}</strong>
-          <p>{m.bot_setup_not_connected_desc()} <a href="#/dashboard/settings" class="inline-link">{m.settings_title()}</a>.</p>
+          <p>{m.bot_setup_not_connected_desc()} <a href="/dashboard/settings" class="inline-link">{m.settings_title()}</a>.</p>
         </div>
       </div>
     {:else}
@@ -190,7 +190,7 @@
             <li>
               <span class="action-num">2.1</span>
               <div>
-                {m.bot_setup_step2_1()} <a href="#/dashboard/settings" class="inline-link">«{m.settings_title()}» <ExternalLink size={12} /></a> {m.bot_setup_step2_1_end()}
+                {m.bot_setup_step2_1()} <a href="/dashboard/settings" class="inline-link">«{m.settings_title()}» <ExternalLink size={12} /></a> {m.bot_setup_step2_1_end()}
               </div>
             </li>
             <li>

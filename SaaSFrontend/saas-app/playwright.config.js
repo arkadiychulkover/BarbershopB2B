@@ -12,15 +12,26 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5183',
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: 'http://localhost:5183',
+          localStorage: [
+            { name: 'PARAGLIDE_LOCALE', value: 'ru' }
+          ]
+        }
+      ]
+    },
     trace: 'on-first-retry',
     video: 'off',
     screenshot: 'only-on-failure'
   },
   webServer: {
-    command: 'npm run dev -- --port 5173',
-    port: 5173,
-    reuseExistingServer: !process.env.CI,
+    command: 'npm run dev -- --port 5183',
+    port: 5183,
+    reuseExistingServer: false,
     timeout: 30000
   },
   projects: [

@@ -3,11 +3,135 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ARCH SYSTEM — Платформа управления заведением и онлайн-записью</title>
+    <meta name="description" content="ARCH SYSTEM — облачная CRM и Telegram Mini App онлайн-записи для барбершопов, салонов красоты и мастеров. Автоматизация расписания, уведомлений и оплат прямо в Telegram за 18 TON/мес." />
+    <meta name="keywords" content="онлайн запись telegram, crm для барбершопа, crm для салона красоты, telegram mini app запись, автоматизация салона, бот для записи клиентов" />
+    <meta name="author" content="ARCH SYSTEM" />
+    <link rel="canonical" href="https://arch-shop.store/" />
+
+    <!-- Open Graph / Telegram Preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://arch-shop.store/" />
+    <meta property="og:site_name" content="ARCH SYSTEM" />
+    <meta property="og:title" content="ARCH SYSTEM — Онлайн-запись и CRM для салонов в Telegram" />
+    <meta property="og:description" content="Клиенты записываются за 30 секунд прямо в Telegram Mini App без отдельного сайта. Расписание, CRM, аналитика и интеграция с TON." />
+    <meta property="og:image" content="https://arch-shop.store/og-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ARCH SYSTEM — Telegram Mini App для записи клиентов" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ARCH SYSTEM — Онлайн-запись и CRM для салонов в Telegram" />
+    <meta name="twitter:description" content="Клиенты записываются за 30 секунд прямо в Telegram Mini App без отдельного сайта. Расписание, CRM, аналитика и интеграция с TON." />
+    <meta name="twitter:image" content="https://arch-shop.store/og-preview.png" />
+
+    <!-- Google Fonts Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Schema.org JSON-LD: SoftwareApplication & Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://arch-shop.store/#software",
+          "name": "ARCH SYSTEM",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web, Telegram, iOS, Android",
+          "url": "https://arch-shop.store",
+          "description": "Облачная платформа управления заведением, CRM и Telegram Mini App онлайн-записи клиентов для сферы услуг, салонов красоты и барбершопов.",
+          "offers": {
+            "@type": "Offer",
+            "price": "18",
+            "priceCurrency": "TON",
+            "priceValidUntil": "2027-12-31",
+            "availability": "https://schema.org/InStock"
+          },
+          "featureList": [
+            "Telegram Mini App для клиентов",
+            "Управление расписанием и сменами мастеров",
+            "Клиентская база и история визитов",
+            "Финансовая и операционная аналитика",
+            "Автоматические Telegram-уведомления",
+            "Интеграция оплат в криптовалюте TON"
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://arch-shop.store/#organization",
+          "name": "ARCH SYSTEM",
+          "url": "https://arch-shop.store",
+          "logo": "https://arch-shop.store/favicon.svg",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "url": "https://t.me/Eyed_Graff"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://arch-shop.store/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Как работает онлайн-запись через Telegram Mini App?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Клиент переходит по ссылке или кнопке в вашем Telegram-канале/боте, нажимает «Записаться» и прямо внутри Telegram открывается интерактивное приложение с каталогом услуг, выбором мастера и свободных слотов времени за 30 секунд без перехода на внешние сайты."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Нужен ли отдельный сайт или домен для работы заведения?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Нет, отдельный сайт не требуется. Вся экосистема работает полностью внутри Telegram Mini App для клиентов и удобной облачной веб-панели ARCH SYSTEM для владельцев и администраторов."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Как подключить собственного Telegram-бота к платформе?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "В разделе «Настройка бота» вы создаете бота в @BotFather за 1 минуту, вставляете API-токен в панель управления, и ARCH SYSTEM автоматически настраивает веб-хуки, приветственные сообщения и кнопку запуска Mini App."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Какова стоимость подписки и как происходит оплата?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Стоимость составляет 18 TON в месяц. Оплата производится прозрачно и безопасно через криптовалюту TON прямо в веб-интерфейсе с автоматической активацией доступа."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Подходит ли сервис для одиночных мастеров или салонов?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Да, ARCH SYSTEM идеально подходит как для частных мастеров, так и для крупных студий красоты и барбершопов с десятками специалистов и гибкими графиками смен."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Получают ли клиенты и мастера автоматические напоминания?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Да, бот автоматически отправляет клиентам напоминания о предстоящей записи и мгновенно оповещает мастеров в Telegram о новых бронированиях или отменах."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="app"></div>

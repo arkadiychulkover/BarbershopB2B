@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /dashboard
+Disallow: /admin/
+Disallow: /admin
+Disallow: /reset-password
+
+Sitemap: https://arch-shop.store/sitemap.xml

@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { push } from 'svelte-spa-router';
+  import { push } from '../lib/router.js';
   import { authStore, setAuthToken, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
   import { theme, toggleTheme } from '../lib/theme';

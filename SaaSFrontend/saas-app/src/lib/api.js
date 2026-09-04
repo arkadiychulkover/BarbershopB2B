@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { authStore, setAuthToken } from './store';
-import { push } from 'svelte-spa-router';
+import { push } from './router.js';
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbarbershopdomen.online';
 

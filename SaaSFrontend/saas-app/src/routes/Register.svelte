@@ -1,5 +1,5 @@
 <script>
-  import { push } from 'svelte-spa-router';
+  import { push } from '../lib/router.js';
   import { apiRequest } from '../lib/api';
   import { 
     User, 
@@ -77,11 +77,11 @@
   </div>
 
   <div class="card auth-card">
-    <a href="#/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
+    <a href="/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
       <X size={18} />
     </a>
 
-    <a href="#/" class="brand-header-link" title="ARCH SYSTEM">
+    <a href="/" class="brand-header-link" title="ARCH SYSTEM">
       <div class="brand-header">
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
@@ -231,11 +231,11 @@
     
     <div class="auth-links">
       <span>{m.auth_have_account()}</span>
-      <a href="#/login">{m.nav_login()}</a>
+      <a href="/login">{m.nav_login()}</a>
     </div>
 
     <div class="back-home-wrap">
-      <a href="#/" class="back-home-link">
+      <a href="/" class="back-home-link">
         <ArrowLeft size={15} />
         <span>{m.common_back()}</span>
       </a>

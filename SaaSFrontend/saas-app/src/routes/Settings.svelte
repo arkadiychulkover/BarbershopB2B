@@ -583,7 +583,7 @@
               <h3>{m.settings_bot_title()}</h3>
               <p>{m.settings_bot_desc()}</p>
             </div>
-            <a href="#/dashboard/bot-setup" class="guide-link">
+            <a href="/dashboard/bot-setup" class="guide-link">
               <Sparkles size={14} />
               <span>{m.settings_step_guide()}</span>
               <ExternalLink size={12} />
@@ -595,7 +595,7 @@
         <div class="bot-quick-help-card">
           <div class="quick-help-header">
             <strong>{m.settings_quick_help_title()}</strong>
-            <a href="#/dashboard/bot-setup" class="quick-help-more">{m.settings_quick_help_link()}</a>
+            <a href="/dashboard/bot-setup" class="quick-help-more">{m.settings_quick_help_link()}</a>
           </div>
           <div class="quick-help-steps">
             <div class="quick-step-chip">

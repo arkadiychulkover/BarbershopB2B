@@ -1,5 +1,5 @@
 <script>
-  import { push } from 'svelte-spa-router';
+  import { push } from '../lib/router.js';
   import { apiRequest } from '../lib/api';
   import { setAuthToken, profileStore } from '../lib/store';
   import { Mail, Lock, AlertCircle, ArrowRight, X, ArrowLeft } from 'lucide-svelte';
@@ -63,11 +63,11 @@
   </div>
 
   <div class="card auth-card">
-    <a href="#/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
+    <a href="/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
       <X size={18} />
     </a>
 
-    <a href="#/" class="brand-header-link" title="ARCH SYSTEM">
+    <a href="/" class="brand-header-link" title="ARCH SYSTEM">
       <div class="brand-header">
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
@@ -103,7 +103,7 @@
       <div class="form-group">
         <div class="label-row">
           <label for="password">{m.auth_password_label()}</label>
-          <a href="#/forgot-password" class="forgot-pwd-link" tabindex="-1">{m.auth_forgot_password()}</a>
+          <a href="/forgot-password" class="forgot-pwd-link" tabindex="-1">{m.auth_forgot_password()}</a>
         </div>
         <div class="input-icon-wrap">
           <Lock size={17} class="input-icon" />
@@ -128,11 +128,11 @@
     
     <div class="auth-links">
       <span>{m.auth_dont_have_account()}</span>
-      <a href="#/register">{m.nav_register()}</a>
+      <a href="/register">{m.nav_register()}</a>
     </div>
 
     <div class="back-home-wrap">
-      <a href="#/" class="back-home-link">
+      <a href="/" class="back-home-link">
         <ArrowLeft size={15} />
         <span>{m.common_back()}</span>
       </a>

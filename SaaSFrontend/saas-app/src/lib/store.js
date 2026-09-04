@@ -38,20 +38,6 @@ export function setAuthToken(token, role = null) {
   }
 }
 
-const cleanHash = () => {
-  const hash = window.location.hash.replace(/^#/, '') || '/';
-  return hash.split('?')[0];
-};
+import { currentPath } from './router.js';
+export const currentLocation = currentPath;
 
-export const currentLocation = readable(
-  cleanHash(),
-  (set) => {
-    const update = () => set(cleanHash());
-    window.addEventListener('hashchange', update);
-    window.addEventListener('popstate', update);
-    return () => {
-      window.removeEventListener('hashchange', update);
-      window.removeEventListener('popstate', update);
-    };
-  }
-);

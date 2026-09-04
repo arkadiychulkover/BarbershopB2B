@@ -18,7 +18,9 @@
     Smile,
     Heart,
     Check,
-    Coins
+    Coins,
+    ChevronDown,
+    HelpCircle
   } from 'lucide-svelte';
   import miniappMockup from '../assets/miniapp_mockup.jpg';
   import { apiRequest } from '../lib/api';
@@ -27,6 +29,38 @@
   import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
 
   let price = null;
+  let activeFaq = null;
+
+  function toggleFaq(index) {
+    activeFaq = activeFaq === index ? null : index;
+  }
+
+  const faqs = [
+    {
+      q: "Как работает онлайн-запись через Telegram Mini App?",
+      a: "Клиент переходит по ссылке или кнопке в вашем Telegram-канале/боте, нажимает «Записаться» и прямо внутри Telegram открывается интерактивное приложение с каталогом услуг, выбором мастера и свободных слотов времени за 30 секунд без перехода на внешние сайты."
+    },
+    {
+      q: "Нужен ли отдельный сайт или домен для работы заведения?",
+      a: "Нет, отдельный сайт не требуется. Вся экосистема работает полностью внутри Telegram Mini App для клиентов и удобной облачной веб-панели ARCH SYSTEM для владельцев и администраторов."
+    },
+    {
+      q: "Как подключить собственного Telegram-бота к платформе?",
+      a: "В разделе «Настройка бота» вы создаете бота в @BotFather за 1 минуту, вставляете API-токен в панель управления, и ARCH SYSTEM автоматически настраивает веб-хуки, приветственные сообщения и кнопку запуска Mini App."
+    },
+    {
+      q: "Какова стоимость подписки и как происходит оплата?",
+      a: "Стоимость составляет 18 TON в месяц. Оплата производится прозрачно и безопасно через криптовалюту TON прямо в веб-интерфейсе с автоматической активацией доступа."
+    },
+    {
+      q: "Подходит ли сервис для одиночных мастеров или салонов?",
+      a: "Да, ARCH SYSTEM идеально подходит как для частных мастеров (барберов, стилистов, мастеров маникюра, массажистов), так и для крупных студий красоты и барбершопов с десятками специалистов и гибкими графиками смен."
+    },
+    {
+      q: "Получают ли клиенты и мастера автоматические напоминания?",
+      a: "Да, бот автоматически отправляет клиентам напоминания о предстоящей записи и мгновенно оповещает мастеров в Telegram о новых бронированиях или отменах."
+    }
+  ];
 
   onMount(async () => {
     try {
@@ -109,11 +143,11 @@
           <Send size={14} />
           <span>Support</span>
         </a>
-        <a href="#/login" class="btn btn-secondary btn-sm">
+        <a href="/login" class="btn btn-secondary btn-sm">
           <LogIn size={16} />
           <span>{m.nav_login()}</span>
         </a>
-        <a href="#/register" class="btn btn-primary btn-sm">
+        <a href="/register" class="btn btn-primary btn-sm">
           <span>{m.nav_register()}</span>
         </a>
       </div>
@@ -137,7 +171,7 @@
       </p>
 
       <div class="hero-actions">
-        <a href="#/register" class="btn btn-primary btn-lg glow">
+        <a href="/register" class="btn btn-primary btn-lg glow">
           <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
         </a>
       </div>
@@ -251,6 +285,36 @@
     </div>
   </section>
 
+  <!-- FAQ Section for SEO, AI Search, and User Trust -->
+  <section class="faq-section" id="faq">
+    <div class="container faq-container">
+      <div class="section-head" use:scrollReveal>
+        <div class="hero-badge">
+          <HelpCircle size={14} />
+          <span>База знаний & Вопросы</span>
+        </div>
+        <h2>Часто задаваемые вопросы</h2>
+        <p class="section-sub">Всё, что нужно знать о запуске онлайн-записи и возможностях ARCH SYSTEM</p>
+      </div>
+
+      <div class="faq-list" use:scrollReveal>
+        {#each faqs as item, idx}
+          <div class="faq-item" class:open={activeFaq === idx}>
+            <button class="faq-question" on:click={() => toggleFaq(idx)} aria-expanded={activeFaq === idx}>
+              <span>{item.q}</span>
+              <span class="faq-arrow"><ChevronDown size={18} /></span>
+            </button>
+            {#if activeFaq === idx}
+              <div class="faq-answer">
+                <p>{item.a}</p>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    </div>
+  </section>
+
   <!-- CTA Box with Floating Blurred Ambient Orbs -->
   <section class="cta-section">
     <div class="container">
@@ -272,7 +336,7 @@
           <h2>{m.landing_cta_heading()}</h2>
           <p>{m.landing_cta_sub()}</p>
           <div class="cta-actions-group">
-            <a href="#/register" class="btn btn-primary btn-lg glow">
+            <a href="/register" class="btn btn-primary btn-lg glow">
               <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
             </a>
             <div class="cta-pricing-subtext">
@@ -949,5 +1013,87 @@
 
   :global([data-theme="light"]) .landing-footer {
     background: rgba(255, 255, 255, 0.92);
+  }
+
+  /* FAQ Section */
+  .faq-section {
+    padding: 5rem 0 3rem;
+  }
+
+  .faq-container {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+
+  .faq-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.25s ease;
+  }
+
+  .faq-item:hover {
+    border-color: var(--pastel-rose-dim);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  .faq-item.open {
+    border-color: rgba(223, 158, 142, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .faq-question {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .faq-question:hover {
+    color: var(--pastel-rose);
+  }
+
+  .faq-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    transition: transform 0.25s ease;
+  }
+
+  .faq-item.open .faq-arrow {
+    transform: rotate(180deg);
+    color: var(--pastel-rose);
+  }
+
+  .faq-answer {
+    padding: 0 1.5rem 1.35rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    animation: fadeIn 0.25s ease-out;
+  }
+
+  .faq-answer p {
+    margin: 0;
   }
 </style>

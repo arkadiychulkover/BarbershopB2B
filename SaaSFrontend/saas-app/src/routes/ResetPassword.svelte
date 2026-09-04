@@ -123,11 +123,11 @@
         </p>
 
         <div class="actions-stack">
-          <a href="#/forgot-password" class="btn btn-primary w-full">
+          <a href="/forgot-password" class="btn btn-primary w-full">
             <RefreshCw size={16} />
             <span>{m.reset_request_new_link()}</span>
           </a>
-          <a href="#/login" class="btn btn-secondary w-full">
+          <a href="/login" class="btn btn-secondary w-full">
             <ArrowLeft size={16} />
             <span>{m.reset_back_to_login()}</span>
           </a>
@@ -215,7 +215,7 @@
       </form>
 
       <div class="auth-links">
-        <a href="#/login" class="back-link">
+        <a href="/login" class="back-link">
           <ArrowLeft size={15} />
           <span>{m.reset_cancel_and_login()}</span>
         </a>
@@ -232,7 +232,7 @@
           {m.reset_success_desc()}
         </p>
 
-        <a href="#/login" class="btn btn-primary w-full glow">
+        <a href="/login" class="btn btn-primary w-full glow">
           <span>{m.reset_login_btn()}</span>
           <ArrowRight size={17} />
         </a>

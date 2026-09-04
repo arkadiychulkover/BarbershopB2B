@@ -42,7 +42,7 @@ test.describe('Masters Management (CRUD) Flow', () => {
   });
 
   test('should display masters list with details', async ({ page }) => {
-    await page.goto('/#/dashboard/masters');
+    await page.goto('/dashboard/masters');
 
     await expect(page.locator('text=Александр Мастер')).toBeVisible();
     await expect(page.locator('text=Барбер с 7-летним стажем')).toBeVisible();
@@ -63,7 +63,7 @@ test.describe('Masters Management (CRUD) Flow', () => {
       }
     });
 
-    await page.goto('/#/dashboard/masters');
+    await page.goto('/dashboard/masters');
 
     // Click "Добавить мастера"
     const addBtn = page.locator('button:has-text("Добавить мастера")').first();
@@ -76,7 +76,7 @@ test.describe('Masters Management (CRUD) Flow', () => {
     await page.fill('#masterTgUsername', 'sergey_fade');
 
     // Submit form
-    const submitBtn = page.locator('button[type="submit"]:has-text("Сохранить мастера")');
+    const submitBtn = page.locator('button[type="submit"]:has-text("Сохранить")');
     await submitBtn.click();
 
     // Verify newly added master is shown
@@ -100,7 +100,7 @@ test.describe('Masters Management (CRUD) Flow', () => {
       await dialog.accept();
     });
 
-    await page.goto('/#/dashboard/masters');
+    await page.goto('/dashboard/masters');
     await expect(page.locator('text=Александр Мастер')).toBeVisible();
 
     const deleteBtn = page.locator('button:has-text("Удалить")').first();

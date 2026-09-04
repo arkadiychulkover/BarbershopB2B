@@ -140,3 +140,4 @@ D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\System.IO.Packaging.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\BouncyCastle.Cryptography.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\MailKit.dll
 D:\BarbershopB2B\Backend\Backend\bin\Debug\net10.0\MimeKit.dll
+D:\BarbershopB2B\Backend\Backend\obj\Debug\net10.0\compressed\x2j46ps129-{0}-plgr9biudg-plgr9biudg.gz

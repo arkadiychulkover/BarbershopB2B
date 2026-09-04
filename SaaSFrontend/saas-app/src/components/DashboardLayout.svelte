@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { push } from 'svelte-spa-router';
+  import { push } from '../lib/router.js';
   import { authStore, profileStore, currentLocation } from '../lib/store';
   import { apiRequest } from '../lib/api';
   import { theme, toggleTheme } from '../lib/theme';
@@ -113,35 +113,35 @@
       </div>
 
       <nav class="nav-menu">
-        <a href="#/dashboard" class="nav-item" class:active={$currentLocation === '/dashboard' || $currentLocation === '/dashboard/'} on:click={closeMobile}>
+        <a href="/dashboard" class="nav-item" class:active={$currentLocation === '/dashboard' || $currentLocation === '/dashboard/'} on:click={closeMobile}>
           <LayoutDashboard size={19} />
           <span>{m.nav_dashboard()}</span>
         </a>
-        <a href="#/dashboard/schedule" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/schedule')} on:click={closeMobile}>
+        <a href="/dashboard/schedule" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/schedule')} on:click={closeMobile}>
           <CalendarDays size={19} />
           <span>{m.nav_schedule()}</span>
         </a>
-        <a href="#/dashboard/masters" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/masters')} on:click={closeMobile}>
+        <a href="/dashboard/masters" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/masters')} on:click={closeMobile}>
           <Users size={19} />
           <span>{m.nav_masters()}</span>
         </a>
-        <a href="#/dashboard/clients" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/clients')} on:click={closeMobile}>
+        <a href="/dashboard/clients" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/clients')} on:click={closeMobile}>
           <UserCheck size={19} />
           <span>{m.nav_clients()}</span>
         </a>
-        <a href="#/dashboard/services" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/services')} on:click={closeMobile}>
+        <a href="/dashboard/services" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/services')} on:click={closeMobile}>
           <Scissors size={19} />
           <span>{m.nav_services()}</span>
         </a>
-        <a href="#/dashboard/statistics" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/statistics')} on:click={closeMobile}>
+        <a href="/dashboard/statistics" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/statistics')} on:click={closeMobile}>
           <BarChart3 size={19} />
           <span>{m.nav_analytics()}</span>
         </a>
-        <a href="#/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/bot-setup')} on:click={closeMobile}>
+        <a href="/dashboard/bot-setup" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/bot-setup')} on:click={closeMobile}>
           <Bot size={19} />
           <span>{m.nav_bot_setup()}</span>
         </a>
-        <a href="#/dashboard/settings" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/settings')} on:click={closeMobile}>
+        <a href="/dashboard/settings" class="nav-item" class:active={$currentLocation.startsWith('/dashboard/settings')} on:click={closeMobile}>
           <Settings size={19} />
           <span>{m.nav_settings()}</span>
         </a>

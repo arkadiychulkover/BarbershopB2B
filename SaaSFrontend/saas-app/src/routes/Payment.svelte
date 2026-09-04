@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { push } from 'svelte-spa-router';
+  import { push } from '../lib/router.js';
   import { apiRequest } from '../lib/api';
   import { profileStore } from '../lib/store';
   import { m } from '../lib/paraglide/messages.js';

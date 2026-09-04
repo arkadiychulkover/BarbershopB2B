@@ -39,11 +39,11 @@
   </div>
 
   <div class="card auth-card">
-    <a href="#/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
+    <a href="/" class="btn-close-auth" title={m.common_close()} aria-label={m.common_close()}>
       <X size={18} />
     </a>
 
-    <a href="#/" class="brand-header-link" title="ARCH SYSTEM">
+    <a href="/" class="brand-header-link" title="ARCH SYSTEM">
       <div class="brand-header">
         <span class="brand-dot"></span>
         <span class="brand-name">ARCH SYSTEM</span>
@@ -86,7 +86,7 @@
       </form>
       
       <div class="auth-links">
-        <a href="#/login" class="back-link">
+        <a href="/login" class="back-link">
           <ArrowLeft size={15} />
           <span>{m.common_back()}</span>
         </a>
@@ -106,7 +106,7 @@
         </div>
         
         <div class="success-actions">
-          <a href="#/login" class="btn btn-secondary w-full">
+          <a href="/login" class="btn btn-secondary w-full">
             <span>{m.auth_go_to_login()}</span>
           </a>
           <button type="button" class="btn-text" on:click={() => { isSubmitted = false; email = ''; }}>

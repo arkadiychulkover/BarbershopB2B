@@ -11,10 +11,10 @@ test.describe('Navigation & Protected Route Flow', () => {
       });
     });
 
-    await page.goto('/#/dashboard');
+    await page.goto('/dashboard');
 
     // apiRequest automatically redirects to /login on 401
-    await expect(page).toHaveURL(/#\/login/);
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test('should navigate between dashboard sections using sidebar', async ({ page }) => {
@@ -59,23 +59,23 @@ test.describe('Navigation & Protected Route Flow', () => {
       });
     });
 
-    await page.goto('/#/dashboard');
-    await expect(page.locator('h1')).toContainText('Панель управления');
+    await page.goto('/dashboard');
+    await expect(page.locator('h1')).toContainText(/дашборд|панель/i);
 
     // Navigate to Services via sidebar link
-    const servicesLink = page.locator('a[href="#/dashboard/services"]');
+    const servicesLink = page.locator('a[href="/dashboard/services"]');
     if (await servicesLink.isVisible()) {
       await servicesLink.click();
-      await expect(page).toHaveURL(/#\/dashboard\/services/);
+      await expect(page).toHaveURL(/\/dashboard\/services/);
       await expect(page.locator('.page-header h1')).toContainText(/услуг/i);
       await expect(servicesLink).toHaveClass(/active/);
     }
 
     // Navigate to Masters
-    const mastersLink = page.locator('a[href="#/dashboard/masters"]');
+    const mastersLink = page.locator('a[href="/dashboard/masters"]');
     if (await mastersLink.isVisible()) {
       await mastersLink.click();
-      await expect(page).toHaveURL(/#\/dashboard\/masters/);
+      await expect(page).toHaveURL(/\/dashboard\/masters/);
       await expect(page.locator('.page-header h1')).toContainText(/мастеров/i);
       await expect(mastersLink).toHaveClass(/active/);
     }

@@ -1,5 +1,5 @@
 <script>
-  import Router from 'svelte-spa-router';
+  import Router from './components/Router.svelte';
   import { currentLocale } from './lib/locale.js';
   import Landing from './routes/Landing.svelte';
   import Register from './routes/Register.svelte';

@@ -116,7 +116,7 @@
         </div>
 
         <div class="stat-footer">
-          <a href="#/dashboard/settings" class="stat-link">
+          <a href="/dashboard/settings" class="stat-link">
             <span>{m.overview_sub_manage()}</span>
             <ArrowUpRight size={14} />
           </a>
@@ -132,7 +132,7 @@
       </div>
 
       <div class="actions-grid">
-        <a href="#/dashboard/schedule" class="action-btn">
+        <a href="/dashboard/schedule" class="action-btn">
           <div class="action-icon sage">
             <CalendarDays size={22} />
           </div>
@@ -143,7 +143,7 @@
           <ArrowUpRight size={18} class="action-arrow" />
         </a>
 
-        <a href="#/dashboard/masters" class="action-btn">
+        <a href="/dashboard/masters" class="action-btn">
           <div class="action-icon rose">
             <UserPlus size={22} />
           </div>
@@ -154,7 +154,7 @@
           <ArrowUpRight size={18} class="action-arrow" />
         </a>
 
-        <a href="#/dashboard/bot-setup" class="action-btn">
+        <a href="/dashboard/bot-setup" class="action-btn">
           <div class="action-icon lavender">
             <Bot size={22} />
           </div>
@@ -165,7 +165,7 @@
           <ArrowUpRight size={18} class="action-arrow" />
         </a>
 
-        <a href="#/dashboard/settings" class="action-btn">
+        <a href="/dashboard/settings" class="action-btn">
           <div class="action-icon amber">
             <SlidersHorizontal size={22} />
           </div>
