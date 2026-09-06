@@ -506,4 +506,59 @@
     transform: translate(2px, -2px);
     color: var(--pastel-rose);
   }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-badge {
+      font-size: 0.82rem;
+      padding: 0.35rem 0.8rem;
+    }
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      padding: 1.25rem 1.15rem;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+    }
+
+    .quick-actions-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .actions-grid {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left h1 {
+      font-size: 1.6rem;
+    }
+
+    .header-subtitle {
+      font-size: 0.9rem;
+    }
+
+    .stat-value {
+      font-size: 1.7rem;
+    }
+
+    .action-btn {
+      padding: 1rem;
+    }
+  }
 </style>

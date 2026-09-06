@@ -2669,6 +2669,14 @@
     padding: 0.25rem;
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    scrollbar-width: none;
+  }
+
+  .period-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .period-tab {
@@ -3329,8 +3337,81 @@
   }
 
   @media (max-width: 768px) {
+    .metrics-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .chart-controls-panel {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    .chart-panel-left {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .period-tabs {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .section-card {
+      padding: 1.15rem 0.9rem;
+      border-radius: var(--radius-md);
+    }
+
+    .filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .search-input-wrap {
+      min-width: 100%;
+    }
+
+    .filter-select-wrap {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .filter-select-wrap select {
+      width: 100%;
+    }
+
+    .data-table th, .data-table td {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.82rem;
+    }
+
+    .modal-card {
+      padding: 1.25rem 1rem;
+      width: calc(100% - 1.5rem);
+      margin: 0.75rem auto;
+    }
+
     .modal-grid-2 {
       grid-template-columns: 1fr;
+    }
+
+    .toast {
+      left: 1rem;
+      right: 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 </style>

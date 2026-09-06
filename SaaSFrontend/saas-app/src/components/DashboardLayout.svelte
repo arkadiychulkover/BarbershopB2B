@@ -67,6 +67,8 @@
   }
 </script>
 
+<svelte:window on:keydown={(e) => { if (e.key === 'Escape') closeMobile(); }} />
+
 {#if isLoading}
   <div class="loader-container">
     <div class="spinner"></div>
@@ -546,6 +548,7 @@
 
     .sidebar {
       transform: translateX(-100%);
+      width: min(290px, 84vw);
     }
 
     .sidebar.mobile-open {
@@ -560,6 +563,27 @@
 
     .content-wrapper {
       padding: 1.5rem 1.25rem 2.5rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .content-wrapper {
+      padding: 1.1rem 0.9rem 2rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .mobile-header {
+      padding: 0 0.85rem;
+    }
+
+    .mobile-brand {
+      font-size: 1rem;
+      gap: 0.45rem;
+    }
+
+    .content-wrapper {
+      padding: 0.9rem 0.65rem 1.75rem;
     }
   }
 </style>

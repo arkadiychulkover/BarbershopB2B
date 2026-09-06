@@ -207,11 +207,10 @@
 
 <style>
   .timeline-page {
-    padding: 1.5rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    min-height: 100vh;
   }
 
   .page-header {
@@ -480,5 +479,57 @@
     color: var(--clr-text-secondary, #888);
     text-align: center;
     font-size: 0.9rem;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.85rem;
+    }
+
+    .date-nav {
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .date-label {
+      min-width: auto;
+      font-size: 0.88rem;
+    }
+
+    .time-axis {
+      width: 52px;
+    }
+
+    .master-col {
+      flex: 0 0 150px;
+      min-width: 150px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left h1 {
+      font-size: 1.25rem;
+    }
+
+    .date-label {
+      font-size: 0.82rem;
+    }
+
+    .time-axis {
+      width: 46px;
+    }
+
+    .time-label {
+      font-size: 0.6rem;
+      padding-left: 3px;
+    }
+
+    .master-col {
+      flex: 0 0 135px;
+      min-width: 135px;
+    }
   }
 </style>

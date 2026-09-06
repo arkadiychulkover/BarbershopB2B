@@ -1767,4 +1767,57 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  @media (max-width: 768px) {
+    .settings-card {
+      padding: 1.25rem 1rem;
+      border-radius: var(--radius-md);
+    }
+
+    .header-left h1 {
+      font-size: 1.6rem;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .sub-title-wrap {
+      min-width: 100%;
+    }
+
+    .sub-meta-grid {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+    }
+
+    .actions .btn {
+      width: 100%;
+    }
+
+    .password-actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .password-actions .btn {
+      width: 100%;
+    }
+
+    .btn-forgot-link {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left h1 {
+      font-size: 1.35rem;
+    }
+
+    .theme-options-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>

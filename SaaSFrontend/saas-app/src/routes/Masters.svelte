@@ -595,7 +595,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
   }
 
@@ -756,5 +756,63 @@
   .btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-header .btn {
+      width: 100%;
+    }
+
+    .header-left h1 {
+      font-size: 1.65rem;
+    }
+
+    .add-card {
+      padding: 1.25rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .master-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .form-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left h1 {
+      font-size: 1.4rem;
+    }
+
+    .master-avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+    }
+
+    .photo-upload-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
   }
 </style>

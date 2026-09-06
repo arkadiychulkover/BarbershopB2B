@@ -95,7 +95,9 @@
 
     <!-- Backdrop for mobile -->
     {#if isMobileOpen}
-      <div class="sidebar-backdrop" on:click={() => isMobileOpen = false}></div>
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="mobile-backdrop" on:click={() => isMobileOpen = false}></div>
     {/if}
 
     <aside class="sidebar" class:mobile-open={isMobileOpen}>
@@ -555,7 +557,7 @@
       gap: 0.6rem;
     }
 
-    .mobile-menu-btn {
+    .mobile-toggle-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
@@ -579,6 +581,22 @@
     .main-content {
       margin-left: 0;
       padding: 5rem 1rem 2rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .main-content {
+      padding: 4.5rem 0.85rem 1.75rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .mobile-header {
+      padding: 0.75rem 0.85rem;
+    }
+
+    .main-content {
+      padding: 4.25rem 0.65rem 1.5rem;
     }
   }
 </style>

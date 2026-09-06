@@ -56,11 +56,22 @@
   
   $: days = getDaysOfWeek(currentWeekStart);
 
+  let selectedDayIndex = 0;
+
   function isToday(date) {
     const today = new Date();
     return date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear();
+  }
+
+  $: {
+    if (days && days.length) {
+      const todayIdx = days.findIndex(d => isToday(d));
+      if (todayIdx !== -1 && selectedDayIndex === 0) {
+        selectedDayIndex = todayIdx;
+      }
+    }
   }
   
   onMount(async () => {
@@ -262,9 +273,29 @@
         <p>{m.common_loading()}</p>
       </div>
     {:else}
+      <!-- Mobile Day Selector Tabs -->
+      <div class="mobile-day-tabs">
+        {#each days as day, idx}
+          {@const appts = getApptsForDay(day)}
+          <button 
+            type="button"
+            class="day-tab" 
+            class:active={selectedDayIndex === idx} 
+            class:is-today={isToday(day)}
+            on:click={() => selectedDayIndex = idx}
+          >
+            <span class="day-tab-name">{day.toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {weekday: 'short'})}</span>
+            <span class="day-tab-date">{day.getDate()}</span>
+            {#if appts.length > 0}
+              <span class="day-tab-dot"></span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+
       <div class="calendar-grid">
-        {#each days as day}
-          <div class="day-col" class:is-today={isToday(day)}>
+        {#each days as day, idx}
+          <div class="day-col" class:is-today={isToday(day)} class:mobile-active={selectedDayIndex === idx}>
             <div class="day-header">
               <div class="day-name">{day.toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {weekday: 'short'})}</div>
               <div class="day-date" class:today-pill={isToday(day)}>
@@ -467,6 +498,69 @@
     width: 32px;
     height: 32px;
     animation: spinSmooth 0.85s linear infinite;
+  }
+
+  /* Mobile Day Selector Tabs */
+  .mobile-day-tabs {
+    display: none;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .day-tab {
+    flex: 1;
+    min-width: 44px;
+    padding: 0.5rem 0.3rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .day-tab.active {
+    background: linear-gradient(135deg, var(--pastel-rose), #c88777);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px var(--pastel-rose-glow);
+  }
+
+  .day-tab.is-today:not(.active) {
+    border-color: var(--pastel-rose);
+    color: var(--pastel-rose);
+  }
+
+  .day-tab-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .day-tab-date {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .day-tab-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--pastel-sage);
+    position: absolute;
+    bottom: 4px;
+  }
+
+  .day-tab.active .day-tab-dot {
+    background: #ffffff;
   }
 
   /* Calendar Grid */
@@ -725,4 +819,97 @@
 
   .mt-2 { margin-top: 0.85rem; }
   .mt-4 { margin-top: 1.5rem; }
+
+  @media (max-width: 768px) {
+    .mobile-day-tabs {
+      display: flex;
+    }
+
+    .calendar-grid {
+      display: block;
+    }
+
+    .day-col {
+      display: none;
+      min-height: auto;
+    }
+
+    .day-col.mobile-active {
+      display: flex;
+    }
+
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .header-left {
+      width: 100%;
+    }
+
+    .header-left h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .select-wrap, .master-select {
+      width: 100%;
+    }
+
+    .week-nav {
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .page-header .btn-primary {
+      width: 100%;
+    }
+
+    .modal-content {
+      width: calc(100% - 1.5rem) !important;
+      max-width: 100% !important;
+      margin: 0.75rem;
+      padding: 1.25rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .modal-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .day-tab {
+      padding: 0.4rem 0.2rem;
+      min-width: 38px;
+    }
+
+    .day-tab-name {
+      font-size: 0.65rem;
+    }
+
+    .day-tab-date {
+      font-size: 0.85rem;
+    }
+
+    .day-body {
+      padding: 0.6rem;
+    }
+  }
 </style>

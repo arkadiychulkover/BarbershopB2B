@@ -358,7 +358,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 1.5rem;
   }
 
@@ -427,5 +427,50 @@
 
   .mt-3 {
     margin-top: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-header .btn {
+      width: 100%;
+    }
+
+    .header-left h1 {
+      font-size: 1.65rem;
+    }
+
+    .add-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .service-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .form-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left h1 {
+      font-size: 1.4rem;
+    }
   }
 </style>

@@ -574,4 +574,57 @@
   .text-center { text-align: center; }
   .text-right { text-align: right; }
   .py-5 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .header-actions .btn-primary {
+      flex: 1;
+    }
+
+    .metrics-grid {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .metric-card {
+      padding: 1rem 1.15rem;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+    }
+
+    .toast {
+      left: 1rem;
+      right: 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .data-table th, .data-table td {
+      padding: 0.75rem 0.65rem;
+      font-size: 0.82rem;
+    }
+
+    .client-avatar {
+      width: 28px;
+      height: 28px;
+      font-size: 0.75rem;
+    }
+  }
 </style>

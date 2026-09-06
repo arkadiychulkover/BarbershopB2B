@@ -740,12 +740,7 @@
     line-height: 1.55;
   }
 
-  .feature-caption {
-    display: inline-block;
-    margin-top: 0.25rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
+
 
   /* CTA Section */
   .cta-section {

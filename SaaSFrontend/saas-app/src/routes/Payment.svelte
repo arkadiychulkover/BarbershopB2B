@@ -570,4 +570,55 @@
   .payment-support-hint .support-link:hover {
     text-decoration: underline;
   }
+
+  @media (max-width: 640px) {
+    .payment-container {
+      padding: 1.5rem 0.85rem;
+    }
+
+    .payment-card {
+      padding: 1.5rem 1.15rem;
+      border-radius: var(--radius-md);
+    }
+
+    .header-center h2 {
+      font-size: 1.6rem;
+    }
+
+    .payment-info-box {
+      padding: 1.25rem 1rem;
+      gap: 1.25rem;
+    }
+
+    .wallet-address-box {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.65rem;
+    }
+
+    .copy-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .submit-btn,
+    .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-center h2 {
+      font-size: 1.35rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+    }
+
+    .qr-container canvas {
+      max-width: 100%;
+      height: auto;
+    }
+  }
 </style>

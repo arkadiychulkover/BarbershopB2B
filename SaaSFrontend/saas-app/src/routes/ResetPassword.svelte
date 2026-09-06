@@ -477,4 +477,24 @@
   .glow {
     box-shadow: 0 6px 20px var(--pastel-rose-glow);
   }
+
+  @media (max-width: 480px) {
+    .auth-container {
+      padding: 1rem 0.75rem;
+    }
+
+    .auth-card {
+      padding: 1.5rem 1.15rem;
+      border-radius: var(--radius-md);
+    }
+
+    .auth-card h2 {
+      font-size: 1.45rem;
+    }
+
+    .auth-top-actions {
+      top: 1rem;
+      right: 1rem;
+    }
+  }
 </style>

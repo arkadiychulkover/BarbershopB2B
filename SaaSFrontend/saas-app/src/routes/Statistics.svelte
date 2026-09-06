@@ -760,6 +760,14 @@
     border-radius: var(--radius-pill);
     border: 1px solid var(--border-subtle);
     backdrop-filter: blur(16px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    scrollbar-width: none;
+  }
+
+  .period-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .period-tab {
@@ -1182,6 +1190,106 @@
     padding: 3rem 1rem !important;
   }
 
-  .text-rose { color: var(--pastel-rose); }
+  :global(.text-rose) { color: var(--pastel-rose); }
   .mb-4 { margin-bottom: 1.75rem; }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-left h1 {
+      font-size: 1.65rem;
+    }
+
+    .header-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .header-actions .btn {
+      width: 100%;
+    }
+
+    .period-tabs {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .custom-range-inner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .custom-range-inputs {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .date-input-group {
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .date-field {
+      flex: 1;
+    }
+
+    .custom-range-inputs .btn {
+      width: 100%;
+    }
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .stat-card {
+      padding: 1.25rem 1.15rem;
+    }
+
+    .stat-value {
+      font-size: 1.7rem;
+    }
+
+    .chart-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .chart-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .table-card {
+      padding: 1.25rem 1rem;
+    }
+
+    .toast {
+      left: 1rem;
+      right: 1rem;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-left h1 {
+      font-size: 1.4rem;
+    }
+
+    .table th, .table td {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.82rem;
+    }
+  }
 </style>
