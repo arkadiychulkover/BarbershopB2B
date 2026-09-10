@@ -18,6 +18,7 @@
   import Schedule from './routes/Schedule.svelte';
   import Timeline from './routes/Timeline.svelte';
   import Admin from './routes/Admin.svelte';
+  import Legal from './routes/Legal.svelte';
 
   // Application route definitions for ARCH SYSTEM
   const routes = {
@@ -28,6 +29,9 @@
     '/reset-password': ResetPassword,
     '/payment': Payment,
     '/admin': Admin,
+    '/privacy': Legal,
+    '/terms': Legal,
+    '/privacy-policy': Legal,
     '/dashboard': Overview,
     '/dashboard/settings': Settings,
     '/dashboard/masters': Masters,

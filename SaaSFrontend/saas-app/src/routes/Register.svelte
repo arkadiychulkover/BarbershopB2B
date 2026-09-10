@@ -227,6 +227,13 @@
           <ArrowRight size={17} />
         {/if}
       </button>
+
+      <p class="auth-legal-notice">
+        {m.auth_agree_terms_text()} 
+        <a href="/privacy" target="_blank" rel="noopener noreferrer">{m.landing_footer_privacy()}</a> 
+        {m.auth_agree_and()} 
+        <a href="/terms" target="_blank" rel="noopener noreferrer">{m.landing_footer_terms()}</a>
+      </p>
     </form>
     
     <div class="auth-links">
@@ -426,6 +433,24 @@
 
   .auth-links a {
     font-weight: 600;
+  }
+
+  .auth-legal-notice {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 1rem;
+    line-height: 1.5;
+  }
+
+  .auth-legal-notice a {
+    color: var(--pastel-rose);
+    text-decoration: underline;
+    transition: color 0.2s ease;
+  }
+
+  .auth-legal-notice a:hover {
+    color: var(--accent-hover);
   }
 
   .back-home-wrap {

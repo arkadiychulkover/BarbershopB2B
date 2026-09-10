@@ -3,8 +3,8 @@
   import { currentLocale, switchLocale } from '../lib/locale.js';
 
   const languages = [
-    { code: 'en', label: 'English', short: 'EN', flag: '🇺🇸' },
-    { code: 'ru', label: 'Русский', short: 'RU', flag: '🇷🇺' }
+    { code: 'en', label: 'English', short: 'EN' },
+    { code: 'ru', label: 'Русский', short: 'RU' }
   ];
 
   let open = false;
@@ -42,7 +42,11 @@
     aria-label="Select language"
     title="Change language / Сменить язык"
   >
-    <span class="flag">{currentLang.flag}</span>
+    <svg class="globe" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
     <span class="code">{currentLang.short}</span>
     <svg class="chevron" class:rotated={open} viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="6 9 12 15 18 9"></polyline>
@@ -60,7 +64,6 @@
           class:selected={lang.code === $currentLocale}
           on:click={() => selectLanguage(lang.code)}
         >
-          <span class="flag">{lang.flag}</span>
           <span class="label">{lang.label}</span>
           {#if lang.code === $currentLocale}
             <svg class="check" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -106,9 +109,10 @@
     transform: translateY(-1px);
   }
 
-  .flag {
-    font-size: 14px;
-    line-height: 1;
+  .globe {
+    color: var(--pastel-rose, #e09f8f);
+    opacity: 0.9;
+    flex-shrink: 0;
   }
 
   .code {

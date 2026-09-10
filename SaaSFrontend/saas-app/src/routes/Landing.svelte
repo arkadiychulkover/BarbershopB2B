@@ -358,6 +358,10 @@
       </div>
 
       <div class="footer-links">
+        <a href="/privacy" class="footer-legal-link">{m.landing_footer_privacy()}</a>
+        <span class="footer-sep">•</span>
+        <a href="/terms" class="footer-legal-link">{m.landing_footer_terms()}</a>
+        <span class="footer-sep">•</span>
         <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="footer-support-link">
           <Send size={15} />
           <span>{m.landing_footer_support()}</span>
@@ -980,6 +984,24 @@
   .footer-support-link:hover {
     color: var(--accent-hover);
     text-decoration: underline;
+  }
+
+  .footer-legal-link {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .footer-legal-link:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+  }
+
+  .footer-sep {
+    color: var(--border-subtle);
+    font-size: 0.8rem;
+    user-select: none;
   }
 
   /* Specific overrides for Light Theme on Landing */
