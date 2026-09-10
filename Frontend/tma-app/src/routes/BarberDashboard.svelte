@@ -12,6 +12,7 @@
   import ClientHistory from '../lib/components/ClientHistory.svelte';
   import Icon from '../lib/components/Icon.svelte';
   import { theme, toggleTmaTheme } from '../lib/stores/theme';
+  import { currentLocale } from '../lib/locale';
 
   let activeTab: 'appointments' | 'shifts' | 'services' | 'reviews' | 'profile' = 'appointments';
   let clientHistoryId: string | null = null;
@@ -55,6 +56,10 @@
 
   function selectTab(tab: 'appointments' | 'shifts' | 'services' | 'reviews' | 'profile') {
     activeTab = tab;
+    if (tab === 'shifts' && (!shifts || shifts.length === 0)) {
+      loadShifts();
+      loadVacations();
+    }
     setTimeout(() => {
       updateScrollIndicator();
       if (tabsContainer) {
@@ -69,18 +74,25 @@
   async function loadShifts() {
     loading = true;
     try {
-      shifts = await apiFetch('/api/Barber/my-shift/all');
+      const res = await apiFetch('/api/Barber/my-shift/all');
+      shifts = Array.isArray(res) ? res : [];
       shifts.sort((a, b) => {
-        if (a.dayOfWeek !== b.dayOfWeek) {
-            let aDay = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
-            let bDay = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
+        const aDayNum = typeof a.dayOfWeek === 'number' ? a.dayOfWeek : 0;
+        const bDayNum = typeof b.dayOfWeek === 'number' ? b.dayOfWeek : 0;
+        if (aDayNum !== bDayNum) {
+            let aDay = aDayNum === 0 ? 7 : aDayNum;
+            let bDay = bDayNum === 0 ? 7 : bDayNum;
             return aDay - bDay;
         }
-        return a.startTime.localeCompare(b.startTime);
+        const aStart = typeof a.startTime === 'string' ? a.startTime : (a.startTime ? `${String(a.startTime.hour || 0).padStart(2, '0')}:${String(a.startTime.minute || 0).padStart(2, '0')}` : '');
+        const bStart = typeof b.startTime === 'string' ? b.startTime : (b.startTime ? `${String(b.startTime.hour || 0).padStart(2, '0')}:${String(b.startTime.minute || 0).padStart(2, '0')}` : '');
+        return aStart.localeCompare(bStart);
       });
     } catch (error) {
       console.error('Failed to load shifts', error);
-      showAlert(m.tma_shifts_load_error());
+      if (activeTab === 'shifts') {
+        showAlert(m.tma_shifts_load_error());
+      }
     } finally {
       loading = false;
     }
@@ -326,7 +338,7 @@
                     <div class="vacation-item">
                       <div class="vacation-dates">
                         <span class="vacation-badge-pill">{vac.reason || m.tma_vacation_reason_default()}</span>
-                        <span class="vacation-period">{new Date(vac.startDate).toLocaleDateString('ru-RU')} — {new Date(vac.endDate).toLocaleDateString('ru-RU')}</span>
+                        <span class="vacation-period">{new Date(vac.startDate).toLocaleDateString($currentLocale === 'en' ? 'en-US' : 'ru-RU')} — {new Date(vac.endDate).toLocaleDateString($currentLocale === 'en' ? 'en-US' : 'ru-RU')}</span>
                       </div>
                       <button type="button" class="vacation-del-btn" on:click={() => deleteVacation(vac.id)}>
                         <Icon name="trash" size={14} />

@@ -317,7 +317,20 @@ namespace Backend.Controllers
             if (master?.Owner == null || !master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
-            var shifts = await _context.Shifts.AsNoTracking().Where(s => s.MasterId == masterId).ToListAsync();
+            var shifts = await _context.Shifts.AsNoTracking()
+                .Where(s => s.MasterId == masterId)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.MasterId,
+                    DayOfWeek = (int)s.DayOfWeek,
+                    StartTime = s.StartTime.ToString("HH:mm"),
+                    EndTime = s.EndTime.ToString("HH:mm"),
+                    BreakStartTime = s.BreakStartTime.HasValue ? s.BreakStartTime.Value.ToString("HH:mm") : null,
+                    BreakEndTime = s.BreakEndTime.HasValue ? s.BreakEndTime.Value.ToString("HH:mm") : null,
+                    s.BreakDurationMinutes
+                })
+                .ToListAsync();
             return Ok(shifts);
         }
 
@@ -1075,7 +1088,7 @@ namespace Backend.Controllers
             if (master.Owner == null || !master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Подписка заведения не активна." });
 
-            var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId && c.OwnerId == master.OwnerId);
+            var client = await _context.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == clientId && (c.OwnerId == master.OwnerId || _context.Appointments.Any(a => a.ClientId == clientId && a.MasterId == masterId)));
             if (client == null) return NotFound(new { message = "Client not found" });
 
             var appointments = await _context.Appointments

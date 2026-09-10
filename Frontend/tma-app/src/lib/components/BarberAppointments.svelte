@@ -11,11 +11,13 @@
   import SecureImage from "./SecureImage.svelte";
   import Icon from "./Icon.svelte";
   import { m } from "../paraglide/messages.js";
+  import { currentLocale } from "../locale";
 
   const dispatch = createEventDispatcher();
 
   let innerWidth = 0;
   $: isDesktop = innerWidth >= 768;
+  $: dateLocale = $currentLocale === "en" ? "en-US" : "ru-RU";
 
   let currentDate = new Date();
   let currentWeekStart = getMonday(new Date());
@@ -472,11 +474,11 @@
         <div class="week-nav">
           <button class="nav-btn" on:click={prevWeek}>&larr;</button>
           <span class="week-label">
-            {days[0].toLocaleDateString("ru-RU", {
+            {days[0].toLocaleDateString(dateLocale, {
               day: "2-digit",
               month: "2-digit",
             })} -
-            {days[6].toLocaleDateString("ru-RU", {
+            {days[6].toLocaleDateString(dateLocale, {
               day: "2-digit",
               month: "2-digit",
             })}
@@ -497,10 +499,10 @@
             <div class="day-col" on:click={() => openNewForm(day)}>
               <div class="day-header">
                 <div class="day-name">
-                  {day.toLocaleDateString("ru-RU", { weekday: "short" })}
+                  {day.toLocaleDateString(dateLocale, { weekday: "short" })}
                 </div>
                 <div class="day-date">
-                  {day.toLocaleDateString("ru-RU", {
+                  {day.toLocaleDateString(dateLocale, {
                     day: "2-digit",
                     month: "2-digit",
                   })}
@@ -665,7 +667,7 @@
                           <a 
                             class="detail-client-handle-link"
                             href="https://t.me/{selectedDetailAppt.clientTelegramUsername}"
-                            target="_blank"
+                            target="_blank" 
                             rel="noopener noreferrer"
                             on:click|stopPropagation
                           >@{selectedDetailAppt.clientTelegramUsername}</a>
@@ -676,16 +678,26 @@
                             <a 
                               class="detail-client-handle-link"
                               href="https://t.me/{selectedDetailAppt.clientTelegramId.replace(/^@/, '')}"
-                              target="_blank"
+                              target="_blank" 
                               rel="noopener noreferrer"
                               on:click|stopPropagation
                             >@{selectedDetailAppt.clientTelegramId.replace(/^@/, '')}</a>
                           {/if}
-                        {:else}
-                          <span class="detail-client-handle"
-                            >{m.tma_visit_history_arrow()}</span
-                          >
                         {/if}
+                        <div class="client-history-action-row">
+                          <button
+                            type="button"
+                            class="btn-open-history-pill"
+                            on:click|stopPropagation={() => {
+                              const cId = selectedDetailAppt.clientId;
+                              selectedDetailAppt = null;
+                              dispatch("openClientHistory", cId);
+                            }}
+                          >
+                            <Icon name="clock" size={12} />
+                            <span>{m.tma_visit_history()} &rarr;</span>
+                          </button>
+                        </div>
                       </div>
                     {:else}
                       <span class="detail-box-value"
@@ -811,6 +823,21 @@
                   <Icon name="edit" size={15} />
                   <span>{m.tma_edit()}</span>
                 </button>
+                {#if selectedDetailAppt.clientId}
+                  <button
+                    type="button"
+                    class="history-btn flex-1"
+                    on:click={() => {
+                      const cId = selectedDetailAppt.clientId;
+                      selectedDetailAppt = null;
+                      dispatch("openClientHistory", cId);
+                    }}
+                    title={m.tma_client_history_title()}
+                  >
+                    <Icon name="clock" size={15} />
+                    <span>{m.tma_visit_history()}</span>
+                  </button>
+                {/if}
                 {#if selectedDetailAppt.status !== 2}
                   <button
                     class="danger-btn flex-1"
@@ -834,7 +861,7 @@
       <div class="date-selector">
         <button class="nav-btn" on:click={prevDay}>&larr;</button>
         <div class="current-date">
-          {currentDate.toLocaleDateString("ru-RU", {
+          {currentDate.toLocaleDateString(dateLocale, {
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -999,6 +1026,16 @@
                         {/if}
                         <Icon name="chevron-right" size={12} />
                       </span>
+                      <button
+                        type="button"
+                        class="btn-history-pill"
+                        on:click|stopPropagation={() =>
+                          dispatch("openClientHistory", appt.clientId)}
+                        title={m.tma_client_history_title()}
+                      >
+                        <Icon name="clock" size={11} />
+                        <span>{m.tma_visit_history()}</span>
+                      </button>
                     </div>
                   {/if}
 
@@ -2347,5 +2384,74 @@
     gap: 12px;
     border-top: 1px solid var(--border-subtle);
     padding-top: 16px;
+  }
+
+  .client-history-action-row {
+    margin-top: 8px;
+  }
+
+  .btn-open-history-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border: 1px solid rgba(223, 158, 142, 0.35);
+    border-radius: var(--radius-pill);
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-open-history-pill:hover {
+    background: var(--pastel-rose);
+    color: var(--text-inverse);
+    border-color: var(--pastel-rose);
+  }
+
+  .history-btn {
+    background: var(--bg-surface-elevated);
+    color: var(--pastel-lavender);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+
+  .history-btn:hover {
+    background: var(--pastel-lavender-dim);
+    border-color: var(--pastel-lavender);
+    color: var(--text-primary);
+  }
+
+  .btn-history-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--pastel-rose-dim);
+    color: var(--pastel-rose);
+    border: 1px solid rgba(223, 158, 142, 0.35);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-left: auto;
+    transition: all 0.2s;
+  }
+
+  .btn-history-pill:hover {
+    background: var(--pastel-rose);
+    color: var(--text-inverse);
   }
 </style>

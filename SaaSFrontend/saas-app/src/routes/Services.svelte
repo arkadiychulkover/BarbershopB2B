@@ -358,30 +358,28 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
   }
 
   .service-card {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 1.75rem;
-    min-height: 160px;
+    padding: 1.5rem;
+    gap: 1.25rem;
   }
 
   .view-mode, .edit-mode {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    justify-content: space-between;
+    gap: 1.25rem;
+    flex: 1;
   }
 
   .service-top {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.25rem;
   }
 
   .service-icon-wrap {
@@ -417,6 +415,8 @@
     display: flex;
     gap: 0.6rem;
     justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
     margin-top: auto;
   }
 

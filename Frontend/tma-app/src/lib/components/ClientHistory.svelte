@@ -7,9 +7,13 @@
     hapticSuccess,
     hapticError,
     hapticWarning,
+    showBackButton,
+    hideBackButton,
   } from "../telegram";
   import SecureImage from "./SecureImage.svelte";
   import Icon from "./Icon.svelte";
+  import { m } from "../paraglide/messages.js";
+  import { currentLocale } from "../locale";
 
   export let clientId: string;
 
@@ -25,19 +29,28 @@
   let photoInputEl: HTMLInputElement;
   let pendingPhotoApptId: string | null = null;
 
-  onMount(async () => {
-    await loadHistory();
+  onMount(() => {
+    showBackButton(() => dispatch("back"));
+    loadHistory();
+    return () => {
+      hideBackButton(() => dispatch("back"));
+    };
   });
 
   async function loadHistory() {
+    if (!clientId) {
+      error = m.tma_history_load_error ? m.tma_history_load_error() : "Client not found";
+      loading = false;
+      return;
+    }
     loading = true;
     error = "";
     try {
       const data = await apiFetch(`/api/Barber/client-history/${clientId}`);
-      client = data.client;
-      appointments = data.appointments;
+      client = data?.client || null;
+      appointments = Array.isArray(data?.appointments) ? data.appointments : [];
     } catch (e) {
-      error = m.tma_history_load_error();
+      error = m.tma_history_load_error ? m.tma_history_load_error() : "Failed to load history";
       console.error(e);
     } finally {
       loading = false;
