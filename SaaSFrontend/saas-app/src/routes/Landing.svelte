@@ -25,7 +25,7 @@
   } from "lucide-svelte";
   import miniappMockup from "../assets/miniapp_mockup.jpg";
   import { apiRequest } from "../lib/api";
-  import { theme, toggleTheme } from "../lib/theme"; //
+  import { theme, toggleTheme } from "../lib/theme";
   import { m } from "../lib/paraglide/messages.js";
   import LanguageSwitcher from "../components/LanguageSwitcher.svelte";
   import RoiCalculator from "../components/RoiCalculator.svelte";
