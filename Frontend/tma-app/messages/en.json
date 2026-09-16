@@ -261,5 +261,8 @@
   "tma_cancel_appt_error": "Error cancelling appointment",
   "tma_status_scheduled_f": "Scheduled",
   "tma_status_completed_f": "Completed",
-  "tma_status_cancelled_f": "Cancelled"
+  "tma_status_cancelled_f": "Cancelled",
+  "tma_tab_reviews": "Reviews",
+  "tma_no_services_warning": "⚠️ No active services configured yet. Please configure services in the Services tab.",
+  "tma_conflict_error": "Data conflict"
 }

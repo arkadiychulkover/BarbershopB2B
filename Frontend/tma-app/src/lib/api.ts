@@ -1,4 +1,5 @@
 import { authStore } from './stores/auth';
+import { m } from './paraglide/messages.js';
 
 let currentToken = null;
 authStore.subscribe(state => {
@@ -24,7 +25,6 @@ export async function apiFetch(endpoint, options = {}) {
     }
     if (!headers.has('Content-Type') && options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)) {
         headers.set('Content-Type', 'application/json');
-        options.body = JSON.stringify(options.body);
     }
     
     const config = {
@@ -39,7 +39,7 @@ export async function apiFetch(endpoint, options = {}) {
     }
     if (response.status === 409) {
         const errorData = await response.json();
-        throw { status: 409, message: errorData.message || 'Конфликт данных' };
+        throw { status: 409, message: errorData.message || m.tma_conflict_error() };
     }
     
     if (!response.ok) {

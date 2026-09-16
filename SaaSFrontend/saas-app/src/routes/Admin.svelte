@@ -39,6 +39,8 @@
     Bot,
     Lock,
     Globe,
+    KeyRound,
+    Copy,
   } from "lucide-svelte";
 
   function formatDateInput(d) {
@@ -103,8 +105,30 @@
   let isClientsLoading = false;
   let isAppointmentsLoading = false;
   let isAdminsLoading = false;
+  let isKeysLoading = false;
   let isExporting = false;
   let actionLoading = false;
+
+  // ─── PromoKeys State ─────────────────────────────────────────────────────────
+  let promoKeys = [];
+  let keyStatusFilter = "";
+  let keySearch = "";
+
+  // Generate key modal
+  let showGenerateKeyModal = false;
+  let newKeyDays = 30;
+  let isGeneratingKey = false;
+
+  // Created key result modal
+  let showKeyResultModal = false;
+  let generatedRawKey = "";
+  let generatedKeyDays = 0;
+  let keyCopied = false;
+
+  // Edit key modal
+  let showEditKeyModal = false;
+  let editingKey = null;
+  let editKeyDays = 30;
 
   // Alerts / Notifications
   let successMsg = "";
@@ -263,6 +287,84 @@
     }
   }
 
+  async function fetchPromoKeys() {
+    isKeysLoading = true;
+    try {
+      let url = "/api/Admin/keys?";
+      if (keyStatusFilter) url += `status=${encodeURIComponent(keyStatusFilter)}&`;
+      if (keySearch) url += `search=${encodeURIComponent(keySearch)}&`;
+      promoKeys = await apiRequest(url);
+    } catch (e) {
+      showError(m.admin_keys_err_load() + ": " + e.message);
+    } finally {
+      isKeysLoading = false;
+    }
+  }
+
+  async function generatePromoKey() {
+    if (!newKeyDays || newKeyDays < 1 || newKeyDays > 3650) return;
+    isGeneratingKey = true;
+    try {
+      const result = await apiRequest("/api/Admin/keys", {
+        method: "POST",
+        body: JSON.stringify({ days: newKeyDays })
+      });
+      generatedRawKey = result.rawKey;
+      generatedKeyDays = result.days;
+      keyCopied = false;
+      showGenerateKeyModal = false;
+      showKeyResultModal = true;
+      await fetchPromoKeys();
+    } catch (e) {
+      showError(m.admin_keys_err_generate() + ": " + e.message);
+    } finally {
+      isGeneratingKey = false;
+    }
+  }
+
+  async function updatePromoKey() {
+    if (!editingKey || editKeyDays < 1 || editKeyDays > 3650) return;
+    actionLoading = true;
+    try {
+      await apiRequest(`/api/Admin/keys/${editingKey.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ days: editKeyDays })
+      });
+      showEditKeyModal = false;
+      editingKey = null;
+      await fetchPromoKeys();
+    } catch (e) {
+      showError(m.admin_keys_err_update() + ": " + e.message);
+    } finally {
+      actionLoading = false;
+    }
+  }
+
+  async function revokePromoKey(key) {
+    if (!confirm(m.admin_keys_delete_confirm())) return;
+    actionLoading = true;
+    try {
+      await apiRequest(`/api/Admin/keys/${key.id}`, { method: "DELETE" });
+      await fetchPromoKeys();
+    } catch (e) {
+      showError(m.admin_keys_err_delete() + ": " + e.message);
+    } finally {
+      actionLoading = false;
+    }
+  }
+
+  function copyGeneratedKey() {
+    navigator.clipboard.writeText(generatedRawKey);
+    keyCopied = true;
+    setTimeout(() => keyCopied = false, 2500);
+  }
+
+  function openEditKeyModal(key) {
+    editingKey = key;
+    editKeyDays = key.days;
+    showEditKeyModal = true;
+  }
+
   function handleSectionChange(section) {
     activeSection = section;
     if (section === "overview") {
@@ -274,6 +376,7 @@
     else if (section === "clients") fetchClients();
     else if (section === "appointments") fetchAppointments();
     else if (section === "admins") fetchAdmins();
+    else if (section === "keys") fetchPromoKeys();
   }
 
   // ─── Excel Export ───────────────────────────────────────────────────────────
@@ -793,6 +896,7 @@
         {#if activeSection === "clients"}{m.admin_header_clients_base()}{/if}
         {#if activeSection === "appointments"}{m.admin_header_all_appts()}{/if}
         {#if activeSection === "admins"}{m.admin_header_admins()}{/if}
+        {#if activeSection === "keys"}{m.admin_keys_title()}{/if}
       </h1>
       <p class="subtitle">
         {#if activeSection === "overview"}{m.admin_header_overview_desc()}{/if}
@@ -801,6 +905,7 @@
         {#if activeSection === "clients"}{m.admin_header_clients_desc()}{/if}
         {#if activeSection === "appointments"}{m.admin_header_appts_desc()}{/if}
         {#if activeSection === "admins"}{m.admin_header_admins_desc()}{/if}
+        {#if activeSection === "keys"}{m.admin_keys_desc()}{/if}
       </p>
     </div>
 
@@ -834,6 +939,14 @@
         >
           <Plus size={16} />
           <span>{m.admin_add_admin_btn()}</span>
+        </button>
+      {:else if activeSection === "keys"}
+        <button
+          class="btn btn-primary"
+          on:click={() => { newKeyDays = 30; showGenerateKeyModal = true; }}
+        >
+          <Plus size={16} />
+          <span>{m.admin_keys_btn_generate()}</span>
         </button>
       {/if}
       <button
@@ -1831,6 +1944,259 @@
         </table>
       </div>
     </div>
+  {/if}
+
+  <!-- ══════════════════════════════════════════════════════════════════════════ -->
+  <!-- PROMO KEYS SECTION                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════════════════ -->
+  {#if activeSection === "keys"}
+    <!-- Stats row -->
+    <div class="stats-row" style="margin-bottom:1.5rem">
+      <div class="stat-card">
+        <span class="stat-label">{m.admin_keys_stat_total()}</span>
+        <span class="stat-value">{promoKeys.length}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">{m.admin_keys_stat_active()}</span>
+        <span class="stat-value text-sage">{promoKeys.filter(k => k.status === 'Created').length}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">{m.admin_keys_stat_used()}</span>
+        <span class="stat-value text-lavender">{promoKeys.filter(k => k.status === 'Used').length}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">{m.admin_keys_stat_deleted()}</span>
+        <span class="stat-value text-muted">{promoKeys.filter(k => k.status === 'Deleted').length}</span>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <Search size={15} class="search-icon" />
+          <input
+            class="search-input"
+            type="text"
+            placeholder={m.admin_keys_search_placeholder()}
+            bind:value={keySearch}
+            on:input={() => fetchPromoKeys()}
+          />
+        </div>
+        <select class="filter-select" bind:value={keyStatusFilter} on:change={() => fetchPromoKeys()}>
+          <option value="">{m.admin_keys_filter_all()}</option>
+          <option value="Created">{m.admin_keys_filter_created()}</option>
+          <option value="Used">{m.admin_keys_filter_used()}</option>
+          <option value="Deleted">{m.admin_keys_filter_deleted()}</option>
+        </select>
+        <button class="btn btn-secondary" on:click={fetchPromoKeys} title={m.common_refresh()}>
+          <RefreshCw size={15} />
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>{m.admin_keys_table_days()}</th>
+              <th>{m.admin_keys_table_status()}</th>
+              <th>{m.admin_keys_table_created()}</th>
+              <th>{m.admin_keys_table_used()}</th>
+              <th>{m.admin_keys_table_used_by()}</th>
+              <th>{m.admin_keys_table_actions()}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each promoKeys as key}
+              <tr>
+                <td>
+                  <span class="badge badge-neutral" style="font-size:.95rem;font-weight:700">{key.days}</span>
+                </td>
+                <td>
+                  {#if key.status === 'Created'}
+                    <span class="badge badge-active">{m.admin_keys_status_created()}</span>
+                  {:else if key.status === 'Used'}
+                    <span class="badge badge-lavender">{m.admin_keys_status_used()}</span>
+                  {:else}
+                    <span class="badge badge-inactive">{m.admin_keys_status_deleted()}</span>
+                  {/if}
+                </td>
+                <td>{formatDateTime(key.createdAt)}</td>
+                <td>{key.usedAt ? formatDateTime(key.usedAt) : m.admin_keys_not_used()}</td>
+                <td>
+                  {#if key.barbershopName}
+                    <div class="table-cell-bold">{key.barbershopName}</div>
+                    <div class="table-cell-sub">{key.ownerEmail ?? ''}</div>
+                  {:else}
+                    {m.admin_keys_not_used()}
+                  {/if}
+                </td>
+                <td>
+                  <div class="action-btns">
+                    {#if key.status === 'Created'}
+                      <button
+                        class="btn btn-xs btn-outline"
+                        title={m.admin_keys_edit_days_title()}
+                        on:click={() => openEditKeyModal(key)}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        class="btn btn-xs btn-danger"
+                        title={m.admin_keys_revoke_title()}
+                        on:click={() => revokePromoKey(key)}
+                        disabled={actionLoading}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    {/if}
+                  </div>
+                </td>
+              </tr>
+            {:else}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  {#if isKeysLoading}
+                    {m.common_loading()}
+                  {:else}
+                    <div>{m.admin_keys_empty()}</div>
+                    <div style="font-size:.85rem;margin-top:.35rem">{m.admin_keys_empty_sub()}</div>
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal: Generate Key -->
+    {#if showGenerateKeyModal}
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="modal-backdrop" on:click={() => (showGenerateKeyModal = false)}>
+        <div class="modal-card" on:click|stopPropagation>
+          <div class="modal-header">
+            <h3><KeyRound size={18} style="margin-right:.5rem" />{m.admin_keys_modal_gen_title()}</h3>
+            <button class="modal-close" on:click={() => (showGenerateKeyModal = false)}>&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="newKeyDays">{m.admin_keys_modal_days_label()}</label>
+              <div class="quick-days-presets">
+                {#each [7, 14, 30, 90, 180, 365] as d}
+                  <button
+                    type="button"
+                    class="btn btn-xs {newKeyDays === d ? 'btn-primary' : 'btn-outline'}"
+                    on:click={() => newKeyDays = d}
+                  >{d}{m.admin_keys_day_unit()}</button>
+                {/each}
+              </div>
+              <input
+                id="newKeyDays"
+                type="number"
+                class="input mt-2"
+                bind:value={newKeyDays}
+                min="1"
+                max="3650"
+                placeholder={m.admin_keys_modal_days_placeholder()}
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" on:click={() => (showGenerateKeyModal = false)}>{m.admin_keys_modal_btn_cancel()}</button>
+            <button class="btn btn-primary" on:click={generatePromoKey} disabled={isGeneratingKey || !newKeyDays}>
+              <KeyRound size={15} />
+              <span>{isGeneratingKey ? m.common_loading() : m.admin_keys_modal_btn_generate()}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Modal: Show Generated Key (one-time reveal) -->
+    {#if showKeyResultModal}
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="modal-backdrop" on:click|self={() => (showKeyResultModal = false)}>
+        <div class="modal-card key-result-modal" on:click|stopPropagation>
+          <div class="modal-header">
+            <h3 style="color:var(--pastel-sage)">✅ {m.admin_keys_result_modal_title()}</h3>
+            <button class="modal-close" on:click={() => (showKeyResultModal = false)}>&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="key-warn-box">
+              <AlertCircle size={16} />
+              <span>{m.admin_keys_result_modal_warn()}</span>
+            </div>
+            <p style="font-size:.85rem;color:var(--text-secondary);margin:.75rem 0 .4rem">
+              {m.admin_keys_result_label()}
+            </p>
+            <div class="key-display-box">
+              <code class="key-code">{generatedRawKey}</code>
+              <button class="btn btn-xs {keyCopied ? 'btn-primary' : 'btn-outline'}" on:click={copyGeneratedKey}>
+                {#if keyCopied}
+                  <Check size={13} />
+                  <span>{m.admin_keys_result_copied()}</span>
+                {:else}
+                  <Copy size={13} />
+                  <span>{m.admin_keys_result_copy()}</span>
+                {/if}
+              </button>
+            </div>
+            <p style="margin-top:.75rem;font-size:.85rem">
+              {m.admin_keys_result_days()}<strong>{generatedKeyDays}</strong>
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" on:click={() => (showKeyResultModal = false)}>{m.admin_keys_result_btn_close()}</button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- Modal: Edit Key Days -->
+    {#if showEditKeyModal && editingKey}
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="modal-backdrop" on:click={() => (showEditKeyModal = false)}>
+        <div class="modal-card" on:click|stopPropagation>
+          <div class="modal-header">
+            <h3>{m.admin_keys_edit_modal_title()}</h3>
+            <button class="modal-close" on:click={() => (showEditKeyModal = false)}>&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="editKeyDays">{m.admin_keys_edit_days_label()}</label>
+              <div class="quick-days-presets">
+                {#each [7, 14, 30, 90, 180, 365] as d}
+                  <button
+                    type="button"
+                    class="btn btn-xs {editKeyDays === d ? 'btn-primary' : 'btn-outline'}"
+                    on:click={() => editKeyDays = d}
+                  >{d}{m.admin_keys_day_unit()}</button>
+                {/each}
+              </div>
+              <input
+                id="editKeyDays"
+                type="number"
+                class="input mt-2"
+                bind:value={editKeyDays}
+                min="1"
+                max="3650"
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" on:click={() => (showEditKeyModal = false)}>{m.admin_keys_edit_btn_cancel()}</button>
+            <button class="btn btn-primary" on:click={updatePromoKey} disabled={actionLoading || !editKeyDays}>
+              <span>{actionLoading ? m.common_loading() : m.admin_keys_edit_btn_save()}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
   {/if}
 
   <!-- ══════════════════════════════════════════════════════════════════════════ -->

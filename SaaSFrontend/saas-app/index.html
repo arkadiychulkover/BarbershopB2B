@@ -12,13 +12,19 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0c0e12" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- ── Primary SEO ─────────────────────────────────────────────────── -->
     <title>ARCH SYSTEM — Платформа управления заведением и онлайн-записью</title>
     <meta name="description" content="ARCH SYSTEM — облачная CRM и Telegram Mini App онлайн-записи для барбершопов, салонов красоты и мастеров. Автоматизация расписания, уведомлений и оплат прямо в Telegram за 18 TON/мес." />
-    <meta name="keywords" content="онлайн запись telegram, crm для барбершопа, crm для салона красоты, telegram mini app запись, автоматизация салона, бот для записи клиентов" />
+    <meta name="keywords" content="онлайн запись telegram, crm для барбершопа, crm для салона красоты, telegram mini app запись, автоматизация салона, бот для записи клиентов, arch system, барбершоп crm, салон красоты crm" />
     <meta name="author" content="ARCH SYSTEM" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://arch-shop.store/" />
 
-    <!-- Open Graph / Telegram Preview -->
+    <!-- ── Sitemap discovery ───────────────────────────────────────────── -->
+    <link rel="sitemap" type="application/xml" href="https://arch-shop.store/sitemap.xml" />
+
+    <!-- ── Open Graph / Telegram Preview ─────────────────────────────── -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://arch-shop.store/" />
     <meta property="og:site_name" content="ARCH SYSTEM" />
@@ -31,18 +37,27 @@
     <meta property="og:locale" content="ru_RU" />
     <meta property="og:locale:alternate" content="en_US" />
 
-    <!-- Twitter Cards -->
+    <!-- ── Twitter Cards ──────────────────────────────────────────────── -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ARCH SYSTEM — Онлайн-запись и CRM для салонов в Telegram" />
     <meta name="twitter:description" content="Клиенты записываются за 30 секунд прямо в Telegram Mini App без отдельного сайта. Расписание, CRM, аналитика и интеграция с TON." />
     <meta name="twitter:image" content="https://arch-shop.store/og-preview.png" />
 
-    <!-- Google Fonts Preconnect -->
+    <!-- ── AI / LLM crawler discovery hints ──────────────────────────── -->
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="bingbot" content="index, follow" />
+
+    <!-- ── Hreflang (ru/en both served on same URL via JS i18n) ──────── -->
+    <link rel="alternate" hreflang="ru" href="https://arch-shop.store/" />
+    <link rel="alternate" hreflang="en" href="https://arch-shop.store/" />
+    <link rel="alternate" hreflang="x-default" href="https://arch-shop.store/" />
+
+    <!-- ── Google Fonts Preconnect ────────────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- Schema.org JSON-LD: SoftwareApplication & Organization -->
+    <!-- ── Schema.org JSON-LD: SoftwareApplication & Organization ─────── -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -142,7 +157,106 @@
     </script>
   </head>
   <body>
-    <div id="app"></div>
+    <!--
+      SSR-fallback: visible to crawlers that do not execute JavaScript
+      (Googlebot renders JS, but GPTBot, Bytespider, many AI bots do NOT).
+      Svelte replaces #app on mount; this content is hidden via CSS once JS loads.
+    -->
+    <div id="app">
+      <main class="seo-fallback" aria-hidden="false">
+        <header>
+          <a href="/" aria-label="ARCH SYSTEM — главная страница">
+            <strong>ARCH SYSTEM</strong>
+          </a>
+          <nav aria-label="Основная навигация">
+            <a href="/register">Регистрация</a>
+            <a href="/login">Войти</a>
+          </nav>
+        </header>
+
+        <section aria-labelledby="hero-heading">
+          <h1 id="hero-heading">Онлайн-запись и CRM для барбершопов и салонов красоты в Telegram</h1>
+          <p>ARCH SYSTEM — облачная платформа управления заведением с встроенным Telegram Mini App для онлайн-записи клиентов. Клиенты записываются за 30 секунд прямо в Telegram без отдельного сайта или приложения. Расписание, CRM, аналитика, автоматические уведомления и интеграция с TON.</p>
+          <a href="/register">Начать бесплатно</a>
+        </section>
+
+        <section aria-labelledby="features-heading">
+          <h2 id="features-heading">Возможности платформы</h2>
+          <ul>
+            <li>
+              <h3>Telegram Mini App для клиентов</h3>
+              <p>Клиенты открывают запись прямо в Telegram — без установки приложений, регистрации и ожидания. Выбор услуги, мастера и времени за 30 секунд.</p>
+            </li>
+            <li>
+              <h3>Управление расписанием и мастерами</h3>
+              <p>Гибкое расписание смен, управление несколькими мастерами, цветовая таймлайн-сетка бронирований. Все записи синхронизируются в реальном времени.</p>
+            </li>
+            <li>
+              <h3>CRM и клиентская база</h3>
+              <p>История визитов, предпочтения, статистика по клиентам. Автоматический возврат клиентов через win-back уведомления в Telegram.</p>
+            </li>
+            <li>
+              <h3>Финансовая аналитика</h3>
+              <p>Дашборд с выручкой, популярными услугами, загрузкой мастеров и конверсией записей. Экспорт данных за любой период.</p>
+            </li>
+            <li>
+              <h3>Автоматические уведомления</h3>
+              <p>Бот отправляет напоминания клиентам до визита и мгновенно оповещает мастеров о новых, изменённых или отменённых записях.</p>
+            </li>
+            <li>
+              <h3>Оплата через TON</h3>
+              <p>Безопасная подписка 18 TON/мес через блокчейн TON. Никаких комиссий банков, никаких рисков блокировки платежей.</p>
+            </li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="pricing-heading">
+          <h2 id="pricing-heading">Стоимость</h2>
+          <p>Подписка: <strong>18 TON в месяц</strong>. Безлимитное число клиентов и мастеров. Все функции включены. 14 дней бесплатного пробного периода.</p>
+          <a href="/register">Попробовать бесплатно</a>
+        </section>
+
+        <section aria-labelledby="faq-heading">
+          <h2 id="faq-heading">Часто задаваемые вопросы</h2>
+          <dl>
+            <dt>Как работает онлайн-запись через Telegram Mini App?</dt>
+            <dd>Клиент переходит по ссылке или кнопке в вашем Telegram-канале/боте, нажимает «Записаться» и прямо внутри Telegram открывается интерактивное приложение с каталогом услуг, выбором мастера и свободных слотов времени за 30 секунд без перехода на внешние сайты.</dd>
+
+            <dt>Нужен ли отдельный сайт или домен для работы заведения?</dt>
+            <dd>Нет, отдельный сайт не требуется. Вся экосистема работает полностью внутри Telegram Mini App для клиентов и удобной облачной веб-панели ARCH SYSTEM для владельцев и администраторов.</dd>
+
+            <dt>Как подключить собственного Telegram-бота к платформе?</dt>
+            <dd>В разделе «Настройка бота» вы создаете бота в @BotFather за 1 минуту, вставляете API-токен в панель управления, и ARCH SYSTEM автоматически настраивает веб-хуки, приветственные сообщения и кнопку запуска Mini App.</dd>
+
+            <dt>Какова стоимость подписки и как происходит оплата?</dt>
+            <dd>Стоимость составляет 18 TON в месяц. Оплата производится прозрачно и безопасно через криптовалюту TON прямо в веб-интерфейсе с автоматической активацией доступа.</dd>
+
+            <dt>Подходит ли сервис для одиночных мастеров или салонов?</dt>
+            <dd>Да, ARCH SYSTEM идеально подходит как для частных мастеров (барберов, стилистов, мастеров маникюра, массажистов), так и для крупных студий красоты и барбершопов с десятками специалистов и гибкими графиками смен.</dd>
+
+            <dt>Получают ли клиенты и мастера автоматические напоминания?</dt>
+            <dd>Да, бот автоматически отправляет клиентам напоминания о предстоящей записи и мгновенно оповещает мастеров в Telegram о новых бронированиях или отменах.</dd>
+          </dl>
+        </section>
+
+        <footer>
+          <p>© 2026 ARCH SYSTEM. Все права защищены.</p>
+          <nav aria-label="Подвал сайта">
+            <a href="/privacy">Политика конфиденциальности</a>
+            <a href="/terms">Условия использования</a>
+            <a href="https://t.me/Eyed_Graff" rel="noopener noreferrer">Поддержка в Telegram</a>
+          </nav>
+        </footer>
+
+        <style>
+          /* Hide fallback once JS loads — Svelte will replace #app content entirely */
+          .seo-fallback { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        </style>
+      </main>
+    </div>
     <script type="module" src="/src/main.js"></script>
+    <noscript>
+      <style>.seo-fallback { position: static !important; width: auto !important; height: auto !important; clip: auto !important; overflow: visible !important; }</style>
+    </noscript>
   </body>
 </html>

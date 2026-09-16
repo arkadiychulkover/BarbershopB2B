@@ -248,13 +248,13 @@
           </div>
 
           <div class="week-nav">
-            <button class="nav-arrow-btn" on:click={prevWeek} title="Previous week">
+            <button class="nav-arrow-btn" on:click={prevWeek} title={m.schedule_prev_week()}>
               <ChevronLeft size={18} />
             </button>
             <span class="week-label">
               {days[0].toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {day:'2-digit', month:'short'})} — {days[6].toLocaleDateString($currentLocale === 'ru' ? 'ru-RU' : 'en-US', {day:'2-digit', month:'short'})}
             </span>
-            <button class="nav-arrow-btn" on:click={nextWeek} title="Next week">
+            <button class="nav-arrow-btn" on:click={nextWeek} title={m.schedule_next_week()}>
               <ChevronRight size={18} />
             </button>
           </div>
@@ -344,7 +344,7 @@
         <div class="modal-header">
           <div class="modal-header-text">
             <h2>{editingAppt ? m.schedule_edit_appt() : m.schedule_add_appt()}</h2>
-            <p class="modal-subtitle">Appointment details</p>
+            <p class="modal-subtitle">{m.schedule_modal_subtitle()}</p>
           </div>
           <button class="modal-close-btn" on:click={() => showModal = false} type="button" aria-label={m.common_close()}>
             <X size={18} />
@@ -373,7 +373,7 @@
             <option value="0">{m.status_scheduled()}</option>
             <option value="1">{m.status_completed()}</option>
             <option value="2">{m.status_cancelled()}</option>
-            <option value="3">No Show</option>
+            <option value="3">{m.status_noshow()}</option>
           </select>
         </div>
         

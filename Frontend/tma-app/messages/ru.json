@@ -261,5 +261,8 @@
   "tma_cancel_appt_error": "Ошибка отмены записи",
   "tma_status_scheduled_f": "Запланирована",
   "tma_status_completed_f": "Завершена",
-  "tma_status_cancelled_f": "Отменена"
+  "tma_status_cancelled_f": "Отменена",
+  "tma_tab_reviews": "Отзывы",
+  "tma_no_services_warning": "⚠️ Нет настроенных активных услуг. Пожалуйста, настройте услуги во вкладке «Услуги».",
+  "tma_conflict_error": "Конфликт данных"
 }

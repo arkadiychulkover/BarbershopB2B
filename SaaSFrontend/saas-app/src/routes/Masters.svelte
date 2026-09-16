@@ -224,7 +224,7 @@
                 <Send size={16} class="input-icon" />
                 <input id="masterTg" type="text" class="input has-icon" bind:value={newMaster.telegramId} placeholder="123456789" required />
               </div>
-              <span class="field-hint">Authorization in Telegram Mini App</span>
+              <span class="field-hint">{m.masters_tg_id_hint()}</span>
             </div>
 
             <div class="form-group">
@@ -233,7 +233,7 @@
                 <AtSign size={16} class="input-icon" />
                 <input id="masterTgUsername" type="text" class="input has-icon" bind:value={newMaster.telegramUsername} placeholder="username" />
               </div>
-              <span class="field-hint">Clients can chat directly via «Contact Barber»</span>
+              <span class="field-hint">{m.masters_tg_user_hint()}</span>
             </div>
           </div>
 
@@ -374,13 +374,13 @@
               {#if master.telegramUsername}
                 <div class="meta-row highlight-meta">
                   <AtSign size={14} class="meta-icon text-rose" />
-                  <span>Username: <strong>@{master.telegramUsername.replace(/^@/, '')}</strong></span>
+                  <span>{m.masters_username_label()}: <strong>@{master.telegramUsername.replace(/^@/, '')}</strong></span>
                   <a 
                     href={`https://t.me/${master.telegramUsername.replace(/^@/, '')}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="tg-ext-link"
-                    title="Open in Telegram"
+                    title={m.masters_open_tg()}
                   >
                     <ExternalLink size={12} />
                   </a>
@@ -388,14 +388,14 @@
               {:else}
                 <div class="meta-row empty-meta">
                   <AtSign size={14} class="meta-icon text-muted" />
-                  <span>Username: <em>—</em></span>
+                  <span>{m.masters_username_label()}: <em>—</em></span>
                 </div>
               {/if}
 
               {#if master.telegramId}
                 <div class="meta-row">
                   <Send size={14} class="meta-icon" />
-                  <span>TG ID: <strong>{master.telegramId}</strong></span>
+                  <span>{m.masters_tgid_label()}: <strong>{master.telegramId}</strong></span>
                 </div>
               {/if}
             </div>

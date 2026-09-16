@@ -1,12 +1,13 @@
 using Backend.Data;
+using Backend.DTOs;
 using Backend.Extensions;
 using Backend.Models;
 using Backend.Models.Enums;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers
 {
@@ -35,6 +36,7 @@ namespace Backend.Controllers
             return Ok(new
             {
                 price = _subscriptionAmount,
+                amount = _subscriptionAmount,
                 platformWalletAddress = _configuration["Ton:Address"]
             });
         }
@@ -51,6 +53,65 @@ namespace Backend.Controllers
         public async Task<IActionResult> RenewSubscription([FromBody] object payload)
         {
             return await ProcessSubscriptionPayment(payload);
+        }
+
+        [HttpPost("redeem-key")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> RedeemPromoKey([FromBody] RedeemPromoKeyRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Key))
+                return BadRequest("Ключ обязателен для ввода.");
+
+            var rawKey = request.Key.Trim();
+
+            var activeKeys = await _context.PromoKeys
+                .Where(p => p.Status == PromoKeyStatus.Created)
+                .ToListAsync();
+
+            var matchedKey = activeKeys.FirstOrDefault(p => PromoKeyService.VerifyKey(rawKey, p.Salt, p.KeyHash));
+            if (matchedKey == null)
+                return BadRequest("Недействительный или уже использованный ключ.");
+
+            var ownerId = User.GetUserId();
+            var owner = await _context.BarbershopOwners.FindAsync(ownerId);
+            if (owner == null)
+                return NotFound("User not found.");
+
+            var baseDate = (owner.NextPayment > DateTime.UtcNow)
+                ? owner.NextPayment
+                : DateTime.UtcNow;
+
+            owner.LastPayment = DateTime.UtcNow;
+            owner.PayedAt = DateTime.UtcNow;
+            owner.NextPayment = baseDate.AddDays(matchedKey.Days);
+            owner.Status = OwnerStatus.Active;
+            owner.IsBlocked = false;
+
+            matchedKey.Status = PromoKeyStatus.Used;
+            matchedKey.UsedAt = DateTime.UtcNow;
+            matchedKey.UsedByOwnerId = owner.Id;
+
+            var transaction = new Tranzaction
+            {
+                Id = Guid.NewGuid(),
+                OwnerId = owner.Id,
+                TxhHash = $"PROMO-{matchedKey.Id.ToString("N")[..8].ToUpperInvariant()}",
+                Amount = 0,
+                Time = DateTime.UtcNow
+            };
+            _context.Tranxactions.Add(transaction);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"Подписка успешно продлена на {matchedKey.Days} дн.",
+                days = matchedKey.Days,
+                nextPayment = owner.NextPayment,
+                lastPayment = owner.LastPayment,
+                status = owner.Status.ToString(),
+                isSubscribed = true
+            });
         }
 
         private async Task<IActionResult> ProcessSubscriptionPayment(object payload)

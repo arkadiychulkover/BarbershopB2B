@@ -84,7 +84,7 @@
       </div>
       <div class="mobile-header-actions">
         <LanguageSwitcher />
-        <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label="Menu">
+        <button class="mobile-menu-btn" on:click={() => isMobileOpen = !isMobileOpen} aria-label={m.nav_menu()}>
           {#if isMobileOpen}
             <X size={22} />
           {:else}
@@ -151,19 +151,19 @@
 
       <div class="sidebar-footer">
         <div class="sidebar-actions-row">
-          <button class="theme-toggle-btn" on:click={toggleTheme} title="Theme">
+          <button class="theme-toggle-btn" on:click={toggleTheme} title={m.admin_layout_theme_toggle()}>
             {#if $theme === 'dark'}
               <Sun size={16} class="text-amber" />
-              <span>Light</span>
+              <span>{m.admin_layout_light_theme()}</span>
             {:else}
               <Moon size={16} class="text-lavender" />
-              <span>Dark</span>
+              <span>{m.admin_layout_dark_theme()}</span>
             {/if}
           </button>
 
-          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title="Support @Eyed_Graff">
+          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title={m.admin_layout_support_title()}>
             <Send size={14} />
-            <span>Support</span>
+            <span>{m.admin_layout_support()}</span>
           </a>
         </div>
 

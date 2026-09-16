@@ -21,6 +21,7 @@ namespace Backend.Data
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<Tranzaction> Tranxactions { get; set; }
         public DbSet<SaasAdmin> SaasAdmins { get; set; }
+        public DbSet<PromoKey> PromoKeys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -117,6 +118,15 @@ namespace Backend.Data
                 .WithMany()
                 .HasForeignKey(sn => sn.OwnerId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PromoKey>()
+                .HasOne(p => p.UsedByOwner)
+                .WithMany()
+                .HasForeignKey(p => p.UsedByOwnerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<PromoKey>()
+                .HasIndex(p => p.Status);
         }
     }
 }

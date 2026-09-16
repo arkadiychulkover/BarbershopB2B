@@ -1,9 +1,89 @@
+# ARCH SYSTEM — robots.txt
+# https://arch-shop.store/robots.txt
+
+# ── Standard crawlers ──────────────────────────────────────────────────────
 User-agent: *
 Allow: /
-Disallow: /dashboard/
 Disallow: /dashboard
-Disallow: /admin/
+Disallow: /dashboard/
 Disallow: /admin
+Disallow: /admin/
+Disallow: /payment
+Disallow: /payment/
 Disallow: /reset-password
+Disallow: /reset-password/
+Disallow: /api/
 
+# ── Google bots (main + AI) ────────────────────────────────────────────────
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+# ── Bing / Microsoft ───────────────────────────────────────────────────────
+User-agent: Bingbot
+Allow: /
+
+User-agent: msnbot
+Allow: /
+
+# ── OpenAI / ChatGPT ───────────────────────────────────────────────────────
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# ── Anthropic ─────────────────────────────────────────────────────────────
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# ── Perplexity ────────────────────────────────────────────────────────────
+User-agent: PerplexityBot
+Allow: /
+
+# ── ByteDance / TikTok ────────────────────────────────────────────────────
+User-agent: Bytespider
+Allow: /
+
+# ── Meta ──────────────────────────────────────────────────────────────────
+User-agent: FacebookExternalHit
+Allow: /
+
+# ── Apple ─────────────────────────────────────────────────────────────────
+User-agent: Applebot
+Allow: /
+
+# ── Yandex ────────────────────────────────────────────────────────────────
+User-agent: YandexBot
+Allow: /
+
+User-agent: YandexImages
+Allow: /
+
+# ── DuckDuckGo ────────────────────────────────────────────────────────────
+User-agent: DuckDuckBot
+Allow: /
+
+# ── Common / Other ────────────────────────────────────────────────────────
+User-agent: Slurp
+Allow: /
+
+User-agent: ia_archiver
+Allow: /
+
+# ── Sitemaps ──────────────────────────────────────────────────────────────
 Sitemap: https://arch-shop.store/sitemap.xml

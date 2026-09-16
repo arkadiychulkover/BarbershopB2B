@@ -141,7 +141,7 @@
         <FileSpreadsheet size={17} />
         <span>{isExporting ? m.clients_exporting() : m.clients_export_btn()}</span>
       </button>
-      <button class="btn btn-secondary" on:click={fetchClients} title="Refresh">
+      <button class="btn btn-secondary" on:click={fetchClients} title={m.common_refresh()}>
         <RefreshCw size={16} />
       </button>
     </div>

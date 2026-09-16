@@ -1159,7 +1159,7 @@
             class="services-empty-warning"
             style="margin-bottom:16px;padding:12px;border-radius:10px;background:rgba(235,160,50,0.12);color:var(--pastel-peach);font-size:13px;border:1px solid rgba(235,160,50,0.25);"
           >
-            ⚠️ No active services configured yet. Please configure services in the Services tab.
+            {m.tma_no_services_warning()}
           </div>
         {/if}
 
@@ -1233,7 +1233,7 @@
             id="barber-form-comment"
             class="input"
             bind:value={formComment}
-            placeholder="Note..."
+            placeholder={m.tma_comment_placeholder()}
             rows="2"
             style="resize:vertical;"
           ></textarea>

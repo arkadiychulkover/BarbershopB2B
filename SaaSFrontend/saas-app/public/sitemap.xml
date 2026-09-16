@@ -1,27 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Landing / Home -->
   <url>
     <loc>https://arch-shop.store/</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://arch-shop.store/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://arch-shop.store/"/>
   </url>
+
+  <!-- Registration -->
   <url>
     <loc>https://arch-shop.store/register</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- Login -->
   <url>
     <loc>https://arch-shop.store/login</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Forgot Password -->
   <url>
     <loc>https://arch-shop.store/forgot-password</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://arch-shop.store/privacy</loc>
+    <lastmod>2026-09-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://arch-shop.store/terms</loc>
+    <lastmod>2026-09-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
 </urlset>

@@ -653,5 +653,127 @@ namespace Backend.Controllers
                 fileName
             );
         }
+
+        #region PromoKeys Management
+
+        [HttpGet("keys")]
+        public async Task<IActionResult> GetPromoKeys([FromQuery] string? status, [FromQuery] string? search)
+        {
+            var query = _context.PromoKeys
+                .AsNoTracking()
+                .Include(p => p.UsedByOwner)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<PromoKeyStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(p => p.Status == parsedStatus);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(p => (p.UsedByOwner != null && (
+                    p.UsedByOwner.BarbershopName.ToLower().Contains(s) ||
+                    p.UsedByOwner.OwnerName.ToLower().Contains(s) ||
+                    p.UsedByOwner.Email.ToLower().Contains(s)
+                )));
+            }
+
+            var keys = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new AdminPromoKeyDto
+                {
+                    Id = p.Id,
+                    Days = p.Days,
+                    Status = p.Status.ToString(),
+                    CreatedAt = p.CreatedAt,
+                    UsedAt = p.UsedAt,
+                    UsedByOwnerId = p.UsedByOwnerId,
+                    BarbershopName = p.UsedByOwner != null ? p.UsedByOwner.BarbershopName : null,
+                    OwnerName = p.UsedByOwner != null ? p.UsedByOwner.OwnerName : null,
+                    OwnerEmail = p.UsedByOwner != null ? p.UsedByOwner.Email : null
+                })
+                .ToListAsync();
+
+            return Ok(keys);
+        }
+
+        [HttpPost("keys")]
+        public async Task<IActionResult> CreatePromoKey([FromBody] CreatePromoKeyRequest request)
+        {
+            if (request.Days <= 0 || request.Days > 3650)
+                return BadRequest(new { message = "Количество дней должно быть в диапазоне от 1 до 3650." });
+
+            var rawKey = PromoKeyService.GenerateRawKey();
+            var (salt, keyHash) = PromoKeyService.HashKey(rawKey);
+
+            var promoKey = new PromoKey
+            {
+                Id = Guid.NewGuid(),
+                Days = request.Days,
+                KeyHash = keyHash,
+                Salt = salt,
+                Status = PromoKeyStatus.Created,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.PromoKeys.Add(promoKey);
+            await _context.SaveChangesAsync();
+
+            return Ok(new CreatedPromoKeyResultDto
+            {
+                Id = promoKey.Id,
+                RawKey = rawKey,
+                Days = promoKey.Days,
+                Status = promoKey.Status.ToString(),
+                CreatedAt = promoKey.CreatedAt
+            });
+        }
+
+        [HttpPut("keys/{id}")]
+        public async Task<IActionResult> UpdatePromoKey(Guid id, [FromBody] UpdatePromoKeyRequest request)
+        {
+            if (request.Days <= 0 || request.Days > 3650)
+                return BadRequest(new { message = "Количество дней должно быть в диапазоне от 1 до 3650." });
+
+            var promoKey = await _context.PromoKeys.FindAsync(id);
+            if (promoKey == null)
+                return NotFound(new { message = "Ключ не найден." });
+
+            if (promoKey.Status != PromoKeyStatus.Created)
+                return BadRequest(new { message = "Нельзя изменить количество дней для уже использованного или удалённого ключа." });
+
+            promoKey.Days = request.Days;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Количество дней действия ключа успешно обновлено.",
+                key = new AdminPromoKeyDto
+                {
+                    Id = promoKey.Id,
+                    Days = promoKey.Days,
+                    Status = promoKey.Status.ToString(),
+                    CreatedAt = promoKey.CreatedAt,
+                    UsedAt = promoKey.UsedAt,
+                    UsedByOwnerId = promoKey.UsedByOwnerId
+                }
+            });
+        }
+
+        [HttpDelete("keys/{id}")]
+        public async Task<IActionResult> DeletePromoKey(Guid id)
+        {
+            var promoKey = await _context.PromoKeys.FindAsync(id);
+            if (promoKey == null)
+                return NotFound(new { message = "Ключ не найден." });
+
+            promoKey.Status = PromoKeyStatus.Deleted;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Ключ успешно отозван (удалён)." });
+        }
+
+        #endregion
     }
 }

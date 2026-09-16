@@ -7,8 +7,13 @@ import { initTheme } from './lib/theme.js'
 // CI/CD trigger update
 initTheme();
 
+const appElement = document.getElementById('app');
+if (appElement) {
+  appElement.innerHTML = '';
+}
+
 const app = mount(App, {
-  target: document.getElementById('app'),
+  target: appElement,
 })
 
 export default app

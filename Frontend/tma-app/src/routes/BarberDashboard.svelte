@@ -255,7 +255,7 @@
           on:click={() => selectTab('reviews')}
         >
           <span class="tab-icon"><Icon name="star" size={14} /></span>
-          <span class="tab-label">Reviews</span>
+          <span class="tab-label">{m.tma_tab_reviews()}</span>
         </button>
         <button 
           class="tab" 

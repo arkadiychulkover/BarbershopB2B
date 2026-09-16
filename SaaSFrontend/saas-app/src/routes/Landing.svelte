@@ -27,6 +27,7 @@
   import { theme, toggleTheme } from '../lib/theme';
   import { m } from '../lib/paraglide/messages.js';
   import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
+  import RoiCalculator from '../components/RoiCalculator.svelte';
 
   let price = null;
   let activeFaq = null;
@@ -35,30 +36,30 @@
     activeFaq = activeFaq === index ? null : index;
   }
 
-  const faqs = [
+  $: faqs = [
     {
-      q: "Как работает онлайн-запись через Telegram Mini App?",
-      a: "Клиент переходит по ссылке или кнопке в вашем Telegram-канале/боте, нажимает «Записаться» и прямо внутри Telegram открывается интерактивное приложение с каталогом услуг, выбором мастера и свободных слотов времени за 30 секунд без перехода на внешние сайты."
+      q: m.landing_faq_q1(),
+      a: m.landing_faq_a1()
     },
     {
-      q: "Нужен ли отдельный сайт или домен для работы заведения?",
-      a: "Нет, отдельный сайт не требуется. Вся экосистема работает полностью внутри Telegram Mini App для клиентов и удобной облачной веб-панели ARCH SYSTEM для владельцев и администраторов."
+      q: m.landing_faq_q2(),
+      a: m.landing_faq_a2()
     },
     {
-      q: "Как подключить собственного Telegram-бота к платформе?",
-      a: "В разделе «Настройка бота» вы создаете бота в @BotFather за 1 минуту, вставляете API-токен в панель управления, и ARCH SYSTEM автоматически настраивает веб-хуки, приветственные сообщения и кнопку запуска Mini App."
+      q: m.landing_faq_q3(),
+      a: m.landing_faq_a3()
     },
     {
-      q: "Какова стоимость подписки и как происходит оплата?",
-      a: "Стоимость составляет 18 TON в месяц. Оплата производится прозрачно и безопасно через криптовалюту TON прямо в веб-интерфейсе с автоматической активацией доступа."
+      q: m.landing_faq_q4(),
+      a: m.landing_faq_a4()
     },
     {
-      q: "Подходит ли сервис для одиночных мастеров или салонов?",
-      a: "Да, ARCH SYSTEM идеально подходит как для частных мастеров (барберов, стилистов, мастеров маникюра, массажистов), так и для крупных студий красоты и барбершопов с десятками специалистов и гибкими графиками смен."
+      q: m.landing_faq_q5(),
+      a: m.landing_faq_a5()
     },
     {
-      q: "Получают ли клиенты и мастера автоматические напоминания?",
-      a: "Да, бот автоматически отправляет клиентам напоминания о предстоящей записи и мгновенно оповещает мастеров в Telegram о новых бронированиях или отменах."
+      q: m.landing_faq_q6(),
+      a: m.landing_faq_a6()
     }
   ];
 
@@ -132,16 +133,16 @@
       </div>
       <div class="nav-actions">
         <LanguageSwitcher />
-        <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title="Theme">
+        <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title={m.admin_layout_theme_toggle()}>
           {#if $theme === 'dark'}
             <Sun size={16} class="text-amber" />
           {:else}
             <Moon size={16} class="text-lavender" />
           {/if}
         </button>
-        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Support @Eyed_Graff">
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title={m.admin_layout_support_title()}>
           <Send size={14} />
-          <span>Support</span>
+          <span>{m.admin_layout_support()}</span>
         </a>
         <a href="/login" class="btn btn-secondary btn-sm">
           <LogIn size={16} />
@@ -285,16 +286,19 @@
     </div>
   </section>
 
+  <!-- Interactive ROI & Lead Growth Calculator -->
+  <RoiCalculator />
+
   <!-- FAQ Section for SEO, AI Search, and User Trust -->
   <section class="faq-section" id="faq">
     <div class="container faq-container">
       <div class="section-head" use:scrollReveal>
         <div class="hero-badge">
           <HelpCircle size={14} />
-          <span>База знаний & Вопросы</span>
+          <span>{m.landing_faq_badge()}</span>
         </div>
-        <h2>Часто задаваемые вопросы</h2>
-        <p class="section-sub">Всё, что нужно знать о запуске онлайн-записи и возможностях ARCH SYSTEM</p>
+        <h2>{m.landing_faq_title()}</h2>
+        <p class="section-sub">{m.landing_faq_sub()}</p>
       </div>
 
       <div class="faq-list" use:scrollReveal>

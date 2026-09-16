@@ -17,7 +17,8 @@
     ArrowRight, 
     Sparkles, 
     ExternalLink,
-    Edit3
+    Edit3,
+    KeyRound
   } from 'lucide-svelte';
 
   let canvas;
@@ -33,6 +34,11 @@
 
   let platformWalletAddress = '';
   let subscriptionAmount = '10';
+
+  // Tab state: 'ton' | 'key'
+  let activeTab = 'ton';
+  let promoKey = '';
+  let isRedeeming = false;
   
   $: paymentLink = `ton://transfer/${platformWalletAddress}?amount=${Number(subscriptionAmount) * 1000000000}`;
 
@@ -125,6 +131,25 @@
       isLoading = false;
     }
   }
+
+  async function handleRedeemKey() {
+    if (!promoKey.trim()) return;
+    isRedeeming = true;
+    errorMsg = '';
+    try {
+      await apiRequest('/api/Payment/redeem-key', {
+        method: 'POST',
+        body: JSON.stringify({ key: promoKey.trim() })
+      });
+      successMsg = m.payment_key_success();
+      profileStore.update(s => ({ ...s, status: 'Active' }));
+      setTimeout(() => { push('/dashboard'); }, 2000);
+    } catch (err) {
+      errorMsg = err.message || m.payment_key_error();
+    } finally {
+      isRedeeming = false;
+    }
+  }
 </script>
 
 <div class="payment-container">
@@ -141,6 +166,26 @@
     <div class="header-center">
       <h2>{m.payment_title()}</h2>
       <p class="subtitle">{m.payment_subtitle()}</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="payment-tabs">
+      <button
+        class="payment-tab"
+        class:active={activeTab === 'ton'}
+        on:click={() => { activeTab = 'ton'; errorMsg = ''; successMsg = ''; }}
+      >
+        <Coins size={16} />
+        <span>{m.payment_method_ton()}</span>
+      </button>
+      <button
+        class="payment-tab"
+        class:active={activeTab === 'key'}
+        on:click={() => { activeTab = 'key'; errorMsg = ''; successMsg = ''; }}
+      >
+        <KeyRound size={16} />
+        <span>{m.payment_method_key()}</span>
+      </button>
     </div>
     
     {#if isLoading && !settings}
@@ -163,105 +208,138 @@
         </div>
       {/if}
 
-      {#if !settings?.walletAddress}
-        <div class="wallet-setup">
-          <div class="notice-box">
-            <Wallet size={20} class="notice-icon" />
-            <p>{m.payment_wallet_notice()}</p>
-          </div>
-
-          <form on:submit|preventDefault={handleSaveWallet} class="verify-form">
-            <div class="form-group">
-              <label for="userWalletAddress">{m.payment_wallet_label()}</label>
-              <div class="input-icon-wrap">
-                <Wallet size={16} class="input-icon" />
-                <input 
-                  id="userWalletAddress" 
-                  type="text" 
-                  class="input has-icon" 
-                  bind:value={userWalletAddress} 
-                  required 
-                  placeholder={m.payment_wallet_placeholder()} 
-                />
-              </div>
+      {#if activeTab === 'ton'}
+        {#if !settings?.walletAddress}
+          <div class="wallet-setup">
+            <div class="notice-box">
+              <Wallet size={20} class="notice-icon" />
+              <p>{m.payment_wallet_notice()}</p>
             </div>
 
-            <button type="submit" class="btn btn-primary submit-btn" disabled={isSaving || !userWalletAddress}>
-              <span>{isSaving ? m.common_loading() : m.payment_wallet_save_btn()}</span>
-              <ArrowRight size={17} />
+            <form on:submit|preventDefault={handleSaveWallet} class="verify-form">
+              <div class="form-group">
+                <label for="userWalletAddress">{m.payment_wallet_label()}</label>
+                <div class="input-icon-wrap">
+                  <Wallet size={16} class="input-icon" />
+                  <input 
+                    id="userWalletAddress" 
+                    type="text" 
+                    class="input has-icon" 
+                    bind:value={userWalletAddress} 
+                    required 
+                    placeholder={m.payment_wallet_placeholder()} 
+                  />
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary submit-btn" disabled={isSaving || !userWalletAddress}>
+                <span>{isSaving ? m.common_loading() : m.payment_wallet_save_btn()}</span>
+                <ArrowRight size={17} />
+              </button>
+            </form>
+          </div>
+        {:else}
+          <!-- Wallet connected pill -->
+          <div class="connected-wallet-strip">
+            <div class="strip-left">
+              <Wallet size={16} class="strip-icon" />
+              <span>{m.payment_paying_from()}</span>
+              <strong>{settings.walletAddress.substring(0, 6)}...{settings.walletAddress.substring(settings.walletAddress.length - 4)}</strong>
+            </div>
+            <button class="edit-link" on:click={() => settings.walletAddress = ''}>
+              <Edit3 size={13} />
+              <span>{m.payment_change_wallet()}</span>
+            </button>
+          </div>
+
+          <!-- Payment Info Card -->
+          <div class="payment-info-box">
+            <div class="qr-container">
+              <canvas bind:this={canvas}></canvas>
+            </div>
+            
+            <div class="details">
+              <div class="amount-badge">
+                <Coins size={16} />
+                <span>{m.payment_amount_to_pay()} <strong>{subscriptionAmount} TON</strong></span>
+              </div>
+              
+              <p class="address-label">{m.payment_address_to_send()}</p>
+              <div class="wallet-address-box">
+                <code>{platformWalletAddress}</code>
+                <button class="copy-btn" on:click={copyAddress} title={m.payment_copy_address()}>
+                  {#if copied}
+                    <Check size={16} class="check-icon" />
+                  {:else}
+                    <Copy size={16} />
+                  {/if}
+                </button>
+              </div>
+              
+              <p class="hint">{m.payment_hint_qr()}</p>
+            </div>
+          </div>
+
+          <!-- Transaction Hash Form -->
+          <form on:submit|preventDefault={handleVerify} class="verify-form">
+            <div class="form-group">
+              <label for="txHash">{m.payment_tx_hash_label()}</label>
+              <input 
+                id="txHash" 
+                type="text" 
+                class="input" 
+                bind:value={txHash} 
+                required 
+                placeholder={m.payment_tx_hash_placeholder()} 
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading || !txHash}>
+              <span>{isLoading ? m.payment_verifying_blockchain() : m.payment_confirm_btn()}</span>
+              {#if !isLoading}
+                <ShieldCheck size={18} />
+              {/if}
             </button>
           </form>
-        </div>
-      {:else}
-        <!-- Wallet connected pill -->
-        <div class="connected-wallet-strip">
-          <div class="strip-left">
-            <Wallet size={16} class="strip-icon" />
-            <span>{m.payment_paying_from()}</span>
-            <strong>{settings.walletAddress.substring(0, 6)}...{settings.walletAddress.substring(settings.walletAddress.length - 4)}</strong>
-          </div>
-          <button class="edit-link" on:click={() => settings.walletAddress = ''}>
-            <Edit3 size={13} />
-            <span>{m.payment_change_wallet()}</span>
-          </button>
-        </div>
 
-        <!-- Payment Info Card -->
-        <div class="payment-info-box">
-          <div class="qr-container">
-            <canvas bind:this={canvas}></canvas>
+          <div class="payment-support-hint">
+            <span>{m.payment_support_questions()}</span>
+            <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link">
+              <span>@Eyed_Graff</span>
+              <ExternalLink size={13} />
+            </a>
           </div>
-          
-          <div class="details">
-            <div class="amount-badge">
-              <Coins size={16} />
-              <span>{m.payment_amount_to_pay()} <strong>{subscriptionAmount} TON</strong></span>
-            </div>
-            
-            <p class="address-label">{m.payment_address_to_send()}</p>
-            <div class="wallet-address-box">
-              <code>{platformWalletAddress}</code>
-              <button class="copy-btn" on:click={copyAddress} title={m.payment_copy_address()}>
-                {#if copied}
-                  <Check size={16} class="check-icon" />
-                {:else}
-                  <Copy size={16} />
-                {/if}
-              </button>
-            </div>
-            
-            <p class="hint">{m.payment_hint_qr()}</p>
+        {/if}
+      {:else if activeTab === 'key'}
+        <div class="key-activation-block">
+          <div class="key-info-box">
+            <KeyRound size={20} class="key-info-icon" />
+            <p>{m.payment_key_desc()}</p>
           </div>
-        </div>
-
-        <!-- Transaction Hash Form -->
-        <form on:submit|preventDefault={handleVerify} class="verify-form">
           <div class="form-group">
-            <label for="txHash">{m.payment_tx_hash_label()}</label>
-            <input 
-              id="txHash" 
-              type="text" 
-              class="input" 
-              bind:value={txHash} 
-              required 
-              placeholder={m.payment_tx_hash_placeholder()} 
-            />
+            <label for="promoKey">{m.payment_key_label()}</label>
+            <textarea
+              id="promoKey"
+              class="input key-textarea"
+              bind:value={promoKey}
+              placeholder={m.payment_key_placeholder()}
+              rows="3"
+              spellcheck="false"
+              autocomplete="off"
+            ></textarea>
           </div>
-
-          <button type="submit" class="btn btn-primary submit-btn" disabled={isLoading || !txHash}>
-            <span>{isLoading ? m.payment_verifying_blockchain() : m.payment_confirm_btn()}</span>
-            {#if !isLoading}
-              <ShieldCheck size={18} />
+          <button
+            class="btn btn-primary submit-btn"
+            disabled={isRedeeming || !promoKey.trim()}
+            on:click={handleRedeemKey}
+          >
+            {#if isRedeeming}
+              <span>{m.payment_key_activating()}</span>
+            {:else}
+              <KeyRound size={17} />
+              <span>{m.payment_key_btn()}</span>
             {/if}
           </button>
-        </form>
-
-        <div class="payment-support-hint">
-          <span>{m.payment_support_questions()}</span>
-          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noreferrer" class="support-link">
-            <span>@Eyed_Graff</span>
-            <ExternalLink size={13} />
-          </a>
         </div>
       {/if}
     {/if}
@@ -309,6 +387,74 @@
     font-weight: 700;
     color: var(--text-secondary);
   }
+
+  /* ── Tab Switcher ── */
+  .payment-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.35rem;
+  }
+
+  .payment-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: calc(var(--radius-md) - 2px);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+  }
+
+  .payment-tab.active {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  /* ── Key activation ── */
+  .key-activation-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: fadeIn 0.2s var(--ease-spring);
+  }
+
+  .key-info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    background: var(--pastel-sage-dim, rgba(152, 193, 169, 0.08));
+    border: 1px solid rgba(152, 193, 169, 0.2);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .key-info-box p {
+    margin: 0;
+  }
+
+  .key-textarea {
+    font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    resize: vertical;
+    min-height: 80px;
+  }
+
   
   .header-center {
     text-align: center;

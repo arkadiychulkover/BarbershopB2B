@@ -20,7 +20,8 @@
     Sparkles,
     Sun,
     Moon,
-    Send
+    Send,
+    KeyRound
   } from 'lucide-svelte';
 
   export let activeSection = 'overview';
@@ -83,7 +84,7 @@
       </div>
       <div class="mobile-header-actions">
         <LanguageSwitcher />
-        <button class="mobile-toggle-btn" on:click={toggleMobileMenu} aria-label="Toggle Navigation">
+        <button class="mobile-toggle-btn" on:click={toggleMobileMenu} aria-label={m.nav_menu()}>
           {#if isMobileOpen}
             <X size={20} />
           {:else}
@@ -170,6 +171,15 @@
         >
           <Shield size={18} />
           <span>{m.admin_layout_admins()}</span>
+        </button>
+
+        <button 
+          class="nav-item" 
+          class:active={activeSection === 'keys'} 
+          on:click={() => selectTab('keys')}
+        >
+          <KeyRound size={18} />
+          <span>{m.admin_layout_keys()}</span>
         </button>
       </nav>
 

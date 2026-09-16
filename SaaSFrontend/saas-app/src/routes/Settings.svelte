@@ -92,6 +92,12 @@
   let copied = false;
   let qrCanvas;
 
+  // Promo key activation
+  let promoKeyInput = "";
+  let isRedeemingKey = false;
+  let keySuccessMsg = "";
+  let keyErrorMsg = "";
+
   $: paymentLink = `ton://transfer/${platformWalletAddress}?amount=${subscriptionAmount * 1e9}&text=renew_${settings.ownerName || 'owner'}`;
   
   $: remainingDays = settings.nextPayment 
@@ -108,7 +114,7 @@
       ]);
       settings = { ...settings, ...data };
       if (priceData) {
-        subscriptionAmount = priceData.amount || 5;
+        subscriptionAmount = priceData.amount ?? priceData.price ?? 5;
         platformWalletAddress = priceData.platformWalletAddress || "";
       }
     } catch (e) {
@@ -181,6 +187,31 @@
       renewErrorMsg = err.message || m.settings_renew_fail();
     } finally {
       isRenewing = false;
+    }
+  }
+
+  async function handleRedeemKeyInSettings() {
+    if (!promoKeyInput.trim()) return;
+    isRedeemingKey = true;
+    keyErrorMsg = "";
+    keySuccessMsg = "";
+    try {
+      const res = await apiRequest("/api/Payment/redeem-key", {
+        method: "POST",
+        body: JSON.stringify({ key: promoKeyInput.trim() }),
+      });
+      keySuccessMsg = res.message || m.payment_key_success();
+      settings.nextPayment = res.nextPayment;
+      settings.lastPayment = res.lastPayment;
+      settings.status = res.status || "Active";
+      settings.isSubscribed = true;
+      profileStore.update(s => ({ ...s, status: "Active" }));
+      promoKeyInput = "";
+      setTimeout(() => { keySuccessMsg = ""; }, 5000);
+    } catch (err) {
+      keyErrorMsg = err.message || m.payment_key_error();
+    } finally {
+      isRedeemingKey = false;
     }
   }
 
@@ -464,6 +495,46 @@
             </div>
           </div>
         {/if}
+
+
+        <!-- ── Promo Key Activation ── -->
+        <div class="key-renew-panel">
+          <div class="key-renew-header">
+            <KeyRound size={18} class="text-lavender" />
+            <h4>{m.settings_key_section_title()}</h4>
+          </div>
+
+          {#if keySuccessMsg}
+            <div class="alert alert-success mt-2">
+              <CheckCircle2 size={18} />
+              <span>{keySuccessMsg}</span>
+            </div>
+          {/if}
+          {#if keyErrorMsg}
+            <div class="alert alert-danger mt-2">
+              <AlertCircle size={18} />
+              <span>{keyErrorMsg}</span>
+            </div>
+          {/if}
+
+          <div class="tx-input-wrap mt-2">
+            <input
+              type="text"
+              class="input"
+              bind:value={promoKeyInput}
+              placeholder={m.settings_key_placeholder()}
+            />
+            <button
+              type="button"
+              class="btn btn-secondary"
+              disabled={isRedeemingKey || !promoKeyInput.trim()}
+              on:click={handleRedeemKeyInSettings}
+            >
+              <KeyRound size={16} />
+              <span>{isRedeemingKey ? m.settings_key_activating() : m.settings_key_btn()}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <form on:submit|preventDefault={handleSave} class="card settings-card mt-4">
@@ -1127,6 +1198,47 @@
     border-top: 1px solid var(--border-subtle);
     animation: fadeIn 0.25s var(--ease-spring);
   }
+
+  /* Key Activation Panel */
+  .key-renew-panel {
+    margin-top: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--pastel-lavender-dim, rgba(177, 156, 217, 0.07));
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+
+  .key-renew-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .key-renew-header h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .tx-input-wrap {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tx-input-wrap .input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mt-2 {
+    margin-top: 0.6rem;
+  }
+
+
 
   .renew-panel-header {
     display: flex;

@@ -52,7 +52,7 @@
 
     {#if !isSubmitted}
       <h2>{m.auth_reset_title()}</h2>
-      <p class="subtitle">Enter the email associated with your barbershop</p>
+      <p class="subtitle">{m.auth_reset_sub()}</p>
       
       {#if errorMsg}
         <div class="alert alert-danger">
