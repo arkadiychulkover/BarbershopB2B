@@ -1,13 +1,13 @@
 <script>
-  import { onMount } from 'svelte';
-  import { 
-    Calendar, 
-    Users, 
-    BarChart3, 
-    BellRing, 
-    Bot, 
-    Sparkles, 
-    ShieldCheck, 
+  import { onMount } from "svelte";
+  import {
+    Calendar,
+    Users,
+    BarChart3,
+    BellRing,
+    Bot,
+    Sparkles,
+    ShieldCheck,
     ArrowRight,
     LogIn,
     Sun,
@@ -21,14 +21,14 @@
     Coins,
     ChevronDown,
     HelpCircle,
-    Calculator
-  } from 'lucide-svelte';
-  import miniappMockup from '../assets/miniapp_mockup.jpg';
-  import { apiRequest } from '../lib/api';
-  import { theme, toggleTheme } from '../lib/theme';
-  import { m } from '../lib/paraglide/messages.js';
-  import LanguageSwitcher from '../components/LanguageSwitcher.svelte';
-  import RoiCalculator from '../components/RoiCalculator.svelte';
+    Calculator,
+  } from "lucide-svelte";
+  import miniappMockup from "../assets/miniapp_mockup.jpg";
+  import { apiRequest } from "../lib/api";
+  import { theme, toggleTheme } from "../lib/theme"; //
+  import { m } from "../lib/paraglide/messages.js";
+  import LanguageSwitcher from "../components/LanguageSwitcher.svelte";
+  import RoiCalculator from "../components/RoiCalculator.svelte";
 
   let price = null;
   let activeFaq = null;
@@ -40,36 +40,36 @@
   $: faqs = [
     {
       q: m.landing_faq_q1(),
-      a: m.landing_faq_a1()
+      a: m.landing_faq_a1(),
     },
     {
       q: m.landing_faq_q2(),
-      a: m.landing_faq_a2()
+      a: m.landing_faq_a2(),
     },
     {
       q: m.landing_faq_q3(),
-      a: m.landing_faq_a3()
+      a: m.landing_faq_a3(),
     },
     {
       q: m.landing_faq_q4(),
-      a: m.landing_faq_a4()
+      a: m.landing_faq_a4(),
     },
     {
       q: m.landing_faq_q5(),
-      a: m.landing_faq_a5()
+      a: m.landing_faq_a5(),
     },
     {
       q: m.landing_faq_q6(),
-      a: m.landing_faq_a6()
-    }
+      a: m.landing_faq_a6(),
+    },
   ];
 
   onMount(async () => {
     try {
-      const data = await apiRequest('/api/Payment/price');
+      const data = await apiRequest("/api/Payment/price");
       price = data.price;
-    } catch(e) {
-      console.error('Failed to fetch price', e);
+    } catch (e) {
+      console.error("Failed to fetch price", e);
     }
   });
 
@@ -83,22 +83,26 @@
     function update() {
       if (!node) return;
       const rect = node.getBoundingClientRect();
-      const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-      
+      const windowHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+
       const elementCenter = rect.top + rect.height / 2;
       const viewportCenter = windowHeight / 2;
       const distanceFromCenter = Math.abs(elementCenter - viewportCenter);
-      
+
       // Maximum distance before the element starts fading to minimum
-      const maxRange = (windowHeight / 2) + (rect.height / 2) + 120;
-      
+      const maxRange = windowHeight / 2 + rect.height / 2 + 120;
+
       // Compute 0..1 ratio
-      let progress = Math.max(0, Math.min(1, 1 - (distanceFromCenter / maxRange)));
-      
+      let progress = Math.max(
+        0,
+        Math.min(1, 1 - distanceFromCenter / maxRange),
+      );
+
       // Smooth curve for organic feel
       const smoothProgress = Math.min(1, Math.max(0, (progress - 0.04) / 0.72));
-      
-      node.style.setProperty('--scroll-progress', smoothProgress.toFixed(3));
+
+      node.style.setProperty("--scroll-progress", smoothProgress.toFixed(3));
       ticking = false;
     }
 
@@ -109,17 +113,17 @@
       }
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+
     // Initial calculation after DOM paint
     setTimeout(update, 60);
 
     return {
       destroy() {
-        window.removeEventListener('scroll', onScroll);
-        window.removeEventListener('resize', onScroll);
-      }
+        window.removeEventListener("scroll", onScroll);
+        window.removeEventListener("resize", onScroll);
+      },
     };
   }
 </script>
@@ -134,18 +138,32 @@
       </div>
       <div class="nav-actions">
         <LanguageSwitcher />
-        <button class="btn btn-secondary btn-sm theme-btn" on:click={toggleTheme} title={m.admin_layout_theme_toggle()}>
-          {#if $theme === 'dark'}
+        <button
+          class="btn btn-secondary btn-sm theme-btn"
+          on:click={toggleTheme}
+          title={m.admin_layout_theme_toggle()}
+        >
+          {#if $theme === "dark"}
             <Sun size={16} class="text-amber" />
           {:else}
             <Moon size={16} class="text-lavender" />
           {/if}
         </button>
-        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title={m.admin_layout_support_title()}>
+        <a
+          href="https://t.me/Eyed_Graff"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-secondary btn-sm"
+          title={m.admin_layout_support_title()}
+        >
           <Send size={14} />
           <span>{m.admin_layout_support()}</span>
         </a>
-        <a href="#calculator" class="btn btn-secondary btn-sm nav-calc-link" title={m.nav_calculator()}>
+        <a
+          href="#calculator"
+          class="btn btn-secondary btn-sm nav-calc-link"
+          title={m.nav_calculator()}
+        >
           <Calculator size={14} />
           <span>{m.nav_calculator()}</span>
         </a>
@@ -169,7 +187,8 @@
       </div>
 
       <h1 class="hero-title">
-        {m.landing_hero_title_1()} <span class="gradient-text">{m.landing_hero_title_2()}</span>
+        {m.landing_hero_title_1()}
+        <span class="gradient-text">{m.landing_hero_title_2()}</span>
       </h1>
 
       <p class="subtitle">
@@ -178,7 +197,11 @@
 
       <div class="hero-actions">
         <a href="/register" class="btn btn-primary btn-lg glow">
-          <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
+          <span
+            >{m.landing_cta_trial()} ({price !== null
+              ? `${price} TON`
+              : "18 TON"}) →</span
+          >
         </a>
         <a href="#calculator" class="btn btn-secondary btn-lg">
           <Calculator size={18} />
@@ -217,9 +240,9 @@
       <div class="product-preview" use:scrollReveal>
         <div class="preview-glass-wrapper">
           <div class="preview-glow"></div>
-          <img 
-            src={miniappMockup} 
-            alt={m.landing_mockup_alt()} 
+          <img
+            src={miniappMockup}
+            alt={m.landing_mockup_alt()}
             class="preview-image"
             loading="lazy"
           />
@@ -313,7 +336,11 @@
       <div class="faq-list" use:scrollReveal>
         {#each faqs as item, idx}
           <div class="faq-item" class:open={activeFaq === idx}>
-            <button class="faq-question" on:click={() => toggleFaq(idx)} aria-expanded={activeFaq === idx}>
+            <button
+              class="faq-question"
+              on:click={() => toggleFaq(idx)}
+              aria-expanded={activeFaq === idx}
+            >
               <span>{item.q}</span>
               <span class="faq-arrow"><ChevronDown size={18} /></span>
             </button>
@@ -350,7 +377,11 @@
           <p>{m.landing_cta_sub()}</p>
           <div class="cta-actions-group">
             <a href="/register" class="btn btn-primary btn-lg glow">
-              <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
+              <span
+                >{m.landing_cta_trial()} ({price !== null
+                  ? `${price} TON`
+                  : "18 TON"}) →</span
+              >
             </a>
             <div class="cta-pricing-subtext">
               <span>{m.landing_cta_ton()}</span>
@@ -371,11 +402,19 @@
       </div>
 
       <div class="footer-links">
-        <a href="/privacy" class="footer-legal-link">{m.landing_footer_privacy()}</a>
+        <a href="/privacy" class="footer-legal-link"
+          >{m.landing_footer_privacy()}</a
+        >
         <span class="footer-sep">•</span>
-        <a href="/terms" class="footer-legal-link">{m.landing_footer_terms()}</a>
+        <a href="/terms" class="footer-legal-link">{m.landing_footer_terms()}</a
+        >
         <span class="footer-sep">•</span>
-        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="footer-support-link">
+        <a
+          href="https://t.me/Eyed_Graff"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="footer-support-link"
+        >
           <Send size={15} />
           <span>{m.landing_footer_support()}</span>
         </a>
@@ -478,7 +517,11 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, var(--pastel-rose), var(--pastel-amber));
+    background: linear-gradient(
+      135deg,
+      var(--pastel-rose),
+      var(--pastel-amber)
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -561,12 +604,15 @@
     max-width: 900px;
     margin-left: auto;
     margin-right: auto;
-    
+
     /* Scroll reveal dynamic state */
     --p: var(--scroll-progress, 0.9);
     opacity: calc(0.25 + 0.75 * var(--p));
-    transform: translateY(calc(30px * (1 - var(--p)))) scale(calc(0.95 + 0.05 * var(--p)));
-    transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+    transform: translateY(calc(30px * (1 - var(--p))))
+      scale(calc(0.95 + 0.05 * var(--p)));
+    transition:
+      opacity 0.18s ease-out,
+      transform 0.18s ease-out;
     will-change: opacity, transform;
   }
 
@@ -576,7 +622,7 @@
     padding: 0.75rem;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    box-shadow:
       0 24px 60px rgba(0, 0, 0, 0.65),
       0 0 40px rgba(223, 158, 142, 0.12);
     overflow: hidden;
@@ -588,7 +634,11 @@
     left: 20%;
     width: 60%;
     height: 100%;
-    background: radial-gradient(ellipse, rgba(223, 158, 142, 0.2) 0%, rgba(152, 193, 169, 0) 70%);
+    background: radial-gradient(
+      ellipse,
+      rgba(223, 158, 142, 0.2) 0%,
+      rgba(152, 193, 169, 0) 70%
+    );
     filter: blur(50px);
     pointer-events: none;
   }
@@ -652,12 +702,14 @@
     max-width: 620px;
     margin-left: auto;
     margin-right: auto;
-    
+
     /* Scroll reveal dynamic state */
     --p: var(--scroll-progress, 0.9);
     opacity: calc(0.2 + 0.8 * var(--p));
     transform: translateY(calc(24px * (1 - var(--p))));
-    transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+    transition:
+      opacity 0.15s ease-out,
+      transform 0.15s ease-out;
     will-change: opacity, transform;
   }
 
@@ -696,8 +748,13 @@
     /* Dynamic scroll-driven opacity and scale */
     --p: var(--scroll-progress, 0.85);
     opacity: calc(0.18 + 0.82 * var(--p));
-    transform: translateY(calc(34px * (1 - var(--p)))) scale(calc(0.93 + 0.07 * var(--p)));
-    transition: opacity 0.12s ease-out, transform 0.12s ease-out, border-color 0.25s, box-shadow 0.25s;
+    transform: translateY(calc(34px * (1 - var(--p))))
+      scale(calc(0.93 + 0.07 * var(--p)));
+    transition:
+      opacity 0.12s ease-out,
+      transform 0.12s ease-out,
+      border-color 0.25s,
+      box-shadow 0.25s;
     will-change: opacity, transform;
   }
 
@@ -757,8 +814,6 @@
     line-height: 1.55;
   }
 
-
-
   /* CTA Section */
   .cta-section {
     padding: 4rem 0 6.5rem;
@@ -781,8 +836,11 @@
     /* Dynamic scroll-driven opacity and scale */
     --p: var(--scroll-progress, 0.85);
     opacity: calc(0.2 + 0.8 * var(--p));
-    transform: translateY(calc(38px * (1 - var(--p)))) scale(calc(0.93 + 0.07 * var(--p)));
-    transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+    transform: translateY(calc(38px * (1 - var(--p))))
+      scale(calc(0.93 + 0.07 * var(--p)));
+    transition:
+      opacity 0.15s ease-out,
+      transform 0.15s ease-out;
     will-change: opacity, transform;
   }
 
@@ -808,7 +866,11 @@
   .orb-rose {
     width: 290px;
     height: 290px;
-    background: radial-gradient(circle, rgba(223, 158, 142, 0.7) 0%, rgba(223, 158, 142, 0) 70%);
+    background: radial-gradient(
+      circle,
+      rgba(223, 158, 142, 0.7) 0%,
+      rgba(223, 158, 142, 0) 70%
+    );
     top: -20%;
     left: 10%;
     animation: orbFloat1 13s ease-in-out infinite alternate;
@@ -817,7 +879,11 @@
   .orb-sage {
     width: 320px;
     height: 320px;
-    background: radial-gradient(circle, rgba(152, 193, 169, 0.6) 0%, rgba(152, 193, 169, 0) 70%);
+    background: radial-gradient(
+      circle,
+      rgba(152, 193, 169, 0.6) 0%,
+      rgba(152, 193, 169, 0) 70%
+    );
     bottom: -25%;
     right: 12%;
     animation: orbFloat2 16s ease-in-out infinite alternate;
@@ -826,7 +892,11 @@
   .orb-lavender {
     width: 260px;
     height: 260px;
-    background: radial-gradient(circle, rgba(179, 183, 219, 0.55) 0%, rgba(179, 183, 219, 0) 70%);
+    background: radial-gradient(
+      circle,
+      rgba(179, 183, 219, 0.55) 0%,
+      rgba(179, 183, 219, 0) 70%
+    );
     top: 30%;
     right: 25%;
     animation: orbFloat3 19s ease-in-out infinite alternate;
@@ -835,7 +905,11 @@
   .orb-amber {
     width: 240px;
     height: 240px;
-    background: radial-gradient(circle, rgba(229, 190, 138, 0.5) 0%, rgba(229, 190, 138, 0) 70%);
+    background: radial-gradient(
+      circle,
+      rgba(229, 190, 138, 0.5) 0%,
+      rgba(229, 190, 138, 0) 70%
+    );
     bottom: 15%;
     left: 20%;
     animation: orbFloat4 14s ease-in-out infinite alternate;
