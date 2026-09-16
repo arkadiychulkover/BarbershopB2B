@@ -20,7 +20,8 @@
     Check,
     Coins,
     ChevronDown,
-    HelpCircle
+    HelpCircle,
+    Calculator
   } from 'lucide-svelte';
   import miniappMockup from '../assets/miniapp_mockup.jpg';
   import { apiRequest } from '../lib/api';
@@ -144,6 +145,10 @@
           <Send size={14} />
           <span>{m.admin_layout_support()}</span>
         </a>
+        <a href="#calculator" class="btn btn-secondary btn-sm nav-calc-link" title={m.nav_calculator()}>
+          <Calculator size={14} />
+          <span>{m.nav_calculator()}</span>
+        </a>
         <a href="/login" class="btn btn-secondary btn-sm">
           <LogIn size={16} />
           <span>{m.nav_login()}</span>
@@ -174,6 +179,10 @@
       <div class="hero-actions">
         <a href="/register" class="btn btn-primary btn-lg glow">
           <span>{m.landing_cta_trial()} ({price !== null ? `${price} TON` : '18 TON'}) →</span>
+        </a>
+        <a href="#calculator" class="btn btn-secondary btn-lg">
+          <Calculator size={18} />
+          <span>{m.landing_calc_btn()}</span>
         </a>
       </div>
 

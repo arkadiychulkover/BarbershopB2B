@@ -822,5 +822,7 @@
   "calc_preset_small": "Студия (90)",
   "calc_preset_med": "Стандарт (180)",
   "calc_preset_large": "Крупный (360)",
-  "calc_preset_pro": "Сеть (720)"
+  "calc_preset_pro": "Сеть (720)",
+  "nav_calculator": "Калькулятор",
+  "landing_calc_btn": "Рассчитать доходность"
 }

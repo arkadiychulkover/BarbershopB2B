@@ -822,5 +822,7 @@
   "calc_preset_small": "Studio (90)",
   "calc_preset_med": "Standard (180)",
   "calc_preset_large": "Large (360)",
-  "calc_preset_pro": "Chain (720)"
+  "calc_preset_pro": "Chain (720)",
+  "nav_calculator": "ROI Calculator",
+  "landing_calc_btn": "Calculate ROI & Leads"
 }
