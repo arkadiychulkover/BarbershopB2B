@@ -16,7 +16,7 @@ export function getFullImageUrl(path: string | null | undefined): string {
     return `${cleanBase}/${cleanPath}`;
 }
 
-export async function apiFetch(endpoint, options: any = {}) {
+export async function apiFetch(endpoint: string, options: any = {}) {
     const url = `${BASE_URL}${endpoint}`;
     
     const headers = new Headers(options.headers || {});
