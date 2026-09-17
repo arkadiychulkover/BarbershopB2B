@@ -29,6 +29,10 @@ namespace Backend.Models
 
         /// <summary>Через сколько дней без визита слать win-back сообщение клиенту. 0 = отключено.</summary>
         public int WinBackDays { get; set; } = 0;
+
+        /// <summary>Максимальное количество активных/предстоящих записей для одного клиента одновременно. 0 = без ограничений.</summary>
+        public int MaxActiveBookingsPerClient { get; set; } = 1;
+
         public bool DepositEnabled { get; set; } = false;
         public decimal? DepositPercent { get; set; }
 

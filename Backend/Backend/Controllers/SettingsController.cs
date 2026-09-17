@@ -48,6 +48,7 @@ namespace Backend.Controllers
                 BotUsername = owner.BotUsername,
                 ReminderHoursBefore = owner.ReminderHoursBefore,
                 WinBackDays = owner.WinBackDays,
+                MaxActiveBookingsPerClient = owner.MaxActiveBookingsPerClient,
                 MasterFee = owner.MasterFee,
                 WalletAddress = owner.WalletAddress,
                 IsSubscribed = owner.HasActiveSubscription(),
@@ -122,6 +123,9 @@ namespace Backend.Controllers
 
             if (request.WinBackDays >= 0)
                 owner.WinBackDays = request.WinBackDays;
+
+            if (request.MaxActiveBookingsPerClient.HasValue && request.MaxActiveBookingsPerClient.Value >= 0)
+                owner.MaxActiveBookingsPerClient = request.MaxActiveBookingsPerClient.Value;
 
             if (request.MasterFee >= 0)
                 owner.MasterFee = request.MasterFee;

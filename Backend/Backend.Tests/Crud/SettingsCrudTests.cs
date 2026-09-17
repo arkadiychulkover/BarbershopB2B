@@ -78,6 +78,7 @@ namespace Backend.Tests.Crud
                 TimeZone = "Europe/Warsaw",
                 ReminderHoursBefore = 3,
                 WinBackDays = 45,
+                MaxActiveBookingsPerClient = 4,
                 MasterFee = 15.5m,
                 WalletAddress = "EQNewTonWalletAddress1234567"
             };
@@ -96,6 +97,7 @@ namespace Backend.Tests.Crud
             Assert.Equal("Europe/Warsaw", updatedOwner.TimeZone);
             Assert.Equal(3, updatedOwner.ReminderHoursBefore);
             Assert.Equal(45, updatedOwner.WinBackDays);
+            Assert.Equal(4, updatedOwner.MaxActiveBookingsPerClient);
             Assert.Equal(15.5m, updatedOwner.MasterFee);
             Assert.Equal("EQNewTonWalletAddress1234567", updatedOwner.WalletAddress);
         }

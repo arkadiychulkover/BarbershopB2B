@@ -160,5 +160,92 @@ namespace Backend.Tests.Crud
             var updatedAppt = await verifyContext.Appointments.FindAsync(apptId);
             Assert.Equal(AppointmentStatus.Cancelled, updatedAppt!.Status);
         }
+
+        [Fact]
+        public async Task Zapisatsa_ClientReachesMaxActiveBookingsLimit_ReturnsBadRequest()
+        {
+            // Arrange
+            string dbName = Guid.NewGuid().ToString();
+            var options = new DbContextOptionsBuilder<Data.AppDbContext>()
+                .UseInMemoryDatabase(databaseName: dbName)
+                .Options;
+
+            var clientId = Guid.NewGuid();
+            var masterId = Guid.NewGuid();
+            var serviceId = Guid.NewGuid();
+
+            using (var seedContext = new Data.AppDbContext(options))
+            {
+                var owner = TestDbContextHelper.CreateValidOwner();
+                owner.MaxActiveBookingsPerClient = 1;
+
+                var master = new Master
+                {
+                    Id = masterId,
+                    Name = "Master Test",
+                    Ip = System.Net.IPAddress.Loopback,
+                    OwnerId = owner.Id,
+                    Owner = owner
+                };
+
+                var serviceName = new ServiceName { Id = Guid.NewGuid(), Name = "Haircut", OwnerId = owner.Id };
+                var service = new Service
+                {
+                    Id = serviceId,
+                    MasterId = masterId,
+                    ServiceName = serviceName,
+                    ServiceNameId = serviceName.Id,
+                    Price = 500,
+                    Duration = 30,
+                    IsActive = true
+                };
+
+                var client = new Client
+                {
+                    Id = clientId,
+                    Name = "Test Client",
+                    Phone = "+380501234567",
+                    TelegramId = "12345",
+                    OwnerId = owner.Id
+                };
+
+                // Already has 1 scheduled future appointment
+                var existingAppt = new Appointment
+                {
+                    Id = Guid.NewGuid(),
+                    ClientId = clientId,
+                    MasterId = masterId,
+                    ServiceId = serviceId,
+                    Status = AppointmentStatus.Scheduled,
+                    AppointmentDate = DateTime.UtcNow.AddDays(2),
+                    AppointmentEndDate = DateTime.UtcNow.AddDays(2).AddMinutes(30)
+                };
+
+                seedContext.BarbershopOwners.Add(owner);
+                seedContext.Masters.Add(master);
+                seedContext.ServiceNames.Add(serviceName);
+                seedContext.Services.Add(service);
+                seedContext.Clients.Add(client);
+                seedContext.Appointments.Add(existingAppt);
+                await seedContext.SaveChangesAsync();
+            }
+
+            var factory = new MockDbContextFactory(options);
+            var controller = new ClientsController(factory, _botService);
+            controller.ControllerContext = TestDbContextHelper.CreateControllerContextWithUser(clientId, "Client");
+
+            var request = new BookAppointmentRequest(
+                MasterId: masterId,
+                ServiceId: serviceId,
+                AppointmentDate: DateTime.UtcNow.AddDays(3)
+            );
+
+            // Act
+            var result = await controller.Zapisatsa(request);
+
+            // Assert
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains("максимального лимита активных записей", badRequest.Value!.ToString()!);
+        }
     }
 }

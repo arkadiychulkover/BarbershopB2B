@@ -14,6 +14,8 @@ namespace Backend.DTOs
         public int ReminderHoursBefore { get; set; }
         /// <summary>Win-back: через сколько дней без визита слать напоминание. 0 = откл.</summary>
         public int WinBackDays { get; set; }
+        /// <summary>Макс. активных записей на одного клиента одновременно. 0 = без ограничений.</summary>
+        public int? MaxActiveBookingsPerClient { get; set; }
         public decimal MasterFee { get; set; }
         public string WalletAddress { get; set; }
     }
@@ -34,6 +36,8 @@ namespace Backend.DTOs
         public int ReminderHoursBefore { get; set; }
         /// <summary>Win-back: через сколько дней без визита слать напоминание. 0 = откл.</summary>
         public int WinBackDays { get; set; }
+        /// <summary>Макс. активных записей на одного клиента одновременно. 0 = без ограничений.</summary>
+        public int MaxActiveBookingsPerClient { get; set; }
         public decimal MasterFee { get; set; }
         public string WalletAddress { get; set; }
         public bool IsSubscribed { get; set; }

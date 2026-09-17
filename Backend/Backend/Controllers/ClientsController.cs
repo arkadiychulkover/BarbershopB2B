@@ -115,6 +115,24 @@ namespace Backend.Controllers
             if (master.Owner == null || !master.Owner.HasActiveSubscription())
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = "Запись невозможна: подписка заведения не активна или истекла." });
 
+            // Проверка лимита активных записей для одного клиента
+            if (master.Owner.MaxActiveBookingsPerClient > 0)
+            {
+                var nowUtc = DateTime.UtcNow;
+                var activeAppointmentsCount = await context.Appointments.CountAsync(a =>
+                    a.ClientId == clientId &&
+                    a.Status == AppointmentStatus.Scheduled &&
+                    a.AppointmentEndDate > nowUtc);
+
+                if (activeAppointmentsCount >= master.Owner.MaxActiveBookingsPerClient)
+                {
+                    return BadRequest(new 
+                    { 
+                        message = $"Вы достигли максимального лимита активных записей ({master.Owner.MaxActiveBookingsPerClient}). Дождитесь визита или отмените предыдущую запись, чтобы выбрать другое время." 
+                    });
+                }
+            }
+
             // Проверка отпуска мастера
             var bookingDateUtc = DateTime.SpecifyKind(request.AppointmentDate.Date, DateTimeKind.Utc);
             bool onVacation = await context.MasterVacations.AnyAsync(v =>
