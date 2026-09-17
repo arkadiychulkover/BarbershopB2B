@@ -462,6 +462,8 @@
   "settings_winback_label": "Win-back: client absence (days)",
   "settings_winback_placeholder": "0 — disabled",
   "settings_winback_hint": "If client hasn't visited in N days — bot sends a check-in reminder. 0 = disabled.",
+  "settings_max_bookings_label": "Max active bookings per client",
+  "settings_max_bookings_hint": "Maximum upcoming bookings for a single client at one time (0 = unlimited)",
   "settings_fee_label": "Barber commission (%)",
   "settings_fee_hint": "Salon base commission rate",
   "settings_save_btn": "Save settings",

@@ -462,6 +462,8 @@
   "settings_winback_label": "Win-back: отсутствие клиента (дней)",
   "settings_winback_placeholder": "0 — отключено",
   "settings_winback_hint": "Если клиент не посещал салон N дней — бот отправит ему напоминание. 0 = отключено.",
+  "settings_max_bookings_label": "Макс. активных записей на клиента",
+  "settings_max_bookings_hint": "Максимальное количество предстоящих записей для одного клиента одновременно (0 = без ограничений)",
   "settings_fee_label": "Комиссия мастеров (%)",
   "settings_fee_hint": "Базовая ставка комиссии заведения",
   "settings_save_btn": "Сохранить настройки",

@@ -64,6 +64,7 @@
     botUsername: "",
     reminderHoursBefore: 24,
     winBackDays: 0,
+    maxActiveBookingsPerClient: 1,
     walletAddress: "",
     masterFee: 0,
     isSubscribed: false,
@@ -245,6 +246,7 @@
           botUsername: settings.botUsername,
           reminderHoursBefore: parseInt(settings.reminderHoursBefore, 10) || 24,
           winBackDays: parseInt(settings.winBackDays, 10) || 0,
+          maxActiveBookingsPerClient: parseInt(settings.maxActiveBookingsPerClient, 10) >= 0 ? parseInt(settings.maxActiveBookingsPerClient, 10) : 1,
           masterFee: parseFloat(settings.masterFee) || 0,
           walletAddress: settings.walletAddress || ""
         }),
@@ -797,6 +799,23 @@
               />
             </div>
             <small class="hint">{m.settings_winback_hint()}</small>
+          </div>
+
+          <div class="form-group">
+            <label for="maxActiveBookings">{m.settings_max_bookings_label()}</label>
+            <div class="input-icon-wrap">
+              <CalendarCheck size={16} class="input-icon" />
+              <input
+                id="maxActiveBookings"
+                type="number"
+                class="input has-icon"
+                bind:value={settings.maxActiveBookingsPerClient}
+                min="0"
+                max="50"
+                placeholder="1"
+              />
+            </div>
+            <small class="hint">{m.settings_max_bookings_hint()}</small>
           </div>
 
           <div class="form-group">
