@@ -16,20 +16,28 @@ export function getFullImageUrl(path: string | null | undefined): string {
     return `${cleanBase}/${cleanPath}`;
 }
 
-export async function apiFetch(endpoint, options = {}) {
+export async function apiFetch(endpoint, options: any = {}) {
     const url = `${BASE_URL}${endpoint}`;
     
     const headers = new Headers(options.headers || {});
     if (currentToken && !options.skipAuth) {
         headers.set('Authorization', `Bearer ${currentToken}`);
     }
-    if (!headers.has('Content-Type') && options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)) {
-        headers.set('Content-Type', 'application/json');
+
+    let body = options.body;
+    if (body && !(body instanceof FormData)) {
+        if (!headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json');
+        }
+        if (typeof body !== 'string') {
+            body = JSON.stringify(body);
+        }
     }
     
     const config = {
         ...options,
-        headers
+        headers,
+        body
     };
     
     const response = await fetch(url, config);
@@ -47,9 +55,23 @@ export async function apiFetch(endpoint, options = {}) {
         const errorText = await response.text();
         try {
             const errorData = JSON.parse(errorText);
-            message = errorData.message || message;
+            if (errorData) {
+                if (typeof errorData === 'string') {
+                    message = errorData;
+                } else if (errorData.message) {
+                    message = errorData.message;
+                } else if (errorData.error) {
+                    message = errorData.error;
+                } else if (errorData.title) {
+                    message = errorData.title;
+                    if (errorData.errors && typeof errorData.errors === 'object') {
+                        const fieldErrors = Object.values(errorData.errors).flat().join(', ');
+                        if (fieldErrors) message += `: ${fieldErrors}`;
+                    }
+                }
+            }
         } catch(e) {
-            message = errorText || message;
+            if (errorText) message = errorText;
         }
         
         throw { status: response.status, message };

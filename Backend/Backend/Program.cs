@@ -40,7 +40,9 @@ namespace Backend
                                   var host = new Uri(origin).Host;
                                   return host.EndsWith("arch-shop.store") ||
                                          host.EndsWith("arch-shop-bot.online") ||
+                                         host.EndsWith("backendbarbershopdomen.online") ||
                                          host.EndsWith("vercel.app") ||
+                                         host.EndsWith("telegram.org") ||
                                          host == "localhost";
                               }
                               catch
@@ -136,11 +138,11 @@ namespace Backend
                 ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
             });
 
+            app.UseCors();
+
             app.UseMiddleware<Backend.Middlewares.GlobalExceptionMiddleware>();
 
             app.UseStaticFiles();
-            
-            app.UseCors();
             app.UseRateLimiter();
 
             app.UseAuthentication();
