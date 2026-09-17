@@ -24,11 +24,32 @@
     Calculator,
   } from "lucide-svelte";
   import miniappMockup from "../assets/miniapp_mockup.jpg";
-  import { apiRequest } from "../lib/api";
+  import { apiRequest, BASE_URL } from "../lib/api";
   import { theme, toggleTheme } from "../lib/theme";
   import { m } from "../lib/paraglide/messages.js";
   import LanguageSwitcher from "../components/LanguageSwitcher.svelte";
   import RoiCalculator from "../components/RoiCalculator.svelte";
+
+  onMount(async () => {
+    try {
+      const jwtToken = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
+      const ownerId = typeof window !== 'undefined' ? (localStorage.getItem('owner_id') || localStorage.getItem('userId')) : null;
+      await fetch(`${BASE_URL}/api/Tracking/landing-visit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {})
+        },
+        body: JSON.stringify({
+          token: jwtToken,
+          userId: ownerId,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+        })
+      });
+    } catch (e) {
+      // Silently ignore
+    }
+  });
 
   let price = null;
   let activeFaq = null;
