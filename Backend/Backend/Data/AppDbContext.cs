@@ -55,7 +55,7 @@ namespace Backend.Data
                 .HasOne(a => a.Master)
                 .WithMany(m => m.Appointments)
                 .HasForeignKey(a => a.MasterId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Client)
@@ -67,7 +67,7 @@ namespace Backend.Data
                 .HasOne(a => a.Service)
                 .WithMany()
                 .HasForeignKey(a => a.ServiceId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // AppointmentService (мульти-услуги)
             modelBuilder.Entity<AppointmentService>()
@@ -80,7 +80,7 @@ namespace Backend.Data
                 .HasOne(aps => aps.Service)
                 .WithMany()
                 .HasForeignKey(aps => aps.ServiceId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // MasterVacation (отпуска мастеров)
             modelBuilder.Entity<MasterVacation>()
@@ -99,7 +99,7 @@ namespace Backend.Data
                 .HasOne(r => r.Master)
                 .WithMany(m => m.Reviews)
                 .HasForeignKey(r => r.MasterId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
                 .HasOne(r => r.Client)

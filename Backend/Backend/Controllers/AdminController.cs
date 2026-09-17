@@ -461,6 +461,38 @@ namespace Backend.Controllers
             if (master == null)
                 return NotFound(new { message = "Мастер не найден" });
 
+            var appointments = await _context.Appointments
+                .Where(a => a.MasterId == master.Id)
+                .ToListAsync();
+            var appointmentIds = appointments.Select(a => a.Id).ToList();
+
+            var additionalServices = await _context.AppointmentServices
+                .Where(aps => appointmentIds.Contains(aps.AppointmentId))
+                .ToListAsync();
+            _context.AppointmentServices.RemoveRange(additionalServices);
+
+            var reviews = await _context.Reviews
+                .Where(r => r.MasterId == master.Id || appointmentIds.Contains(r.AppointmentId))
+                .ToListAsync();
+            _context.Reviews.RemoveRange(reviews);
+
+            _context.Appointments.RemoveRange(appointments);
+
+            var services = await _context.Services
+                .Where(s => s.MasterId == master.Id)
+                .ToListAsync();
+            _context.Services.RemoveRange(services);
+
+            var shifts = await _context.Shifts
+                .Where(s => s.MasterId == master.Id)
+                .ToListAsync();
+            _context.Shifts.RemoveRange(shifts);
+
+            var vacations = await _context.MasterVacations
+                .Where(v => v.MasterId == master.Id)
+                .ToListAsync();
+            _context.MasterVacations.RemoveRange(vacations);
+
             _context.Masters.Remove(master);
             await _context.SaveChangesAsync();
 

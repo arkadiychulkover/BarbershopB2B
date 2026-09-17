@@ -121,6 +121,38 @@ namespace Backend.Controllers
             if (barber == null || barber.OwnerId != owner.Id)
                 return NotFound(new { message = "Barber not found or does not belong to the owner" });
 
+            var appointments = await _context.Appointments
+                .Where(a => a.MasterId == barber.Id)
+                .ToListAsync();
+            var appointmentIds = appointments.Select(a => a.Id).ToList();
+
+            var additionalServices = await _context.AppointmentServices
+                .Where(aps => appointmentIds.Contains(aps.AppointmentId))
+                .ToListAsync();
+            _context.AppointmentServices.RemoveRange(additionalServices);
+
+            var reviews = await _context.Reviews
+                .Where(r => r.MasterId == barber.Id || appointmentIds.Contains(r.AppointmentId))
+                .ToListAsync();
+            _context.Reviews.RemoveRange(reviews);
+
+            _context.Appointments.RemoveRange(appointments);
+
+            var services = await _context.Services
+                .Where(s => s.MasterId == barber.Id)
+                .ToListAsync();
+            _context.Services.RemoveRange(services);
+
+            var shifts = await _context.Shifts
+                .Where(s => s.MasterId == barber.Id)
+                .ToListAsync();
+            _context.Shifts.RemoveRange(shifts);
+
+            var vacations = await _context.MasterVacations
+                .Where(v => v.MasterId == barber.Id)
+                .ToListAsync();
+            _context.MasterVacations.RemoveRange(vacations);
+
             _context.Masters.Remove(barber);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Barber deleted successfully" });

@@ -214,6 +214,63 @@ namespace Backend.Tests.Crud
         }
 
         [Fact]
+        public async Task DeleteBarber_WithAppointmentsReviewsAndVacations_SuccessfullyDeletesAllRelatedData()
+        {
+            // Arrange
+            using var context = TestDbContextHelper.CreateInMemoryDbContext();
+            var ownerId = Guid.NewGuid();
+            var owner = TestDbContextHelper.CreateValidOwner(
+                id: ownerId,
+                email: "owner-cascade@test.com",
+                status: OwnerStatus.Active,
+                nextPayment: DateTime.UtcNow.AddDays(30)
+            );
+            var master = new Master { Id = Guid.NewGuid(), OwnerId = ownerId, Name = "Master With Appts", Ip = System.Net.IPAddress.Loopback };
+            var client = new Client { Id = Guid.NewGuid(), Name = "Client A", TelegramId = "111", OwnerId = ownerId };
+            var serviceName = new ServiceName { Id = Guid.NewGuid(), OwnerId = ownerId, Name = "Fade" };
+            var service = new Service { Id = Guid.NewGuid(), MasterId = master.Id, ServiceNameId = serviceName.Id, Price = 600, Duration = 30 };
+            var addService = new Service { Id = Guid.NewGuid(), MasterId = master.Id, ServiceNameId = serviceName.Id, Price = 200, Duration = 15 };
+            var vacation = new MasterVacation { Id = Guid.NewGuid(), MasterId = master.Id, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(5) };
+            var appt = new Appointment
+            {
+                Id = Guid.NewGuid(),
+                ClientId = client.Id,
+                MasterId = master.Id,
+                ServiceId = service.Id,
+                AppointmentDate = DateTime.UtcNow.AddDays(1),
+                Status = AppointmentStatus.Scheduled
+            };
+            var apptService = new AppointmentService { Id = Guid.NewGuid(), AppointmentId = appt.Id, ServiceId = addService.Id, Price = 200, Duration = 15 };
+            var review = new Review { Id = Guid.NewGuid(), MasterId = master.Id, ClientId = client.Id, AppointmentId = appt.Id, Rating = 5 };
+
+            context.BarbershopOwners.Add(owner);
+            context.Masters.Add(master);
+            context.Clients.Add(client);
+            context.ServiceNames.Add(serviceName);
+            context.Services.AddRange(service, addService);
+            context.MasterVacations.Add(vacation);
+            context.Appointments.Add(appt);
+            context.AppointmentServices.Add(apptService);
+            context.Reviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var controller = new BarberController(context, _botService);
+            controller.ControllerContext = TestDbContextHelper.CreateControllerContextWithUser(ownerId, "Owner");
+
+            // Act
+            var result = await controller.DeleteBarber(new DeleteBarberRequest { BarberId = master.Id });
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            Assert.Null(await context.Masters.FindAsync(master.Id));
+            Assert.Empty(await context.Appointments.Where(a => a.MasterId == master.Id).ToListAsync());
+            Assert.Empty(await context.Reviews.Where(r => r.MasterId == master.Id).ToListAsync());
+            Assert.Empty(await context.Services.Where(s => s.MasterId == master.Id).ToListAsync());
+            Assert.Empty(await context.MasterVacations.Where(v => v.MasterId == master.Id).ToListAsync());
+            Assert.Empty(await context.AppointmentServices.Where(aps => aps.AppointmentId == appt.Id).ToListAsync());
+        }
+
+        [Fact]
         public async Task UpdateMyAppointment_ExistingTelegramClient_PreservesClientAndUpdatesPhone()
         {
             // Arrange
