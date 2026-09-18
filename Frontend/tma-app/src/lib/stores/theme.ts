@@ -41,5 +41,15 @@ function applyTheme(themeValue: string) {
       document.documentElement.classList.add('dark-theme');
       document.documentElement.classList.remove('light-theme');
     }
+
+    try {
+      const tg = (window as any)?.Telegram?.WebApp;
+      if (tg) {
+        tg.setHeaderColor?.(themeValue === 'light' ? '#ffffff' : '#0c0e12');
+        tg.setBackgroundColor?.(themeValue === 'light' ? '#f8fafc' : '#0c0e12');
+      }
+    } catch {
+      // ignore
+    }
   }
 }

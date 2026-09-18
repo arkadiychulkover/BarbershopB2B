@@ -89,9 +89,9 @@
     height: 30px;
     padding: 0 10px;
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text-primary, #ffffff);
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
@@ -101,8 +101,8 @@
   }
 
   .lang-btn:hover, .lang-btn.active {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.22);
+    background: var(--bg-surface-hover);
+    border-color: var(--border-glass);
   }
 
   .globe {
@@ -119,6 +119,7 @@
   .chevron {
     transition: transform 0.2s ease;
     opacity: 0.7;
+    color: var(--text-secondary);
   }
 
   .chevron.rotated {
@@ -132,12 +133,12 @@
     right: 0;
     min-width: 140px;
     padding: 5px;
-    background: rgba(26, 28, 36, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-lg);
     animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
@@ -153,7 +154,7 @@
     border-radius: 8px;
     background: transparent;
     border: none;
-    color: var(--text-secondary, #a1a1aa);
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -162,12 +163,12 @@
   }
 
   .lang-option:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary, #ffffff);
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
   }
 
   .lang-option.selected {
-    background: rgba(223, 158, 142, 0.15);
+    background: var(--pastel-rose-dim);
     color: var(--pastel-rose, #e09f8f);
     font-weight: 600;
   }

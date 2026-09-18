@@ -131,11 +131,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(18, 20, 26, 0.88);
+    background: var(--bg-surface);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border-subtle);
     z-index: 1000;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .tma-brand-box {
@@ -148,7 +149,7 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background-color: var(--pastel-rose, #e09f8f);
+    background-color: var(--pastel-rose, #df9e8e);
     box-shadow: 0 0 10px var(--pastel-rose-glow, rgba(223, 158, 142, 0.5));
   }
 
@@ -156,7 +157,7 @@
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.05em;
-    color: var(--text-primary, #ffffff);
+    color: var(--text-primary);
   }
 
   .tma-top-actions {
