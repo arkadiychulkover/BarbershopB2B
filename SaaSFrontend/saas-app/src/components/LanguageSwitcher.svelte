@@ -2,6 +2,10 @@
   import { onMount } from 'svelte';
   import { currentLocale, switchLocale } from '../lib/locale.js';
 
+  export let variant = 'pill'; // 'pill' | 'sidebar'
+  export let dropUp = false;
+  export let fullWidth = false;
+
   const languages = [
     { code: 'en', label: 'English', short: 'EN' },
     { code: 'ru', label: 'Русский', short: 'RU' }
@@ -33,11 +37,17 @@
   });
 </script>
 
-<div class="lang-switcher" bind:this={switcherEl}>
+<div 
+  class="lang-switcher" 
+  class:sidebar-variant={variant === 'sidebar'} 
+  class:full-width={fullWidth} 
+  bind:this={switcherEl}
+>
   <button
     type="button"
     class="lang-btn"
     class:active={open}
+    class:sidebar-btn={variant === 'sidebar'}
     on:click|stopPropagation={toggle}
     aria-label="Select language"
     title="Change language / Сменить язык"
@@ -56,7 +66,11 @@
   {#if open}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="lang-dropdown" on:click|stopPropagation>
+    <div 
+      class="lang-dropdown" 
+      class:drop-up={dropUp}
+      on:click|stopPropagation
+    >
       {#each languages as lang}
         <button
           type="button"
@@ -83,6 +97,11 @@
     z-index: 1000;
   }
 
+  .lang-switcher.full-width {
+    width: 100%;
+    display: block;
+  }
+
   .lang-btn {
     display: inline-flex;
     align-items: center;
@@ -90,8 +109,8 @@
     height: 34px;
     padding: 0 11px;
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--bg-surface-elevated, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
     color: var(--text-primary, #ffffff);
     font-size: 12px;
     font-weight: 600;
@@ -100,17 +119,31 @@
     -webkit-backdrop-filter: blur(12px);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
+    box-sizing: border-box;
+  }
+
+  .lang-switcher.full-width .lang-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lang-btn.sidebar-btn {
+    border-radius: var(--radius-md, 14px);
+    height: 36px;
+    font-size: 0.8rem;
+    padding: 0 0.6rem;
+    gap: 0.4rem;
   }
 
   .lang-btn:hover, .lang-btn.active {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    background: var(--bg-surface-hover, rgba(255, 255, 255, 0.12));
+    border-color: var(--border-glass, rgba(255, 255, 255, 0.25));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     transform: translateY(-1px);
   }
 
   .globe {
-    color: var(--pastel-rose, #e09f8f);
+    color: var(--pastel-rose, #df9e8e);
     opacity: 0.9;
     flex-shrink: 0;
   }
@@ -136,16 +169,23 @@
     right: 0;
     min-width: 145px;
     padding: 6px;
-    background: rgba(22, 24, 30, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: var(--bg-surface-solid, #161a23);
+    border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.14));
     border-radius: 14px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--border-subtle, rgba(255, 255, 255, 0.05));
     animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     gap: 3px;
+    z-index: 1000;
+  }
+
+  .lang-dropdown.drop-up {
+    top: auto;
+    bottom: calc(100% + 6px);
+    animation: dropdownFadeUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .lang-option {
@@ -166,13 +206,13 @@
   }
 
   .lang-option:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-surface-hover, rgba(255, 255, 255, 0.08));
     color: var(--text-primary, #ffffff);
   }
 
   .lang-option.selected {
-    background: rgba(223, 158, 142, 0.15);
-    color: var(--pastel-rose, #e09f8f);
+    background: var(--pastel-rose-dim, rgba(223, 158, 142, 0.15));
+    color: var(--pastel-rose, #df9e8e);
     font-weight: 600;
   }
 
@@ -188,6 +228,17 @@
     from {
       opacity: 0;
       transform: translateY(-6px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes dropdownFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.96);
     }
     to {
       opacity: 1;

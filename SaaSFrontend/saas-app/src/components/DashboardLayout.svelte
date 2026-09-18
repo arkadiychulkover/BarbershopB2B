@@ -150,22 +150,24 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="sidebar-actions-row">
+        <div class="sidebar-actions-grid">
           <button class="theme-toggle-btn" on:click={toggleTheme} title={m.admin_layout_theme_toggle()}>
             {#if $theme === 'dark'}
-              <Sun size={16} class="text-amber" />
+              <Sun size={15} class="text-amber" />
               <span>{m.admin_layout_light_theme()}</span>
             {:else}
-              <Moon size={16} class="text-lavender" />
+              <Moon size={15} class="text-lavender" />
               <span>{m.admin_layout_dark_theme()}</span>
             {/if}
           </button>
 
-          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title={m.admin_layout_support_title()}>
-            <Send size={14} />
-            <span>{m.admin_layout_support()}</span>
-          </a>
+          <LanguageSwitcher variant="sidebar" dropUp={true} fullWidth={true} />
         </div>
+
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title={m.admin_layout_support_title()}>
+          <Send size={14} />
+          <span>{m.admin_layout_support()}</span>
+        </a>
 
         <div class="user-pill">
           <div class="user-avatar">
@@ -184,9 +186,6 @@
     </aside>
 
     <main class="main-content">
-      <div class="desktop-top-bar">
-        <LanguageSwitcher />
-      </div>
       <div class="content-wrapper">
         <slot></slot>
       </div>
@@ -251,20 +250,7 @@
     gap: 0.6rem;
   }
 
-  .desktop-top-bar {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 1.25rem 2rem 0;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
 
-  @media (max-width: 1024px) {
-    .desktop-top-bar {
-      display: none;
-    }
-  }
 
   .mobile-brand {
     display: flex;
@@ -410,19 +396,19 @@
     gap: 0.75rem;
   }
 
-  .sidebar-actions-row {
+  .sidebar-actions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
   }
 
-  .theme-toggle-btn, .support-btn {
+  .theme-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 0.55rem 0.6rem;
+    height: 36px;
+    padding: 0 0.5rem;
     background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -432,6 +418,29 @@
     cursor: pointer;
     text-decoration: none;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .support-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    height: 36px;
+    padding: 0 0.6rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .theme-toggle-btn:hover {

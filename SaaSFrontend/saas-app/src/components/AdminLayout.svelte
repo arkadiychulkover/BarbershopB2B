@@ -184,7 +184,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="sidebar-actions-row">
+        <div class="sidebar-actions-grid">
           <button class="theme-toggle-btn" on:click={toggleTheme} title={m.admin_layout_theme_toggle()}>
             {#if $theme === 'dark'}
               <Sun size={15} class="text-amber" />
@@ -195,11 +195,13 @@
             {/if}
           </button>
 
-          <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title={m.admin_layout_support_title()}>
-            <Send size={13} />
-            <span>{m.admin_layout_support()}</span>
-          </a>
+          <LanguageSwitcher variant="sidebar" dropUp={true} fullWidth={true} />
         </div>
+
+        <a href="https://t.me/Eyed_Graff" target="_blank" rel="noopener noreferrer" class="support-btn" title={m.admin_layout_support_title()}>
+          <Send size={13} />
+          <span>{m.admin_layout_support()}</span>
+        </a>
 
         <div class="admin-user-card">
           <div class="admin-avatar">
@@ -220,9 +222,6 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <div class="desktop-top-bar">
-        <LanguageSwitcher />
-      </div>
       <slot />
     </main>
   </div>
@@ -242,20 +241,7 @@
     gap: 0.6rem;
   }
 
-  .desktop-top-bar {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 1.25rem 2rem 0;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
 
-  @media (max-width: 1024px) {
-    .desktop-top-bar {
-      display: none;
-    }
-  }
 
   .mobile-header {
     display: none;
@@ -397,19 +383,19 @@
     gap: 0.75rem;
   }
 
-  .sidebar-actions-row {
+  .sidebar-actions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
   }
 
-  .theme-toggle-btn, .support-btn {
+  .theme-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.35rem;
-    padding: 0.45rem 0.5rem;
+    height: 36px;
+    padding: 0 0.5rem;
     background: var(--bg-surface-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -419,6 +405,29 @@
     cursor: pointer;
     text-decoration: none;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .support-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    height: 36px;
+    padding: 0 0.6rem;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .theme-toggle-btn:hover {
